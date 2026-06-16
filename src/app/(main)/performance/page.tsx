@@ -265,7 +265,7 @@ export default function PerformancePage() {
           <form onSubmit={handleCreateTarget} className="space-y-5 mt-4">
             <div className="space-y-2">
               <Label className="font-medium text-slate-600 dark:text-slate-300">Assignee (Karyawan) <span className="text-rose-500">*</span></Label>
-              <Select value={form.assigneeId} onValueChange={v => setForm({...form, assigneeId: v})}>
+              <Select value={form.assigneeId} onValueChange={v => setForm({...form, assigneeId: v ?? ''})}>
                 <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                   <SelectValue placeholder="Pilih karyawan..." />
                 </SelectTrigger>
