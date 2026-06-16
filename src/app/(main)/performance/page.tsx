@@ -321,7 +321,7 @@ export default function PerformancePage() {
 
             <div className="space-y-2">
               <Label className="font-medium text-slate-600 dark:text-slate-300">Periode</Label>
-              <Select value={form.period} onValueChange={v => setForm({...form, period: v})}>
+              <Select value={form.period} onValueChange={v => setForm({...form, period: v ?? 'MONTHLY'})}>
                 <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                   <SelectValue />
                 </SelectTrigger>
