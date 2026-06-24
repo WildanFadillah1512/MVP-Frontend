@@ -21,6 +21,10 @@ export default function AttendancePage() {
   const [showOvertimeForm, setShowOvertimeForm] = useState(false);
   const [overtimeForm, setOvertimeForm] = useState({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '', endTime: '', reason: '', notes: '' });
   const [submittingOT, setSubmittingOT] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [allAttendanceToday, setAllAttendanceToday] = useState<any[]>([]);
+
+  const EXECUTIVE_ROLES = ['OWNER', 'CEO', 'GM', 'ADMIN', 'MANAGER'];
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -43,7 +47,19 @@ export default function AttendancePage() {
     }
   };
 
-  useEffect(() => { 
+  useEffect(() => {
+    // Ambil data user dari sessionStorage
+    const userStr = sessionStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setCurrentUser(user);
+      // Jika atasan, ambil absensi semua karyawan hari ini
+      if (EXECUTIVE_ROLES.includes(user.role?.name)) {
+        api.get('/attendances/today/all')
+          .then(r => { if (r.data.success) setAllAttendanceToday(r.data.data); })
+          .catch(() => {});
+      }
+    }
     fetchAttendances();
     api.get('/overtime/me').then(r => { if (r.data.success) setOvertimes(r.data.data); }).catch(() => {});
   }, []);
@@ -139,8 +155,51 @@ export default function AttendancePage() {
       {/* Page Header */}
       <div className="bg-white/50 dark:bg-slate-900/50 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800 backdrop-blur-sm">
         <h1 className="text-3xl font-bold tracking-tight text-slate-800 dark:text-white">Absensi Harian</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Catat jam masuk dan pulang kerja Anda setiap hari.</p>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">
+          {currentUser ? (
+            <span>Login sebagai: <strong className="text-slate-700 dark:text-slate-200">{currentUser.name}</strong> — {currentUser.role?.name} / {currentUser.division?.name}</span>
+          ) : 'Catat jam masuk dan pulang kerja Anda setiap hari.'}
+        </p>
       </div>
+
+      {/* Rekap Absensi Semua Karyawan Hari Ini — Hanya untuk Atasan */}
+      {currentUser && EXECUTIVE_ROLES.includes(currentUser.role?.name) && allAttendanceToday.length > 0 && (
+        <div className="bg-white/80 dark:bg-slate-900/80 rounded-2xl border border-slate-200/60 dark:border-slate-800 p-6">
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">📋 Rekap Absensi Hari Ini — Semua Karyawan ({allAttendanceToday.length} orang)</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-700">
+                  <th className="text-left py-2 px-3 text-slate-500">Nama</th>
+                  <th className="text-left py-2 px-3 text-slate-500">Divisi</th>
+                  <th className="text-left py-2 px-3 text-slate-500">Jabatan</th>
+                  <th className="text-left py-2 px-3 text-slate-500">Check-In</th>
+                  <th className="text-left py-2 px-3 text-slate-500">Check-Out</th>
+                  <th className="text-left py-2 px-3 text-slate-500">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allAttendanceToday.map((att: any) => (
+                  <tr key={att.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="py-2 px-3 font-medium text-slate-800 dark:text-slate-200">{att.user?.name}</td>
+                    <td className="py-2 px-3 text-slate-500">{att.user?.division?.name}</td>
+                    <td className="py-2 px-3 text-slate-500">{att.user?.role?.name}</td>
+                    <td className="py-2 px-3 text-emerald-600">{att.checkIn ? format(new Date(att.checkIn), 'HH:mm') : '-'}</td>
+                    <td className="py-2 px-3 text-rose-600">{att.checkOut ? format(new Date(att.checkOut), 'HH:mm') : '—'}</td>
+                    <td className="py-2 px-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        att.status === 'HADIR' ? 'bg-emerald-100 text-emerald-700' :
+                        att.status === 'TELAT' ? 'bg-amber-100 text-amber-700' :
+                        'bg-rose-100 text-rose-700'
+                      }`}>{att.status}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Summary Stats */}
       <div className="grid gap-4 md:grid-cols-3">
