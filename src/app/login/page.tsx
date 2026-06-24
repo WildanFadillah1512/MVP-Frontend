@@ -29,6 +29,9 @@ export default function LoginPage() {
     try {
       const response = await authApi.login(data);
       if (response.success) {
+        // Bersihkan semua sesi lama sebelum menyimpan sesi baru
+        // Ini mencegah token akun sebelumnya masih aktif saat ganti akun
+        localStorage.clear();
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
         toast.success('Login berhasil');

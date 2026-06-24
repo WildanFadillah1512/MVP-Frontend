@@ -145,8 +145,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [router]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.clear(); // Bersihkan SEMUA data sesi, bukan hanya token dan user
     router.push('/login');
   };
 
