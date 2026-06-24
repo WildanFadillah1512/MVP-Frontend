@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 
-const inter = Inter({ subsets: ["latin"] });
+const outfit = Outfit({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"] });
 
 export const metadata: Metadata = {
-  title: "Sistem Internal Operasional",
-  description: "Aplikasi manajemen operasional perusahaan terpadu",
+  title: "SikaryaERP — Sistem Operasional Terpadu",
+  description: "Aplikasi manajemen operasional perusahaan terpadu — Produksi, Gudang, Kasir, Karyawan, dan lebih banyak lagi.",
 };
 
 export default function RootLayout({
@@ -17,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" suppressHydrationWarning>
-      <body className={`${inter.className} min-h-screen bg-background text-foreground antialiased`} suppressHydrationWarning>
+      <body className={`${outfit.className} min-h-screen bg-background text-foreground antialiased`} suppressHydrationWarning>
         {children}
         <Toaster position="top-right" richColors />
       </body>

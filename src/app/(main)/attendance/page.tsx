@@ -4,16 +4,23 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { attendanceApi } from '@/features/attendance/api/attendance.api';
+import { api } from '@/lib/api/axios';
 import { toast } from 'sonner';
-import { Clock, CheckCircle, LogOut, Calendar, TrendingUp, AlertCircle } from 'lucide-react';
+import { Clock, CheckCircle, LogOut, Calendar, TrendingUp, AlertCircle, Plus, Timer } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function AttendancePage() {
   const [attendances, setAttendances] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [todayAttendance, setTodayAttendance] = useState<any>(null);
   const [time, setTime] = useState<Date>(new Date());
+  const [overtimes, setOvertimes] = useState<any[]>([]);
+  const [showOvertimeForm, setShowOvertimeForm] = useState(false);
+  const [overtimeForm, setOvertimeForm] = useState({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '', endTime: '', reason: '', notes: '' });
+  const [submittingOT, setSubmittingOT] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -36,26 +43,86 @@ export default function AttendancePage() {
     }
   };
 
-  useEffect(() => { fetchAttendances(); }, []);
+  useEffect(() => { 
+    fetchAttendances();
+    api.get('/overtime/me').then(r => { if (r.data.success) setOvertimes(r.data.data); }).catch(() => {});
+  }, []);
+
+  const handleOvertimeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittingOT(true);
+    try {
+      const payload = {
+        ...overtimeForm,
+        startTime: `${overtimeForm.date}T${overtimeForm.startTime}:00`,
+        endTime: `${overtimeForm.date}T${overtimeForm.endTime}:00`
+      };
+      const res = await api.post('/overtime', payload);
+      if (res.data.success) {
+        toast.success('Pengajuan lembur berhasil dikirim');
+        setShowOvertimeForm(false);
+        setOvertimeForm({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '', endTime: '', reason: '', notes: '' });
+        const r = await api.get('/overtime/me');
+        if (r.data.success) setOvertimes(r.data.data);
+      }
+    } catch { toast.error('Gagal mengajukan lembur'); }
+    finally { setSubmittingOT(false); }
+  };
 
   const handleCheckIn = async () => {
     setIsLoading(true);
-    try {
-      const res = await attendanceApi.checkIn();
-      if (res.success) { toast.success('Check-in berhasil!'); fetchAttendances(); }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal check-in');
-    } finally { setIsLoading(false); }
+    if (!navigator.geolocation) {
+      toast.error('Browser Anda tidak mendukung deteksi lokasi (GPS)');
+      setIsLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const res = await attendanceApi.checkIn({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+          if (res.success) { toast.success('Check-in berhasil!'); fetchAttendances(); }
+        } catch (error: any) {
+          toast.error(error.response?.data?.message || 'Gagal check-in');
+        } finally { setIsLoading(false); }
+      },
+      (error) => {
+        toast.error('Gagal mendapatkan lokasi. Harap izinkan akses lokasi (GPS) di browser Anda.');
+        setIsLoading(false);
+      },
+      { enableHighAccuracy: true }
+    );
   };
 
   const handleCheckOut = async () => {
     setIsLoading(true);
-    try {
-      const res = await attendanceApi.checkOut();
-      if (res.success) { toast.success('Check-out berhasil!'); fetchAttendances(); }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal check-out');
-    } finally { setIsLoading(false); }
+    if (!navigator.geolocation) {
+      toast.error('Browser Anda tidak mendukung deteksi lokasi (GPS)');
+      setIsLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const res = await attendanceApi.checkOut({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+          if (res.success) { toast.success('Check-out berhasil!'); fetchAttendances(); }
+        } catch (error: any) {
+          toast.error(error.response?.data?.message || 'Gagal check-out');
+        } finally { setIsLoading(false); }
+      },
+      (error) => {
+        toast.error('Gagal mendapatkan lokasi. Harap izinkan akses lokasi (GPS) di browser Anda.');
+        setIsLoading(false);
+      },
+      { enableHighAccuracy: true }
+    );
   };
 
   const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -234,6 +301,89 @@ export default function AttendancePage() {
                   );
                 })
               )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* LEMBUR SECTION */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Form Pengajuan Lembur */}
+        <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
+          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                  <Timer className="w-5 h-5 text-amber-500" /> Pengajuan Lembur
+                </CardTitle>
+                <CardDescription>Ajukan jam kerja lembur untuk persetujuan atasan</CardDescription>
+              </div>
+              <button onClick={() => setShowOvertimeForm(!showOvertimeForm)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl bg-amber-500 text-white hover:bg-amber-600 transition-colors">
+                <Plus className="w-4 h-4" /> Ajukan
+              </button>
+            </div>
+          </CardHeader>
+          {showOvertimeForm && (
+            <CardContent className="p-6">
+              <form onSubmit={handleOvertimeSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="font-medium text-slate-600 dark:text-slate-300">Tanggal Lembur</Label>
+                  <Input type="date" required value={overtimeForm.date} onChange={e => setOvertimeForm({...overtimeForm, date: e.target.value})} className="rounded-xl" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="font-medium text-slate-600 dark:text-slate-300">Jam Mulai <span className="text-rose-500">*</span></Label>
+                    <Input type="time" required value={overtimeForm.startTime} onChange={e => setOvertimeForm({...overtimeForm, startTime: e.target.value})} className="rounded-xl" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-medium text-slate-600 dark:text-slate-300">Jam Selesai <span className="text-rose-500">*</span></Label>
+                    <Input type="time" required value={overtimeForm.endTime} onChange={e => setOvertimeForm({...overtimeForm, endTime: e.target.value})} className="rounded-xl" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium text-slate-600 dark:text-slate-300">Alasan Lembur <span className="text-rose-500">*</span></Label>
+                  <Input required value={overtimeForm.reason} onChange={e => setOvertimeForm({...overtimeForm, reason: e.target.value})} placeholder="Misal: Menyelesaikan target produksi" className="rounded-xl" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium text-slate-600 dark:text-slate-300">Catatan Tambahan</Label>
+                  <Input value={overtimeForm.notes} onChange={e => setOvertimeForm({...overtimeForm, notes: e.target.value})} placeholder="Opsional" className="rounded-xl" />
+                </div>
+                <button type="submit" disabled={submittingOT}
+                  className="w-full h-11 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold transition-colors disabled:opacity-50">
+                  {submittingOT ? 'Mengirim...' : 'Kirim Pengajuan Lembur'}
+                </button>
+              </form>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* Riwayat Lembur */}
+        <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
+          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
+            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">Riwayat Pengajuan Lembur</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+              {overtimes.length === 0 ? (
+                <p className="text-center text-slate-400 py-10">Belum ada pengajuan lembur</p>
+              ) : overtimes.map(ot => (
+                <div key={ot.id} className="flex items-center justify-between px-5 py-4">
+                  <div>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">{ot.reason}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {format(new Date(ot.date), 'dd MMM yyyy', { locale: id })} · {ot.totalHours.toFixed(1)} jam
+                    </p>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                    ot.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
+                    ot.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' :
+                    'bg-amber-100 text-amber-700'
+                  }`}>
+                    {ot.status === 'APPROVED' ? 'Disetujui' : ot.status === 'REJECTED' ? 'Ditolak' : 'Menunggu'}
+                  </span>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

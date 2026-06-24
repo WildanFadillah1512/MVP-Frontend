@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { purchasingApi } from '@/features/purchasing/api/purchasing.api';
-import { ShoppingCart, Plus, CheckCircle, Clock, AlertTriangle, Package, Receipt } from "lucide-react";
+import { warehouseApi } from '@/features/warehouse/api/warehouse.api';
+import { ShoppingCart, Plus, CheckCircle, Clock, AlertTriangle, Package, Receipt, Bell } from "lucide-react";
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -26,6 +27,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 export default function PurchasingPage() {
   const [needs, setNeeds] = useState<any[]>([]);
   const [purchases, setPurchases] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userRole, setUserRole] = useState('');
@@ -40,12 +42,14 @@ export default function PurchasingPage() {
 
   const fetchData = async () => {
     try {
-      const [needsRes, purchRes] = await Promise.all([
+      const [needsRes, purchRes, recRes] = await Promise.all([
         purchasingApi.getNeeds(),
-        purchasingApi.getPurchases()
+        purchasingApi.getPurchases(),
+        warehouseApi.getRecommendations()
       ]);
       if (needsRes.success) setNeeds(needsRes.data);
       if (purchRes.success) setPurchases(purchRes.data);
+      if (recRes.success) setRecommendations(recRes.data);
     } catch (error) { console.error(error); }
     finally { setLoading(false); }
   };
@@ -83,7 +87,7 @@ export default function PurchasingPage() {
     } catch { toast.error('Gagal update status'); }
   };
 
-  const isPurchasingOrAbove = ['CEO', 'ADMIN'].includes(userRole) || userDivision === 'PURCHASING';
+  const isPurchasingOrAbove = ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(userRole) || userDivision === 'PURCHASING';
   const pendingCount = needs.filter(n => n.status !== 'PURCHASED').length;
   const totalSpend = purchases.reduce((s, p) => s + (p.totalPrice || 0), 0);
 
@@ -121,25 +125,63 @@ export default function PurchasingPage() {
             <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center"><Package className="w-6 h-6" /></div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-5 text-white shadow-lg shadow-rose-200 dark:shadow-rose-900/30">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-rose-100 text-sm font-medium">Total Pengeluaran</p>
-              <p className="text-2xl font-bold mt-1">Rp {totalSpend.toLocaleString('id-ID')}</p>
+        {isPurchasingOrAbove && (
+          <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-5 text-white shadow-lg shadow-rose-200 dark:shadow-rose-900/30">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-rose-100 text-sm font-medium">Total Pengeluaran</p>
+                <p className="text-2xl font-bold mt-1">Rp {totalSpend.toLocaleString('id-ID')}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center"><Receipt className="w-6 h-6" /></div>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center"><Receipt className="w-6 h-6" /></div>
+          </div>
+        )}
+      </div>
+
+      {/* Rekomendasi Belanja Otomatis */}
+      {recommendations.length > 0 && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center">
+              <Bell className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <p className="font-bold text-amber-800 dark:text-amber-200">Rekomendasi Belanja Otomatis</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400">{recommendations.length} barang gudang di bawah stok minimum — perlu segera dibeli</p>
+            </div>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {recommendations.map(item => (
+              <div key={item.id} className={`flex items-center gap-3 p-3 rounded-xl border ${
+                item.priority === 'HIGH'
+                  ? 'bg-rose-50 border-rose-200 dark:bg-rose-900/20 dark:border-rose-800/50'
+                  : 'bg-white border-amber-100 dark:bg-slate-800/50 dark:border-amber-800/30'
+              }`}>
+                <div className={`w-2 h-full min-h-[40px] rounded-full flex-shrink-0 ${
+                  item.priority === 'HIGH' ? 'bg-rose-500' : 'bg-amber-400'
+                }`} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{item.name}</p>
+                  <p className="text-xs text-slate-500">Sisa: {item.currentStock} {item.unit} · Rekomendasi beli: <span className="font-bold text-amber-700 dark:text-amber-300">{item.recommendedQty} {item.unit}</span></p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      )}
 
       {/* Tab Switcher */}
       <div className="flex gap-2 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl w-fit">
-        {(['needs', 'purchases'] as const).map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}>
-            {tab === 'needs' ? `📋 Kebutuhan Belanja (${pendingCount} pending)` : '🧾 Riwayat Pembelian'}
+        <button onClick={() => setActiveTab('needs')}
+          className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'needs' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}>
+          📋 Kebutuhan Belanja ({pendingCount} pending)
+        </button>
+        {isPurchasingOrAbove && (
+          <button onClick={() => setActiveTab('purchases')}
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'purchases' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}>
+            🧾 Riwayat Pembelian
           </button>
-        ))}
+        )}
       </div>
 
       {/* TAB: KEBUTUHAN */}

@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { productionApi } from '@/features/production/api/production.api';
-import { Package, Plus, ClipboardList, BarChart3, AlertTriangle, TrendingUp } from "lucide-react";
+import { warehouseApi } from '@/features/warehouse/api/warehouse.api';
+import { Package, Plus, ClipboardList, BarChart3, AlertTriangle, TrendingUp, Box } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -14,9 +15,10 @@ import { Label } from "@/components/ui/label";
 export default function ProductionPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [records, setRecords] = useState<any[]>([]);
+  const [warehouseItems, setWarehouseItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'input' | 'matrix'>('input');
+  const [activeTab, setActiveTab] = useState<'input' | 'matrix' | 'materials'>('input');
 
   const [formData, setFormData] = useState({
     productId: '',
@@ -25,14 +27,26 @@ export default function ProductionPage() {
     notes: ''
   });
 
+  const [materialForm, setMaterialForm] = useState({
+    warehouseItemId: '',
+    quantity: '',
+    date: format(new Date(), 'yyyy-MM-dd'),
+    notes: ''
+  });
+  
+  const [userRole, setUserRole] = useState('');
+  const [userDivision, setUserDivision] = useState('');
+
   const fetchData = async () => {
     try {
-      const [prodRes, recRes] = await Promise.all([
+      const [prodRes, recRes, whRes] = await Promise.all([
         productionApi.getProducts(),
-        productionApi.getRecords()
+        productionApi.getRecords(),
+        warehouseApi.getItems()
       ]);
       if (prodRes.success) setProducts(prodRes.data);
       if (recRes.success) setRecords(recRes.data);
+      if (whRes.success) setWarehouseItems(whRes.data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -40,7 +54,15 @@ export default function ProductionPage() {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const p = JSON.parse(userStr);
+      setUserRole(p.role.name);
+      setUserDivision(p.division.name);
+    }
+    fetchData();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +79,26 @@ export default function ProductionPage() {
         fetchData();
       }
     } catch { toast.error('Gagal menyimpan laporan'); }
+    finally { setIsSubmitting(false); }
+  };
+
+  const handleUseMaterial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!materialForm.warehouseItemId || !materialForm.quantity) {
+      toast.error('Bahan baku dan Jumlah wajib diisi');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await productionApi.useMaterials(materialForm);
+      if (res.success) {
+        toast.success('Pemakaian bahan baku berhasil dicatat');
+        setMaterialForm({ ...materialForm, quantity: '', notes: '' });
+        fetchData();
+      }
+    } catch (error: any) { 
+      toast.error(error?.response?.data?.message || 'Gagal mencatat pemakaian'); 
+    }
     finally { setIsSubmitting(false); }
   };
 
@@ -82,11 +124,25 @@ export default function ProductionPage() {
   const totalThisMonth = monthRecords.reduce((s, r) => s + r.quantity, 0);
   const uniqueDays = new Set(monthRecords.map(r => format(new Date(r.date), 'yyyy-MM-dd'))).size;
 
+  const isProduksiOrAbove = ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(userRole) || userDivision === 'PRODUKSI';
+
   if (loading) return (
     <div className="flex h-[60vh] items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
     </div>
   );
+
+  if (!loading && !isProduksiOrAbove) {
+    return (
+      <div className="flex h-[60vh] flex-col items-center justify-center text-center gap-4">
+        <AlertTriangle className="w-16 h-16 text-rose-500 opacity-50" />
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Akses Ditolak</h2>
+          <p className="text-slate-500 mt-2">Anda tidak memiliki izin untuk melihat halaman Divisi Produksi.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -136,7 +192,7 @@ export default function ProductionPage() {
 
       {/* Tab Switcher */}
       <div className="flex gap-2 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl w-fit">
-        {(['input', 'matrix'] as const).map(tab => (
+        {(['input', 'materials', 'matrix'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -146,7 +202,9 @@ export default function ProductionPage() {
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
           >
-            {tab === 'input' ? '📝 Input Harian' : '📊 Matriks Bulanan'}
+            {tab === 'input' && '📝 Input Harian'}
+            {tab === 'materials' && '📦 Pakai Bahan Baku'}
+            {tab === 'matrix' && '📊 Matriks Bulanan'}
           </button>
         ))}
       </div>
@@ -255,6 +313,75 @@ export default function ProductionPage() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* TAB: PAKAI BAHAN BAKU */}
+      {activeTab === 'materials' && (
+        <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden max-w-3xl">
+          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
+            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <Box className="w-5 h-5 text-amber-500" /> Penggunaan Bahan Baku
+            </CardTitle>
+            <CardDescription>Catat bahan baku dari gudang yang digunakan untuk produksi</CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <form onSubmit={handleUseMaterial} className="space-y-5">
+              <div className="space-y-2">
+                <Label className="font-medium text-slate-600 dark:text-slate-300">Tanggal Penggunaan</Label>
+                <Input
+                  type="date"
+                  value={materialForm.date}
+                  onChange={(e) => setMaterialForm({...materialForm, date: e.target.value})}
+                  required
+                  className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus-visible:ring-brand-primary"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium text-slate-600 dark:text-slate-300">Pilih Bahan Baku <span className="text-rose-500">*</span></Label>
+                <Select value={materialForm.warehouseItemId} onValueChange={(val) => setMaterialForm({...materialForm, warehouseItemId: val || ''})}>
+                  <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                    <SelectValue placeholder="Pilih barang dari gudang..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warehouseItems.length === 0 && <SelectItem value="none" disabled>Tidak ada stok gudang</SelectItem>}
+                    {warehouseItems.map(w => (
+                      <SelectItem key={w.id} value={w.id}>
+                        {w.name} (Sisa: {w.currentStock} {w.unit})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium text-slate-600 dark:text-slate-300">Jumlah Terpakai <span className="text-rose-500">*</span></Label>
+                <Input
+                  type="number" min="1"
+                  placeholder="Contoh: 5"
+                  value={materialForm.quantity}
+                  onChange={(e) => setMaterialForm({...materialForm, quantity: e.target.value})}
+                  required
+                  className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus-visible:ring-brand-primary"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium text-slate-600 dark:text-slate-300">Catatan Penggunaan</Label>
+                <Input
+                  placeholder="Misal: Untuk batch pagi"
+                  value={materialForm.notes}
+                  onChange={(e) => setMaterialForm({...materialForm, notes: e.target.value})}
+                  className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus-visible:ring-brand-primary"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isSubmitting || warehouseItems.length === 0}
+                className="w-full h-11 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold transition-colors shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Memproses...' : 'Potong Stok Gudang'}
+              </button>
+            </form>
+          </CardContent>
+        </Card>
       )}
 
       {/* TAB: MATRIKS BULANAN */}

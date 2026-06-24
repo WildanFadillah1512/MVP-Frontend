@@ -23,7 +23,9 @@ import {
   DollarSign,
   Bell,
   Search,
-  ChevronDown
+  ChevronDown,
+  CheckSquare,
+  MapPin
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -45,13 +47,24 @@ const getSidebarMenus = (role: string, division: string) => {
     { name: 'Cuti', href: '/leave', icon: Calendar },
     { name: 'Laporan Harian', href: '/daily-reports', icon: FileText },
     { name: 'Upload Harian', href: '/daily-uploads', icon: UploadCloud },
+    { name: 'Tugas', href: '/tasks', icon: CheckSquare },
     { name: 'Target & KPI', href: '/performance', icon: Target },
     { name: 'Chat Divisi', href: '/chat', icon: MessageSquare },
   ];
 
-  // === MENU ADMIN-ONLY (CEO & ADMIN saja) ===
+  // === MENU ADMIN-ONLY (OWNER, CEO, GM & ADMIN saja) ===
   const adminOnlyMenus = [
     { name: 'User Management', href: '/users', icon: Users },
+  ];
+
+  // === MENU MANAJERIAL KE ATAS ===
+  const managerialMenus = [
+    { name: 'Tracking Lokasi', href: '/tracking', icon: MapPin },
+  ];
+
+  // === MENU CEO & OWNER SAJA ===
+  const topLevelMenus = [
+    { name: 'Surat Paklaring', href: '/paklaring', icon: FileText },
   ];
 
   // === MENU DIVISI (sesuai divisi masing-masing, atau CEO/ADMIN lihat semua) ===
@@ -74,21 +87,38 @@ const getSidebarMenus = (role: string, division: string) => {
   // === BUILD MENU BERDASARKAN ROLE ===
   let menus = [...commonMenus];
 
-  if (role === 'CEO' || role === 'ADMIN') {
-    // CEO & ADMIN: lihat semua menu divisi + user management + ERP (locked)
+  if (role === 'CEO' || role === 'ADMIN' || role === 'OWNER') {
     menus = [
       ...menus,
+      ...managerialMenus,
       ...adminOnlyMenus,
+      ...(role === 'CEO' || role === 'OWNER' ? topLevelMenus : []),
       ...Object.values(divisionMenuMap),
       ...erpMenus,
     ];
+  } else if (role === 'GM') {
+    const gmDivisions = { ...divisionMenuMap };
+    delete gmDivisions.KASIR;
+    menus = [
+      ...menus,
+      ...managerialMenus,
+      ...adminOnlyMenus,
+      ...Object.values(gmDivisions),
+      ...erpMenus,
+    ];
+  } else if (role === 'MANAGER') {
+    const myDivisionMenu = divisionMenuMap[division.toUpperCase()];
+    menus = [
+      ...menus,
+      ...managerialMenus,
+      ...(myDivisionMenu ? [myDivisionMenu] : []),
+    ];
   } else {
-    // MANAGER, LEADER, STAFF: hanya lihat divisi mereka sendiri
+    // LEADER, STAFF: hanya lihat divisi mereka sendiri
     const myDivisionMenu = divisionMenuMap[division.toUpperCase()];
     if (myDivisionMenu) {
       menus = [...menus, myDivisionMenu];
     }
-    // Tidak mendapat User Management & ERP sama sekali
   }
 
   return menus;
@@ -123,14 +153,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) return null;
 
   const SidebarContent = () => (
-    <div className="flex h-full flex-col bg-white dark:bg-slate-900">
-      <div className="p-6 flex items-center justify-center border-b border-slate-100 dark:border-slate-800">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-white font-bold shadow-md shadow-brand-primary/20">
-            S
-          </div>
+    <div className="flex h-full flex-col bg-sidebar border-r border-sidebar-border">
+      <div className="p-6 flex items-center justify-center border-b border-sidebar-border">
+        <div className="flex items-center gap-3">
+          <img src="/logo.jpeg" alt="Logo" className="w-10 h-10 object-cover rounded shadow-sm" />
           <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-500 dark:from-white dark:to-slate-400">
-            Synco<span className="font-light">ERP</span>
+            Sikarya<span className="font-light">ERP</span>
           </h2>
         </div>
       </div>
@@ -144,12 +172,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link key={menu.href} href={menu.isLocked ? '#' : menu.href}>
                 <span className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                   menu.isLocked
-                    ? 'text-slate-400 cursor-not-allowed bg-slate-50 dark:bg-slate-800/50'
+                    ? 'text-muted-foreground cursor-not-allowed opacity-60'
                     : isActive
-                      ? 'bg-brand-primary text-white shadow-md shadow-brand-primary/25 translate-x-1'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-brand-primary/10 hover:text-brand-primary dark:hover:bg-brand-primary/20 hover:translate-x-1'
+                      ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md translate-x-1'
+                      : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-1'
                 }`}>
-                  <menu.icon className={`h-5 w-5 transition-colors ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-brand-primary'}`} />
+                  <menu.icon className={`h-5 w-5 transition-colors ${isActive ? 'text-sidebar-primary-foreground' : 'text-muted-foreground group-hover:text-sidebar-primary'}`} />
                   <span className="flex-1">{menu.name}</span>
                   {menu.isLocked && <Lock className="h-3.5 w-3.5 opacity-50" />}
                 </span>
@@ -159,16 +187,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
       </div>
       
-      <div className="p-4 border-t border-slate-100 dark:border-slate-800">
-        <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-4 flex items-center gap-3">
-          <Avatar className="h-10 w-10 border-2 border-white dark:border-slate-700 shadow-sm">
-            <AvatarFallback className="bg-gradient-to-br from-brand-secondary to-purple-400 text-white font-medium">
-              {user.name.substring(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+      <div className="p-4 border-t border-sidebar-border">
+        <div className="rounded-xl bg-sidebar-accent p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground font-bold text-sm shadow-sm">
+            {user.photoUrl ? (
+              <img src={user.photoUrl} alt="Profile" className="w-10 h-10 rounded-full object-cover" />
+            ) : (
+              user.name.substring(0, 2).toUpperCase()
+            )}
+          </div>
           <div className="flex flex-col overflow-hidden">
-            <span className="text-sm font-bold text-slate-800 dark:text-white truncate">{user.name}</span>
-            <span className="text-xs font-medium text-brand-primary truncate">{user.role.name}</span>
+            <span className="text-sm font-bold text-sidebar-foreground truncate">{user.name}</span>
+            <span className="text-xs font-medium text-muted-foreground truncate">{user.role.name} · {user.division.name}</span>
           </div>
         </div>
       </div>
@@ -176,14 +206,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 font-sans">
+    <div className="flex min-h-screen bg-background font-sans">
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 w-full glass z-30 border-b border-slate-200/50 p-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-white font-bold">
-            S
-          </div>
-          <h2 className="text-lg font-bold text-slate-800 dark:text-white">SyncoERP</h2>
+        <div className="flex items-center gap-3">
+          <img src="/logo.jpeg" alt="Logo" className="w-8 h-8 object-cover rounded shadow-sm" />
+          <h2 className="text-lg font-bold text-slate-800 dark:text-white">SikaryaERP</h2>
         </div>
         <Sheet>
           <SheetTrigger className="inline-flex items-center justify-center rounded-full p-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors outline-none">
@@ -226,7 +254,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <DropdownMenuTrigger className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 px-2 py-1.5 h-auto flex items-center gap-2 outline-none">
                   <Avatar className="h-8 w-8 border border-slate-200 dark:border-slate-700">
                     <AvatarFallback className="bg-brand-primary text-white text-xs">
-                      {user.name.substring(0, 2).toUpperCase()}
+                      {user.photoUrl ? (
+                        <img src={user.photoUrl} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        user.name.substring(0, 2).toUpperCase()
+                      )}
                     </AvatarFallback>
                   </Avatar>
                   <ChevronDown className="h-4 w-4 text-slate-500" />
@@ -236,7 +268,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <DropdownMenuLabel>Akun Saya</DropdownMenuLabel>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="py-2 cursor-pointer">
+                <DropdownMenuItem onClick={() => router.push('/profile')} className="py-2 cursor-pointer">
                   <Users className="mr-2 h-4 w-4 text-slate-500" />
                   <span>Profile</span>
                 </DropdownMenuItem>

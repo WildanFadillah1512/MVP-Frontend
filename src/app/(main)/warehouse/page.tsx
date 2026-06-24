@@ -52,7 +52,7 @@ export default function WarehousePage() {
     finally { setIsSubmitting(false); }
   };
 
-  const isWarehouseOrAbove = ['CEO', 'ADMIN'].includes(userRole) || userDivision === 'GUDANG';
+  const isWarehouseOrAbove = ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(userRole) || userDivision === 'GUDANG';
   const lowStockItems = items.filter(i => i.currentStock <= i.minStock);
   const todayMovements = movements.filter(m => new Date(m.date).toDateString() === new Date().toDateString());
 
@@ -61,6 +61,18 @@ export default function WarehousePage() {
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
     </div>
   );
+
+  if (!loading && !isWarehouseOrAbove) {
+    return (
+      <div className="flex h-[60vh] flex-col items-center justify-center text-center gap-4">
+        <AlertTriangle className="w-16 h-16 text-rose-500 opacity-50" />
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Akses Ditolak</h2>
+          <p className="text-slate-500 mt-2">Anda tidak memiliki izin untuk melihat halaman Divisi Gudang.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8">

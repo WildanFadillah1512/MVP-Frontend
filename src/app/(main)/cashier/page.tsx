@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cashierApi } from '@/features/cashier/api/cashier.api';
-import { Calculator, Plus, TrendingUp, Wallet, Receipt, Minus } from "lucide-react";
+import { productionApi } from '@/features/production/api/production.api';
+import { Calculator, Plus, TrendingUp, Wallet, Receipt, Minus, Package, X } from "lucide-react";
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -14,6 +15,8 @@ import { toast } from 'sonner';
 export default function CashierPage() {
   const [branches, setBranches] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [productsSold, setProductsSold] = useState<{productId: string; quantity: string; isReject: boolean}[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -29,27 +32,55 @@ export default function CashierPage() {
 
   const fetchData = async () => {
     try {
-      const [branchRes, reportsRes] = await Promise.all([
+      const [branchRes, reportsRes, prodRes] = await Promise.all([
         cashierApi.getBranches(),
-        cashierApi.getReports()
+        cashierApi.getReports(),
+        productionApi.getProducts()
       ]);
       if (branchRes.success) setBranches(branchRes.data);
       if (reportsRes.success) setReports(reportsRes.data);
+      if (prodRes.success) setProducts(prodRes.data);
     } catch (error) { console.error(error); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  const addProductRow = () => setProductsSold(prev => [...prev, { productId: '', quantity: '', isReject: false }]);
+  const removeProductRow = (i: number) => setProductsSold(prev => prev.filter((_, idx) => idx !== i));
+  const updateProductRow = (i: number, field: string, value: any) => {
+    setProductsSold(prev => prev.map((row, idx) => idx === i ? { ...row, [field]: value } : row));
+  };
+
+  const [userRole, setUserRole] = useState('');
+  const [userDivision, setUserDivision] = useState('');
+
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const p = JSON.parse(userStr);
+      setUserRole(p.role.name);
+      setUserDivision(p.division.name);
+    }
+    fetchData();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.branchId) { toast.error('Pilih cabang terlebih dahulu'); return; }
     setIsSubmitting(true);
     try {
-      const res = await cashierApi.createReport(formData);
+      const payload = {
+        ...formData,
+        productsSold: productsSold.filter(p => p.productId && Number(p.quantity) > 0).map(p => ({
+          productId: p.productId,
+          quantity: Number(p.quantity),
+          isReject: p.isReject
+        }))
+      };
+      const res = await cashierApi.createReport(payload);
       if (res.success) {
-        toast.success('Laporan kasir berhasil disimpan');
+        toast.success('Laporan kasir & penjualan berhasil disimpan');
         setFormData({ ...formData, totalCash: '', totalTransfer: '', totalQris: '', totalExpense: '', notes: '' });
+        setProductsSold([]);
         fetchData();
       }
     } catch { toast.error('Gagal menyimpan laporan kasir'); }
@@ -63,11 +94,27 @@ export default function CashierPage() {
   const totalOmzet = reports.reduce((s, r) => s + (r.netTotal || 0), 0);
   const todayReports = reports.filter(r => format(new Date(r.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd'));
 
+  const isCashierOrAbove = ['OWNER', 'CEO', 'ADMIN'].includes(userRole) || userDivision === 'KASIR';
+
   if (loading) return (
     <div className="flex h-[60vh] items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
     </div>
   );
+
+  if (!loading && !isCashierOrAbove) {
+    return (
+      <div className="flex h-[60vh] flex-col items-center justify-center text-center gap-4">
+        <div className="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center mb-2">
+          <span className="text-2xl">🚫</span>
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Akses Ditolak</h2>
+          <p className="text-slate-500 mt-2">Anda tidak memiliki izin untuk melihat halaman Divisi Kasir.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -166,6 +213,48 @@ export default function CashierPage() {
                   <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">Catatan Selisih / Lainnya</Label>
                   <Input value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} placeholder="Opsional" className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus-visible:ring-brand-primary h-9 text-sm" />
                 </div>
+              </div>
+
+              {/* Products Sold */}
+              <div className="space-y-3 p-4 rounded-xl bg-violet-50 dark:bg-violet-900/10 border border-violet-100 dark:border-violet-900/30">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-violet-700 dark:text-violet-300 flex items-center gap-2">
+                    <Package className="w-4 h-4" /> Produk Terjual / Reject
+                  </p>
+                  <button type="button" onClick={addProductRow}
+                    className="text-xs font-semibold text-violet-600 hover:text-violet-800 flex items-center gap-1 transition-colors">
+                    <Plus className="w-3 h-3" /> Tambah
+                  </button>
+                </div>
+                {productsSold.length === 0 && (
+                  <p className="text-xs text-slate-400 text-center py-1">Klik Tambah untuk mencatat produk terjual</p>
+                )}
+                {productsSold.map((row, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <select
+                      value={row.productId}
+                      onChange={e => updateProductRow(i, 'productId', e.target.value)}
+                      className="flex-1 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5"
+                    >
+                      <option value="">Pilih produk...</option>
+                      {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                    <Input
+                      type="number" min="1"
+                      placeholder="Qty"
+                      value={row.quantity}
+                      onChange={e => updateProductRow(i, 'quantity', e.target.value)}
+                      className="w-20 h-8 text-xs rounded-lg"
+                    />
+                    <label className="flex items-center gap-1 text-xs text-rose-600 whitespace-nowrap">
+                      <input type="checkbox" checked={row.isReject} onChange={e => updateProductRow(i, 'isReject', e.target.checked)} />
+                      Reject
+                    </label>
+                    <button type="button" onClick={() => removeProductRow(i)} className="text-slate-400 hover:text-rose-500">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
               </div>
 
               {/* Summary */}

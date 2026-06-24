@@ -62,7 +62,9 @@ export default function ChatPage() {
     fetchMessages(activeGroup.id);
 
     const { io } = require('socket.io-client');
-    const socket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080');
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+    const baseUrl = apiUrl.replace(/\/api$/, '');
+    const socket = io(baseUrl);
 
     socket.emit('join-room', activeGroup.id);
 

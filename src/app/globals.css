@@ -44,83 +44,95 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   
-  /* Brand Colors - Modern Enterprise */
-  --color-brand-primary: #4F46E5; /* Indigo 600 */
-  --color-brand-secondary: #8B5CF6; /* Violet 500 */
-  --color-brand-accent: #06B6D4; /* Cyan 500 */
-  --color-brand-light: #F8FAFC; /* Slate 50 */
-  --color-brand-dark: #0F172A; /* Slate 900 */
+  /* Brand Colors - Earthy / Sikarya */
+  --color-brand-primary: #89523D; /* Terracotta */
+  --color-brand-secondary: #28374A; /* Azul */
+  --color-brand-accent: #917B43; /* Gold Trimming */
+  --color-brand-light: #FAF3E0; /* Antique */
+  --color-brand-dark: #3E231B; /* Leather */
   
   /* Legacy mapping to prevent errors, pointing to new colors */
-  --color-brand-sage: #4F46E5; 
-  --color-brand-dusty-rose: #EF4444; 
-  --color-brand-oat-milk: #F1F5F9; 
-  --color-brand-warm-taupe: #E2E8F0;
-  --color-brand-charcoal: #0F172A;
+  --color-brand-sage: #A6A89A; /* Dusky Green */
+  --color-brand-dusty-rose: #754437; /* Terra Queimada */
+  --color-brand-oat-milk: #D7CBB5; /* Natural Cotton */
+  --color-brand-warm-taupe: #D3C7AD; /* Areia */
+  --color-brand-charcoal: #3E231B;
 }
 
 :root {
-  --background: #F8FAFC;
-  --foreground: #0F172A;
+  --background: #FAF3E0;
+  --foreground: #3E231B;
   --card: #FFFFFF;
-  --card-foreground: #0F172A;
+  --card-foreground: #3E231B;
   --popover: #FFFFFF;
-  --popover-foreground: #0F172A;
-  --primary: #4F46E5;
-  --primary-foreground: #FFFFFF;
-  --secondary: #F1F5F9;
-  --secondary-foreground: #0F172A;
-  --muted: #F1F5F9;
-  --muted-foreground: #64748B;
-  --accent: #E0E7FF;
-  --accent-foreground: #4F46E5;
+  --popover-foreground: #3E231B;
+  --primary: #89523D;
+  --primary-foreground: #FAF3E0;
+  --secondary: #D7CBB5;
+  --secondary-foreground: #3E231B;
+  --muted: #D3C7AD;
+  --muted-foreground: #754437;
+  --accent: #A6A89A;
+  --accent-foreground: #3E231B;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #E2E8F0;
-  --input: #E2E8F0;
-  --ring: #4F46E5;
+  --border: #D7CBB5;
+  --input: #D7CBB5;
+  --ring: #89523D;
   
-  --radius: 0.75rem; /* More rounded */
+  --radius: 0.75rem;
+  
+  --chart-1: #89523D;
+  --chart-2: #28374A;
+  --chart-3: #917B43;
+  --chart-4: #6B6751;
+  --chart-5: #A6A89A;
   
   --sidebar: #FFFFFF;
-  --sidebar-foreground: #0F172A;
-  --sidebar-primary: #4F46E5;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F1F5F9;
-  --sidebar-accent-foreground: #0F172A;
-  --sidebar-border: #E2E8F0;
-  --sidebar-ring: #4F46E5;
+  --sidebar-foreground: #3E231B;
+  --sidebar-primary: #28374A;
+  --sidebar-primary-foreground: #FAF3E0;
+  --sidebar-accent: #D7CBB5;
+  --sidebar-accent-foreground: #3E231B;
+  --sidebar-border: #D7CBB5;
+  --sidebar-ring: #28374A;
 }
 
 .dark {
-  --background: #0F172A;
-  --foreground: #F8FAFC;
-  --card: #1E293B;
-  --card-foreground: #F8FAFC;
-  --popover: #1E293B;
-  --popover-foreground: #F8FAFC;
-  --primary: #6366F1;
-  --primary-foreground: #FFFFFF;
-  --secondary: #334155;
-  --secondary-foreground: #F8FAFC;
-  --muted: #334155;
-  --muted-foreground: #94A3B8;
-  --accent: #1E1B4B;
-  --accent-foreground: #6366F1;
+  --background: #3E231B;
+  --foreground: #FAF3E0;
+  --card: #4A2B21;
+  --card-foreground: #FAF3E0;
+  --popover: #4A2B21;
+  --popover-foreground: #FAF3E0;
+  --primary: #D3C7AD;
+  --primary-foreground: #3E231B;
+  --secondary: #754437;
+  --secondary-foreground: #FAF3E0;
+  --muted: #754437;
+  --muted-foreground: #D7CBB5;
+  --accent: #6B6751;
+  --accent-foreground: #FAF3E0;
   --destructive: #F87171;
   --destructive-foreground: #000000;
-  --border: #334155;
-  --input: #334155;
-  --ring: #6366F1;
+  --border: #754437;
+  --input: #754437;
+  --ring: #D3C7AD;
   
-  --sidebar: #1E293B;
-  --sidebar-foreground: #F8FAFC;
-  --sidebar-primary: #6366F1;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #334155;
-  --sidebar-accent-foreground: #F8FAFC;
-  --sidebar-border: #334155;
-  --sidebar-ring: #6366F1;
+  --chart-1: #D3C7AD;
+  --chart-2: #A6A89A;
+  --chart-3: #917B43;
+  --chart-4: #89523D;
+  --chart-5: #754437;
+  
+  --sidebar: #3E231B;
+  --sidebar-foreground: #FAF3E0;
+  --sidebar-primary: #D3C7AD;
+  --sidebar-primary-foreground: #3E231B;
+  --sidebar-accent: #754437;
+  --sidebar-accent-foreground: #FAF3E0;
+  --sidebar-border: #754437;
+  --sidebar-ring: #D3C7AD;
 }
 
 @layer base {
@@ -134,12 +146,12 @@
 
 @layer utilities {
   .glass {
-    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-sm dark:bg-slate-900/70 dark:border-slate-800/50;
+    @apply bg-[#FAF3E0]/70 backdrop-blur-md border border-[#D7CBB5]/40 shadow-sm;
   }
   .glass-card {
-    @apply bg-white/90 backdrop-blur-sm border border-slate-200/50 shadow-sm dark:bg-slate-800/90 dark:border-slate-700/50;
+    @apply bg-white/90 backdrop-blur-sm border border-[#D7CBB5]/60 shadow-sm;
   }
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-primary to-brand-secondary;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#89523D] to-[#28374A];
   }
 }

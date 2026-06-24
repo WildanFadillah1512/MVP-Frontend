@@ -14,5 +14,10 @@ export const productionApi = {
   createRecord: async (data: any) => {
     const response = await api.post('/production/records', data);
     return response.data;
+  },
+  
+  useMaterials: async (data: any) => {
+    const response = await api.post('/production/materials/use', data);
+    return response.data;
   }
 };

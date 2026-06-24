@@ -1,13 +1,13 @@
 import { api } from '@/lib/api/axios';
 
 export const attendanceApi = {
-  checkIn: async () => {
-    const response = await api.post('/attendances/check-in');
+  checkIn: async (data: { latitude: number; longitude: number }) => {
+    const response = await api.post('/attendances/check-in', data);
     return response.data;
   },
   
-  checkOut: async () => {
-    const response = await api.post('/attendances/check-out');
+  checkOut: async (data: { latitude: number; longitude: number }) => {
+    const response = await api.post('/attendances/check-out', data);
     return response.data;
   },
 
@@ -15,4 +15,9 @@ export const attendanceApi = {
     const response = await api.get('/attendances/me');
     return response.data;
   },
+
+  getLocations: async () => {
+    const response = await api.get('/attendances/locations');
+    return response.data;
+  }
 };

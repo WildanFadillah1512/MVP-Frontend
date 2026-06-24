@@ -12,5 +12,9 @@ export const warehouseApi = {
   createMovement: async (data: any) => {
     const response = await api.post('/warehouse/movements', data);
     return response.data;
+  },
+  getRecommendations: async () => {
+    const response = await api.get('/warehouse/recommendations');
+    return response.data;
   }
 };
