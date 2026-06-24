@@ -3,7 +3,7 @@ import axios from 'axios';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 const getAuthHeader = () => {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   return { Authorization: `Bearer ${token}` };
 };
 
@@ -25,3 +25,4 @@ export const erpApi = {
     return res.data;
   }
 };
+

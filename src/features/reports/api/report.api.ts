@@ -21,3 +21,4 @@ export const reportApi = {
     return response.data;
   },
 };
+

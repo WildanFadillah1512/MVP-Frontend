@@ -14,7 +14,7 @@ export default function StaffDashboard() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
+    const userStr = sessionStorage.getItem('user');
     if (userStr) setUser(JSON.parse(userStr));
 
     const fetchData = async () => {

@@ -70,3 +70,4 @@ describe('Validasi Stok Gudang', () => {
     expect(isStokRendah(15, 10)).toBe(false);
   });
 });
+

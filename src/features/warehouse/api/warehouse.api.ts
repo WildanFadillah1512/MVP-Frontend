@@ -18,3 +18,4 @@ export const warehouseApi = {
     return response.data;
   }
 };
+

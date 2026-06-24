@@ -131,8 +131,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [menus, setMenus] = useState<any[]>([]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
+    const token = sessionStorage.getItem('token');
+    const userStr = sessionStorage.getItem('user');
 
     if (!token || !userStr) {
       router.push('/login');
@@ -145,7 +145,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [router]);
 
   const handleLogout = () => {
-    localStorage.clear(); // Bersihkan SEMUA data sesi, bukan hanya token dan user
+    sessionStorage.clear(); // Bersihkan SEMUA data sesi, bukan hanya token dan user
     router.push('/login');
   };
 

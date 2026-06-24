@@ -14,3 +14,4 @@ export const cashierApi = {
     return response.data;
   }
 };
+

@@ -54,7 +54,7 @@ export default function TasksPage() {
   };
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
+    const userStr = sessionStorage.getItem('user');
     if (userStr) {
       const p = JSON.parse(userStr);
       setUserRole(p.role.name);
@@ -257,3 +257,4 @@ export default function TasksPage() {
     </div>
   );
 }
+

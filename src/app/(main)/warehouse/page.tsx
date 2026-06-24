@@ -32,7 +32,7 @@ export default function WarehousePage() {
   };
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
+    const userStr = sessionStorage.getItem('user');
     if (userStr) { const p = JSON.parse(userStr); setUserRole(p.role.name); setUserDivision(p.division.name); }
     fetchData();
   }, []);

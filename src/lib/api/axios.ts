@@ -12,7 +12,7 @@ export const api = axios.create({
 // Add a request interceptor for auth token
 api.interceptors.request.use(
   (config) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const token = typeof window !== 'undefined' ? sessionStorage.getItem('token') : null;
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -22,3 +22,4 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+

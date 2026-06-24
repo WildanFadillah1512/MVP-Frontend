@@ -25,7 +25,7 @@ export default function ProfilePage() {
   const [userContext, setUserContext] = useState<any>(null);
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
+    const userStr = sessionStorage.getItem('user');
     if (userStr) {
       const u = JSON.parse(userStr);
       setUserContext(u);
@@ -49,7 +49,7 @@ export default function ProfilePage() {
         toast.success('Profil berhasil diperbarui');
         // Update local storage
         const updatedUser = { ...userContext, ...res.data.data };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+        sessionStorage.setItem('user', JSON.stringify(updatedUser));
         setUserContext(updatedUser);
         
         // Refresh to update sidebar/header image
@@ -156,3 +156,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+

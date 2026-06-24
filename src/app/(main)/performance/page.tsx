@@ -56,7 +56,7 @@ export default function PerformancePage() {
   };
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
+    const userStr = sessionStorage.getItem('user');
     if (userStr) {
       const parsed = JSON.parse(userStr);
       setUserRole(parsed.role.name);

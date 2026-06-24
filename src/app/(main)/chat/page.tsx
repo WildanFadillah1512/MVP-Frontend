@@ -47,7 +47,7 @@ export default function ChatPage() {
   };
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
+    const userStr = sessionStorage.getItem('user');
     if (userStr) {
       const parsed = JSON.parse(userStr);
       setUserId(parsed.id);
