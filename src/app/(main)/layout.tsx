@@ -157,7 +157,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="p-6 flex items-center justify-center border-b border-sidebar-border">
         <div className="flex items-center gap-3">
           <img src="/logo.jpeg" alt="SikaryaERP" className="w-10 h-10 object-cover rounded shadow-sm" />
-          <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-500 dark:from-white dark:to-slate-400">
+          <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300">
             Sikarya<span className="font-light">ERP</span>
           </h2>
         </div>
@@ -165,7 +165,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       
       <div className="flex-1 overflow-y-auto py-6 custom-scrollbar">
         <nav className="space-y-1.5 px-4">
-          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-3">Menu Utama</div>
+          <div className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider mb-3 px-3">Menu Utama</div>
           {menus.map((menu) => {
             const isActive = pathname === menu.href || pathname.startsWith(`${menu.href}/`);
             return (
@@ -208,23 +208,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen bg-background font-sans">
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 w-full glass z-30 border-b border-slate-200/50 p-4 flex items-center justify-between">
+      <div className="lg:hidden fixed top-0 w-full glass z-30 border-b border-border/50 p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <img src="/logo.jpeg" alt="SikaryaERP" className="w-8 h-8 object-cover rounded shadow-sm" />
-          <h2 className="text-lg font-bold text-slate-800 dark:text-white">SikaryaERP</h2>
+          <h2 className="text-lg font-bold text-foreground">SikaryaERP</h2>
         </div>
         <Sheet>
-          <SheetTrigger className="inline-flex items-center justify-center rounded-full p-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors outline-none">
-            <Menu className="h-6 w-6 text-slate-700 dark:text-slate-200" />
+          <SheetTrigger className="inline-flex items-center justify-center rounded-full p-2 hover:bg-accent hover:text-accent-foreground transition-colors outline-none">
+            <Menu className="h-6 w-6 text-foreground" />
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-72 border-r-0 shadow-2xl">
+          <SheetContent side="left" className="p-0 w-72 border-r-0 shadow-2xl bg-sidebar">
             <SidebarContent />
           </SheetContent>
         </Sheet>
       </div>
 
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex w-[280px] flex-col fixed inset-y-0 z-20 shadow-xl shadow-slate-200/40 dark:shadow-none border-r border-slate-200/60 dark:border-slate-800">
+      <div className="hidden lg:flex w-[280px] flex-col fixed inset-y-0 z-20 shadow-xl border-r border-sidebar-border bg-sidebar">
         <SidebarContent />
       </div>
 
@@ -232,28 +232,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex-1 lg:pl-[280px] flex flex-col min-h-screen">
         
         {/* Topbar */}
-        <header className="hidden lg:flex h-20 glass sticky top-0 z-10 px-8 items-center justify-between transition-all duration-300">
-          <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-2 w-96 shadow-sm focus-within:ring-2 focus-within:ring-brand-primary/20 focus-within:border-brand-primary transition-all">
-            <Search className="h-4 w-4 text-slate-400 mr-2" />
+        <header className="hidden lg:flex h-20 glass sticky top-0 z-10 px-8 items-center justify-between transition-all duration-300 border-b border-border/50">
+          <div className="flex items-center bg-card border border-border rounded-full px-4 py-2 w-96 shadow-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+            <Search className="h-4 w-4 text-muted-foreground" />
             <input 
               type="text" 
               placeholder="Cari menu atau fitur..." 
-              className="bg-transparent border-none outline-none text-sm w-full text-slate-700 dark:text-slate-200 placeholder:text-slate-400"
+              className="bg-transparent border-none outline-none text-sm w-full text-foreground placeholder:text-muted-foreground"
             />
           </div>
           
           <div className="flex items-center gap-4">
-            <Link href="/notifications" className="relative inline-flex items-center justify-center rounded-full p-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                <Bell className="h-5 w-5 text-slate-600 dark:text-slate-300" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse border-2 border-white dark:border-slate-900"></span>
+            <Link href="/notifications" className="relative inline-flex items-center justify-center rounded-full p-2 hover:bg-accent hover:text-accent-foreground transition-colors">
+                <Bell className="h-5 w-5 text-muted-foreground" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full animate-pulse border-2 border-card"></span>
             </Link>
             
-            <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
+            <div className="h-8 w-px bg-border mx-2"></div>
             
             <DropdownMenu>
-              <DropdownMenuTrigger className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 px-2 py-1.5 h-auto flex items-center gap-2 outline-none">
-                  <Avatar className="h-8 w-8 border border-slate-200 dark:border-slate-700">
-                    <AvatarFallback className="bg-brand-primary text-white text-xs">
+              <DropdownMenuTrigger className="rounded-full hover:bg-accent px-2 py-1.5 h-auto flex items-center gap-2 outline-none transition-colors">
+                  <Avatar className="h-8 w-8 border border-border">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">
                       {user.photoUrl ? (
                         <img src={user.photoUrl} alt="Profile" className="w-full h-full object-cover" />
                       ) : (
@@ -261,19 +261,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       )}
                     </AvatarFallback>
                   </Avatar>
-                  <ChevronDown className="h-4 w-4 text-slate-500" />
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-lg border-slate-100 dark:border-slate-800">
+              <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-lg border-border">
                 <DropdownMenuGroup>
                   <DropdownMenuLabel>Akun Saya</DropdownMenuLabel>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push('/profile')} className="py-2 cursor-pointer">
-                  <Users className="mr-2 h-4 w-4 text-slate-500" />
+                  <Users className="h-4 w-4 text-muted-foreground" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout} className="py-2 text-red-600 focus:bg-red-50 focus:text-red-700 dark:focus:bg-red-950/50 cursor-pointer">
-                  <LogOut className="mr-2 h-4 w-4" />
+                <DropdownMenuItem onClick={handleLogout} className="py-2 text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer">
+                  <LogOut className="h-4 w-4" />
                   <span>Logout</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>

@@ -126,7 +126,7 @@ export default function CashierPage() {
 
   if (loading) return (
     <div className="flex h-[60vh] items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
     </div>
   );
 
@@ -134,11 +134,11 @@ export default function CashierPage() {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center text-center gap-4">
         <div className="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center mb-2">
-          <span className="text-2xl">🚫</span>
+          <span className="text-2xl">??</span>
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Akses Ditolak</h2>
-          <p className="text-slate-500 mt-2">Anda tidak memiliki izin untuk melihat halaman Divisi Kasir.</p>
+          <h2 className="text-2xl font-bold text-foreground">Akses Ditolak</h2>
+          <p className="text-muted-foreground mt-2">Anda tidak memiliki izin untuk melihat halaman Divisi Kasir.</p>
         </div>
       </div>
     );
@@ -147,48 +147,48 @@ export default function CashierPage() {
   return (
     <div className="flex flex-col gap-8">
       {/* Header */}
-      <div className="bg-white/50 dark:bg-slate-900/50 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800 backdrop-blur-sm">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-800 dark:text-white">Divisi Kasir</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Pencatatan pendapatan harian dan monitoring rekap omzet cabang.</p>
+      <div className="pb-2">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Divisi Kasir</h1>
+        <p className="text-muted-foreground mt-1">Pencatatan pendapatan harian dan monitoring rekap omzet cabang.</p>
       </div>
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-5 text-white shadow-lg shadow-emerald-200 dark:shadow-emerald-900/30">
+        <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-emerald-100 text-sm font-medium">Total Omzet (Semua Data)</p>
+              <p className="text-muted-foreground text-sm font-medium">Total Omzet (Semua Data)</p>
               <p className="text-2xl font-bold mt-1">Rp {totalOmzet.toLocaleString('id-ID')}</p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center"><TrendingUp className="w-6 h-6" /></div>
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center"><TrendingUp className="w-6 h-6" /></div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl p-5 text-white shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30">
+        <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-indigo-100 text-sm font-medium">Laporan Hari Ini</p>
-              <p className="text-4xl font-bold mt-1">{todayReports.length}</p>
+              <p className="text-muted-foreground text-sm font-medium">Laporan Hari Ini</p>
+              <p className="text-4xl font-black text-foreground mt-1">{todayReports.length}</p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center"><Receipt className="w-6 h-6" /></div>
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center"><Receipt className="w-6 h-6" /></div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl p-5 text-white shadow-lg shadow-violet-200 dark:shadow-violet-900/30">
+        <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-violet-100 text-sm font-medium">Jumlah Cabang</p>
-              <p className="text-4xl font-bold mt-1">{branches.length}</p>
+              <p className="text-muted-foreground text-sm font-medium">Jumlah Cabang</p>
+              <p className="text-4xl font-black text-foreground mt-1">{branches.length}</p>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center"><Wallet className="w-6 h-6" /></div>
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center"><Wallet className="w-6 h-6" /></div>
           </div>
-          {branches.length === 0 && <p className="text-violet-200 text-xs mt-2">*Hubungi Admin untuk tambah cabang</p>}
+          {branches.length === 0 && <p className="text-muted-foreground text-xs mt-2">*Hubungi Admin untuk tambah cabang</p>}
         </div>
       </div>
 
       {canSetupBranch && (
-        <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
-            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <Plus className="w-5 h-5 text-brand-primary" /> Setup Cabang
+        <Card className="border-border shadow-md rounded-2xl overflow-hidden">
+          <CardHeader className="bg-card/50 border-b border-border p-6">
+            <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+              <Plus className="w-5 h-5 text-primary" /> Setup Cabang
             </CardTitle>
             <CardDescription>Tambahkan cabang kasir baru untuk laporan omzet harian</CardDescription>
           </CardHeader>
@@ -197,7 +197,7 @@ export default function CashierPage() {
               <Input value={branchForm.code} onChange={(e) => setBranchForm({...branchForm, code: e.target.value})} placeholder="Kode cabang" className="rounded-xl" />
               <Input value={branchForm.name} onChange={(e) => setBranchForm({...branchForm, name: e.target.value})} placeholder="Nama cabang" className="rounded-xl" />
               <Input value={branchForm.address} onChange={(e) => setBranchForm({...branchForm, address: e.target.value})} placeholder="Alamat" className="rounded-xl md:col-span-2" />
-              <button type="submit" disabled={isSubmitting} className="md:col-span-4 h-10 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold transition-colors disabled:opacity-50">
+              <button type="submit" disabled={isSubmitting} className="md:col-span-4 h-10 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold transition-colors disabled:opacity-50">
                 {isSubmitting ? 'Menyimpan...' : 'Tambah Cabang'}
               </button>
             </form>
@@ -208,23 +208,23 @@ export default function CashierPage() {
       {/* Main Content */}
       <div className="grid gap-6 lg:grid-cols-5">
         {/* Form */}
-        <Card className="lg:col-span-2 glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
-            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <Plus className="w-5 h-5 text-brand-primary" /> Input Laporan Harian
+        <Card className="lg:col-span-2 border-border shadow-md rounded-2xl overflow-hidden">
+          <CardHeader className="bg-card/50 border-b border-border p-6">
+            <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+              <Plus className="w-5 h-5 text-primary" /> Input Laporan Harian
             </CardTitle>
             <CardDescription>Catat pendapatan per cabang hari ini</CardDescription>
           </CardHeader>
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <Label className="font-medium text-slate-600 dark:text-slate-300">Tanggal <span className="text-rose-500">*</span></Label>
-                <Input type="date" required value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus-visible:ring-brand-primary" />
+                <Label className="font-medium text-foreground">Tanggal <span className="text-rose-500">*</span></Label>
+                <Input type="date" required value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="rounded-xl border-border bg-muted/30  focus-visible:ring-primary" />
               </div>
               <div className="space-y-2">
-                <Label className="font-medium text-slate-600 dark:text-slate-300">Cabang <span className="text-rose-500">*</span></Label>
+                <Label className="font-medium text-foreground">Cabang <span className="text-rose-500">*</span></Label>
                 <Select value={formData.branchId} onValueChange={v => setFormData({...formData, branchId: v || ''})}>
-                  <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                  <SelectTrigger className="rounded-xl border-border bg-muted/30 ">
                     <SelectValue placeholder="Pilih cabang..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -244,8 +244,8 @@ export default function CashierPage() {
                   { label: 'QRIS', key: 'totalQris' },
                 ].map(({ label, key }) => (
                   <div key={key} className="space-y-1">
-                    <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">{label}</Label>
-                    <Input type="number" min="0" value={(formData as any)[key]} onChange={e => setFormData({...formData, [key]: e.target.value})} placeholder="Rp 0" className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus-visible:ring-brand-primary h-9 text-sm" />
+                    <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+                    <Input type="number" min="0" value={(formData as any)[key]} onChange={e => setFormData({...formData, [key]: e.target.value})} placeholder="Rp 0" className="rounded-xl border-border bg-white  focus-visible:ring-primary h-9 text-sm" />
                   </div>
                 ))}
               </div>
@@ -255,19 +255,19 @@ export default function CashierPage() {
                   <Minus className="w-4 h-4" /> Pengeluaran
                 </p>
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">Pengeluaran Kas</Label>
-                  <Input type="number" min="0" value={formData.totalExpense} onChange={e => setFormData({...formData, totalExpense: e.target.value})} placeholder="Rp 0" className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus-visible:ring-brand-primary h-9 text-sm" />
+                  <Label className="text-xs font-medium text-muted-foreground">Pengeluaran Kas</Label>
+                  <Input type="number" min="0" value={formData.totalExpense} onChange={e => setFormData({...formData, totalExpense: e.target.value})} placeholder="Rp 0" className="rounded-xl border-border bg-white  focus-visible:ring-primary h-9 text-sm" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">Catatan Selisih / Lainnya</Label>
-                  <Input value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} placeholder="Opsional" className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus-visible:ring-brand-primary h-9 text-sm" />
+                  <Label className="text-xs font-medium text-muted-foreground">Catatan Selisih / Lainnya</Label>
+                  <Input value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} placeholder="Opsional" className="rounded-xl border-border bg-white  focus-visible:ring-primary h-9 text-sm" />
                 </div>
               </div>
 
               {/* Products Sold */}
-              <div className="space-y-3 p-4 rounded-xl bg-violet-50 dark:bg-violet-900/10 border border-violet-100 dark:border-violet-900/30">
+              <div className="space-y-3 p-4 rounded-xl bg-muted/50 dark:bg-primary/10 border border-primary/20 dark:border-primary/20">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-violet-700 dark:text-violet-300 flex items-center gap-2">
+                  <p className="text-sm font-semibold text-primary dark:text-primary flex items-center gap-2">
                     <Package className="w-4 h-4" /> Produk Terjual / Reject
                   </p>
                   <button type="button" onClick={addProductRow}
@@ -276,14 +276,14 @@ export default function CashierPage() {
                   </button>
                 </div>
                 {productsSold.length === 0 && (
-                  <p className="text-xs text-slate-400 text-center py-1">Klik Tambah untuk mencatat produk terjual</p>
+                  <p className="text-xs text-muted-foreground text-center py-1">Klik Tambah untuk mencatat produk terjual</p>
                 )}
                 {productsSold.map((row, i) => (
                   <div key={i} className="flex gap-2 items-center">
                     <select
                       value={row.productId}
                       onChange={e => updateProductRow(i, 'productId', e.target.value)}
-                      className="flex-1 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5"
+                      className="flex-1 text-xs rounded-lg border border-border bg-white  px-2 py-1.5"
                     >
                       <option value="">Pilih produk...</option>
                       {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -299,7 +299,7 @@ export default function CashierPage() {
                       <input type="checkbox" checked={row.isReject} onChange={e => updateProductRow(i, 'isReject', e.target.checked)} />
                       Reject
                     </label>
-                    <button type="button" onClick={() => removeProductRow(i)} className="text-slate-400 hover:text-rose-500">
+                    <button type="button" onClick={() => removeProductRow(i)} className="text-muted-foreground hover:text-rose-500">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
@@ -307,8 +307,8 @@ export default function CashierPage() {
               </div>
 
               {/* Summary */}
-              <div className="rounded-xl bg-slate-800 dark:bg-slate-950 p-4 space-y-2 text-white">
-                <div className="flex justify-between text-sm text-slate-400">
+              <div className="rounded-xl bg-muted dark:bg-background p-4 space-y-2 text-foreground">
+                <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Total Kotor</span>
                   <span className="font-mono">Rp {totalIncome.toLocaleString('id-ID')}</span>
                 </div>
@@ -320,7 +320,7 @@ export default function CashierPage() {
                 </div>
               </div>
 
-              <button type="submit" disabled={isSubmitting || branches.length === 0} className="w-full h-11 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold transition-colors shadow-lg shadow-brand-primary/20 disabled:opacity-50">
+              <button type="submit" disabled={isSubmitting || branches.length === 0} className="w-full h-11 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold transition-colors shadow-md disabled:opacity-50">
                 {isSubmitting ? 'Menyimpan...' : 'Submit Laporan Kasir'}
               </button>
             </form>
@@ -328,43 +328,43 @@ export default function CashierPage() {
         </Card>
 
         {/* Tabel Rekapitulasi */}
-        <Card className="lg:col-span-3 glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
-            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <Calculator className="w-5 h-5 text-brand-primary" /> Rekapitulasi Pendapatan
+        <Card className="lg:col-span-3 border-border shadow-md rounded-2xl overflow-hidden">
+          <CardHeader className="bg-card/50 border-b border-border p-6">
+            <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+              <Calculator className="w-5 h-5 text-primary" /> Rekapitulasi Pendapatan
             </CardTitle>
             <CardDescription>Riwayat laporan kasir yang sudah disubmit</CardDescription>
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+              <thead className="bg-muted/30 border-b border-border">
                 <tr>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Tanggal</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Cabang</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 text-right">Tunai</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 text-right">Non-Tunai</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 text-right">Keluar</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 text-right">Netto</th>
+                  <th className="px-4 py-3 font-semibold text-foreground">Tanggal</th>
+                  <th className="px-4 py-3 font-semibold text-foreground">Cabang</th>
+                  <th className="px-4 py-3 font-semibold text-foreground text-right">Tunai</th>
+                  <th className="px-4 py-3 font-semibold text-foreground text-right">Non-Tunai</th>
+                  <th className="px-4 py-3 font-semibold text-foreground text-right">Keluar</th>
+                  <th className="px-4 py-3 font-semibold text-foreground text-right">Netto</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                 {reports.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-12 text-center text-slate-400">Belum ada laporan kasir</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">Belum ada laporan kasir</td></tr>
                 ) : reports.map(r => (
-                  <tr key={r.id} className="hover:bg-indigo-50/20 dark:hover:bg-slate-800/20 transition-colors">
-                    <td className="px-4 py-4 text-slate-500 whitespace-nowrap text-xs">{format(new Date(r.date), 'dd MMM yyyy', { locale: localeId })}</td>
-                    <td className="px-4 py-4 font-semibold text-slate-800 dark:text-slate-200">{r.branch.name}</td>
-                    <td className="px-4 py-4 text-right font-mono text-xs text-slate-600 dark:text-slate-400">Rp {r.totalCash.toLocaleString('id-ID')}</td>
-                    <td className="px-4 py-4 text-right font-mono text-xs text-slate-600 dark:text-slate-400">Rp {(r.totalTransfer + r.totalQris).toLocaleString('id-ID')}</td>
+                  <tr key={r.id} className="hover:bg-muted/50 transition-colors">
+                    <td className="px-4 py-4 text-muted-foreground whitespace-nowrap text-xs">{format(new Date(r.date), 'dd MMM yyyy', { locale: localeId })}</td>
+                    <td className="px-4 py-4 font-semibold text-foreground">{r.branch.name}</td>
+                    <td className="px-4 py-4 text-right font-mono text-xs text-muted-foreground">Rp {r.totalCash.toLocaleString('id-ID')}</td>
+                    <td className="px-4 py-4 text-right font-mono text-xs text-muted-foreground">Rp {(r.totalTransfer + r.totalQris).toLocaleString('id-ID')}</td>
                     <td className="px-4 py-4 text-right font-mono text-xs text-rose-500">Rp {r.totalExpense.toLocaleString('id-ID')}</td>
                     <td className="px-4 py-4 text-right font-bold text-emerald-600 dark:text-emerald-400 font-mono">Rp {r.netTotal.toLocaleString('id-ID')}</td>
                   </tr>
                 ))}
               </tbody>
               {reports.length > 0 && (
-                <tfoot className="bg-slate-800 dark:bg-slate-950">
+                <tfoot className="bg-muted dark:bg-background">
                   <tr>
-                    <td colSpan={5} className="px-4 py-3 text-right font-bold text-slate-200 text-sm">Total Omzet</td>
+                    <td colSpan={5} className="px-4 py-3 text-right font-bold text-foreground/80 text-sm">Total Omzet</td>
                     <td className="px-4 py-3 text-right font-bold text-emerald-400 font-mono">Rp {totalOmzet.toLocaleString('id-ID')}</td>
                   </tr>
                 </tfoot>

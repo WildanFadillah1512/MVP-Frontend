@@ -29,7 +29,7 @@ export default function StaffDashboard() {
 
   if (loading) return (
     <div className="flex h-[60vh] items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
     </div>
   );
   if (!data) return <div>Gagal memuat data.</div>;
@@ -40,109 +40,118 @@ export default function StaffDashboard() {
   const usedLeave = balance?.usedQuota || 0;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 pb-10">
       {/* Welcome Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-br from-indigo-500 to-violet-600 p-6 rounded-2xl text-white shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30">
-        <div>
-          <p className="text-indigo-200 text-sm font-medium">Selamat datang kembali 👋</p>
-          <h1 className="text-3xl font-bold mt-1">{user?.name || 'Karyawan'}</h1>
-          <p className="text-indigo-200 mt-1">{user?.division?.name} · {user?.role?.name} · {format(new Date(), 'EEEE, dd MMM yyyy', { locale: localeId })}</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-secondary text-secondary-foreground p-8 rounded-3xl shadow-xl shadow-secondary/10 relative overflow-hidden">
+        {/* Decorative subtle background pattern */}
+        <div className="absolute right-0 top-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+        
+        <div className="relative z-10">
+          <p className="text-secondary-foreground/80 text-sm font-semibold tracking-wide uppercase mb-1">Selamat datang kembali 👋</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{user?.name || 'Karyawan'}</h1>
+          <p className="text-secondary-foreground/70 mt-2 font-medium">{user?.division?.name} · {user?.role?.name} <span className="mx-2 opacity-50">|</span> {format(new Date(), 'EEEE, dd MMM yyyy', { locale: localeId })}</p>
         </div>
-        <div className={`px-5 py-3 rounded-xl text-center ${attendance ? 'bg-white/20' : 'bg-rose-500/80'}`}>
+        
+        <div className={`relative z-10 px-6 py-4 rounded-2xl border  min-w-[200px] ${attendance ? 'bg-black/20 border-white/10' : 'bg-rose-500/20 border-rose-500/30'}`}>
           {attendance ? (
             <>
-              <p className="text-xs font-medium text-indigo-100">Status Hari Ini</p>
-              <p className="text-xl font-bold mt-0.5">{attendance.status === 'HADIR' ? '✓ Hadir' : attendance.status}</p>
-              <p className="text-xs text-indigo-200 mt-0.5">Masuk: {attendance.checkIn ? format(new Date(attendance.checkIn), 'HH:mm') : '--:--'}</p>
+              <p className="text-xs font-semibold text-secondary-foreground/70 uppercase tracking-widest mb-1">Status Hari Ini</p>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-emerald-400" />
+                <p className="text-xl font-bold">{attendance.status === 'HADIR' ? 'Hadir' : attendance.status}</p>
+              </div>
+              <p className="text-sm font-mono text-secondary-foreground/80 mt-2 bg-black/20 inline-block px-2 py-1 rounded-md">
+                In: {attendance.checkIn ? format(new Date(attendance.checkIn), 'HH:mm') : '--:--'}
+              </p>
             </>
           ) : (
             <>
-              <p className="text-xs font-medium text-white/80">Status Hari Ini</p>
-              <p className="text-xl font-bold mt-0.5">⚠ Belum Hadir</p>
-              <p className="text-xs text-white/70 mt-0.5">Segera check-in!</p>
+              <p className="text-xs font-semibold text-rose-200 uppercase tracking-widest mb-1">Status Hari Ini</p>
+              <p className="text-xl font-bold text-rose-400 flex items-center gap-2">⚠ Belum Hadir</p>
+              <p className="text-sm text-rose-200 mt-2">Segera lakukan check-in!</p>
             </>
           )}
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-0 shadow-md glass-card rounded-2xl overflow-hidden">
-          <CardContent className="pt-6 pb-5 px-6">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                <Target className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-border shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                <Target className="w-6 h-6" />
               </div>
-              <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400 px-2 py-0.5 rounded-full">Aktif</span>
+              <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">Aktif</span>
             </div>
-            <p className="text-3xl font-bold text-slate-800 dark:text-white">{data.activeTargets.length}</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Target Berjalan</p>
+            <p className="text-4xl font-black text-foreground">{data.activeTargets.length}</p>
+            <p className="text-sm font-medium text-muted-foreground mt-1">Target Berjalan</p>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-md glass-card rounded-2xl overflow-hidden">
-          <CardContent className="pt-6 pb-5 px-6">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+        <Card className="border-border shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center text-accent-foreground">
+                <Calendar className="w-6 h-6" />
               </div>
-              <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full">Sisa</span>
+              <span className="text-xs font-bold text-accent-foreground bg-accent/20 px-2.5 py-1 rounded-full">Sisa</span>
             </div>
-            <p className="text-3xl font-bold text-slate-800 dark:text-white">{remainingLeave}</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Hari Cuti Tersisa</p>
+            <p className="text-4xl font-black text-foreground">{remainingLeave}</p>
+            <p className="text-sm font-medium text-muted-foreground mt-1">Hari Cuti Tersisa</p>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-md glass-card rounded-2xl overflow-hidden">
-          <CardContent className="pt-6 pb-5 px-6">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+        <Card className="border-border shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
+                <Clock className="w-6 h-6" />
               </div>
-              <span className="text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-900/30 dark:text-rose-400 px-2 py-0.5 rounded-full">Dipakai</span>
+              <span className="text-xs font-bold text-muted-foreground bg-muted px-2.5 py-1 rounded-full">Dipakai</span>
             </div>
-            <p className="text-3xl font-bold text-slate-800 dark:text-white">{usedLeave}</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Hari Cuti Terpakai</p>
+            <p className="text-4xl font-black text-foreground">{usedLeave}</p>
+            <p className="text-sm font-medium text-muted-foreground mt-1">Hari Cuti Terpakai</p>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-md glass-card rounded-2xl overflow-hidden">
-          <CardContent className="pt-6 pb-5 px-6">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+        <Card className="border-border shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                <TrendingUp className="w-6 h-6" />
               </div>
-              <span className="text-xs font-semibold text-violet-600 bg-violet-50 dark:bg-violet-900/30 dark:text-violet-400 px-2 py-0.5 rounded-full">KPI</span>
+              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 rounded-full">KPI</span>
             </div>
-            <p className="text-3xl font-bold text-slate-800 dark:text-white">N/A</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Skor Performa</p>
+            <p className="text-4xl font-black text-foreground">N/A</p>
+            <p className="text-sm font-medium text-muted-foreground mt-1">Skor Performa</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Quick Actions */}
-      <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-        <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
-          <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">Aksi Cepat</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div>
+        <h2 className="text-xl font-bold text-foreground mb-4 px-1">Aksi Cepat</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
           {[
-            { label: 'Absensi', href: '/attendance', icon: CheckCircle, color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300', hover: 'hover:bg-indigo-200 dark:hover:bg-indigo-900/50' },
-            { label: 'Laporan Harian', href: '/daily-reports', icon: FileText, color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300', hover: 'hover:bg-emerald-200 dark:hover:bg-emerald-900/50' },
-            { label: 'Upload Harian', href: '/daily-uploads', icon: Upload, color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300', hover: 'hover:bg-violet-200 dark:hover:bg-violet-900/50' },
-            { label: 'Cuti', href: '/leave', icon: Calendar, color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300', hover: 'hover:bg-amber-200 dark:hover:bg-amber-900/50' },
-            { label: 'Target & KPI', href: '/performance', icon: Target, color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300', hover: 'hover:bg-rose-200 dark:hover:bg-rose-900/50' },
-            { label: 'Chat Divisi', href: '/chat', icon: TrendingUp, color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300', hover: 'hover:bg-cyan-200 dark:hover:bg-cyan-900/50' },
-          ].map(({ label, href, icon: Icon, color, hover }) => (
-            <Link key={href} href={href}>
-              <div className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl ${color} ${hover} transition-colors cursor-pointer text-center`}>
-                <Icon className="w-6 h-6" />
-                <span className="text-sm font-semibold">{label}</span>
+            { label: 'Absensi', href: '/attendance', icon: CheckCircle },
+            { label: 'Laporan', href: '/daily-reports', icon: FileText },
+            { label: 'Upload', href: '/daily-uploads', icon: Upload },
+            { label: 'Cuti', href: '/leave', icon: Calendar },
+            { label: 'Target KPI', href: '/performance', icon: Target },
+            { label: 'Chat', href: '/chat', icon: TrendingUp },
+          ].map(({ label, href, icon: Icon }) => (
+            <Link key={href} href={href} className="group outline-none">
+              <div className="flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-card border border-border shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-primary/40 focus:ring-2 focus:ring-primary/50 text-center h-full">
+                <div className="w-12 h-12 rounded-full bg-muted/50 group-hover:bg-primary/10 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                  <Icon className="w-6 h-6" />
+                </div>
+                <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{label}</span>
               </div>
             </Link>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -91,68 +91,89 @@ export default function LeavePage() {
   };
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 pb-10">
       {/* Header */}
-      <div className="bg-white/50 dark:bg-slate-900/50 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800 backdrop-blur-sm">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-800 dark:text-white">Manajemen Cuti</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Ajukan cuti, pantau saldo, dan setujui permintaan tim Anda.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-secondary text-secondary-foreground p-8 rounded-3xl shadow-xl shadow-secondary/10 relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+        <div className="relative z-10">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Manajemen Cuti</h1>
+          <p className="text-secondary-foreground/70 mt-2 font-medium">Ajukan cuti, pantau saldo, dan setujui permintaan tim.</p>
+        </div>
+        <div className="relative z-10 flex items-center gap-2 bg-white/10 border border-white/10 rounded-2xl px-6 py-4  text-center">
+          <PlaneTakeoff className="w-5 h-5 text-secondary-foreground/70" />
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-secondary-foreground/50">Sisa Kuota</p>
+            <p className="text-3xl font-black">{remainingQuota} <span className="text-lg font-semibold text-secondary-foreground/70">hari</span></p>
+          </div>
+        </div>
       </div>
 
-      {/* Quota Cards */}
+      {/* Quota stats */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl p-5 text-white shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-indigo-100 text-sm font-medium">Total Kuota Tahunan</p>
-              <p className="text-4xl font-bold mt-1">{totalQuota} <span className="text-xl font-normal text-indigo-200">hari</span></p>
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-11 h-11 rounded-xl bg-secondary/30 flex items-center justify-center text-secondary-foreground">
+              <Calendar className="w-5 h-5" />
             </div>
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-              <Calendar className="w-6 h-6" />
+            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Kuota</span>
+          </div>
+          <p className="text-4xl font-black text-foreground">{totalQuota}</p>
+          <p className="text-sm font-medium text-muted-foreground mt-1">Total Hari Tahunan</p>
+        </div>
+
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+              <PlaneTakeoff className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Terpakai</span>
+          </div>
+          <p className="text-4xl font-black text-foreground">{usedQuota}</p>
+          <div className="mt-3">
+            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground mb-1.5">
+              <span>Penggunaan</span>
+              <span className="font-bold text-foreground">{usagePercent}%</span>
+            </div>
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div className="h-full bg-primary rounded-full transition-all duration-700" style={{ width: `${usagePercent}%` }} />
             </div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-5 text-white shadow-lg shadow-rose-200 dark:shadow-rose-900/30">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-rose-100 text-sm font-medium">Sudah Digunakan</p>
-              <p className="text-4xl font-bold mt-1">{usedQuota} <span className="text-xl font-normal text-rose-200">hari</span></p>
+
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <ShieldCheck className="w-5 h-5" />
             </div>
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-              <PlaneTakeoff className="w-6 h-6" />
-            </div>
+            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Tersisa</span>
           </div>
-          <div className="mt-3 bg-white/20 rounded-full h-1.5">
-            <div className="bg-white rounded-full h-1.5 transition-all" style={{ width: `${usagePercent}%` }} />
-          </div>
-          <p className="text-xs text-rose-200 mt-1">{usagePercent}% dari kuota</p>
-        </div>
-        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-5 text-white shadow-lg shadow-emerald-200 dark:shadow-emerald-900/30">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-emerald-100 text-sm font-medium">Sisa Cuti Tersedia</p>
-              <p className="text-4xl font-bold mt-1">{remainingQuota} <span className="text-xl font-normal text-emerald-200">hari</span></p>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-          </div>
+          <p className="text-4xl font-black text-foreground">{remainingQuota}</p>
+          <p className="text-sm font-medium text-muted-foreground mt-1">Hari Tersedia</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="my">
-        <TabsList className="bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl h-auto">
-          <TabsTrigger value="my" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm px-5 py-2">Cuti Saya</TabsTrigger>
-          {canApprove && <TabsTrigger value="team" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm px-5 py-2">Approval Tim</TabsTrigger>}
-        </TabsList>
+      <Tabs defaultValue="my" className="w-full">
+        <div className="flex justify-center mb-8">
+          <TabsList className="flex flex-row items-center justify-center p-1.5 bg-secondary/20 border border-secondary/30 rounded-2xl w-max mx-auto">
+            <TabsTrigger value="my" className="px-8 py-3 rounded-xl data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold text-muted-foreground font-medium transition-all">
+              Cuti Saya
+            </TabsTrigger>
+            {canApprove && (
+              <TabsTrigger value="team" className="px-8 py-3 rounded-xl data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:font-bold text-muted-foreground font-medium transition-all">
+                Approval Tim
+              </TabsTrigger>
+            )}
+          </TabsList>
+        </div>
 
-        <TabsContent value="my" className="mt-6">
-          <div className="grid gap-6 lg:grid-cols-5">
+        <TabsContent value="my" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="grid gap-8 lg:grid-cols-12">
             {/* Form */}
-            <Card className="lg:col-span-2 glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-              <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
-                <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">Ajukan Cuti Baru</CardTitle>
-                <CardDescription>Isi formulir berikut untuk mengajukan izin cuti.</CardDescription>
+            <Card className="lg:col-span-4 bg-card border-border shadow-md rounded-3xl overflow-hidden h-fit">
+              <CardHeader className="bg-secondary/30 text-foreground px-6 py-5 border-b border-border/50">
+                <CardTitle className="text-lg font-bold">Ajukan Cuti Baru</CardTitle>
+                <CardDescription className="text-muted-foreground">Isi formulir untuk mengajukan izin cuti.</CardDescription>
               </CardHeader>
               <CardContent className="p-6">
                 <Form {...form}>
@@ -160,18 +181,18 @@ export default function LeavePage() {
                     <div className="grid grid-cols-2 gap-4">
                       <FormField control={form.control} name="startDate" render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-slate-600 dark:text-slate-300 font-medium">Tanggal Mulai</FormLabel>
+                          <FormLabel className="font-bold text-foreground text-xs uppercase tracking-wider">Mulai</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus-visible:ring-brand-primary" />
+                            <Input type="date" {...field} className="h-11 rounded-xl bg-muted/20 border-border focus-visible:ring-primary shadow-sm" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )} />
                       <FormField control={form.control} name="endDate" render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-slate-600 dark:text-slate-300 font-medium">Tanggal Akhir</FormLabel>
+                          <FormLabel className="font-bold text-foreground text-xs uppercase tracking-wider">Akhir</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus-visible:ring-brand-primary" />
+                            <Input type="date" {...field} className="h-11 rounded-xl bg-muted/20 border-border focus-visible:ring-primary shadow-sm" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -179,24 +200,24 @@ export default function LeavePage() {
                     </div>
                     <FormField control={form.control} name="reason" render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-600 dark:text-slate-300 font-medium">Alasan Cuti</FormLabel>
+                        <FormLabel className="font-bold text-foreground text-xs uppercase tracking-wider">Alasan Cuti</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Jelaskan alasan pengajuan cuti Anda..." {...field} className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus-visible:ring-brand-primary min-h-[100px]" />
+                          <Textarea placeholder="Jelaskan alasan pengajuan cuti Anda..." {...field} className="rounded-xl bg-muted/20 border-border focus-visible:ring-primary min-h-[120px] resize-none shadow-sm" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
                     {remainingQuota <= 0 && (
-                      <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800/50 text-sm text-rose-700 dark:text-rose-400">
-                        Kuota cuti Anda sudah habis.
+                      <div className="p-4 rounded-xl bg-rose-50/50 border border-rose-200 text-sm text-rose-700 font-medium">
+                        Kuota cuti Anda sudah habis untuk tahun ini.
                       </div>
                     )}
                     <Button
                       type="submit"
-                      className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white rounded-xl shadow-lg shadow-brand-primary/20 h-11"
+                      className="w-full h-12 rounded-xl shadow-md shadow-primary/20 font-bold transition-all hover:-translate-y-0.5 text-base"
                       disabled={isLoading || remainingQuota <= 0}
                     >
-                      {isLoading ? 'Memproses...' : 'Kirim Pengajuan Cuti'}
+                      {isLoading ? 'Memproses...' : 'Kirim Pengajuan'}
                     </Button>
                   </form>
                 </Form>
@@ -204,36 +225,38 @@ export default function LeavePage() {
             </Card>
 
             {/* My History */}
-            <Card className="lg:col-span-3 glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-              <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
-                <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">Riwayat Pengajuan Saya</CardTitle>
-                <CardDescription>{data.requests.length} pengajuan tercatat</CardDescription>
+            <Card className="lg:col-span-8 bg-card border-border shadow-md rounded-3xl overflow-hidden">
+              <CardHeader className="border-b border-border/50 bg-card px-8 py-6">
+                <CardTitle className="text-xl font-bold text-foreground">Riwayat Pengajuan Saya</CardTitle>
+                <CardDescription className="text-base">{data.requests.length} pengajuan tercatat di sistem</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                <div className="divide-y divide-border/50">
                   {data.requests.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-                        <PlaneTakeoff className="w-8 h-8 text-slate-400" />
+                    <div className="flex flex-col items-center justify-center py-24 text-center px-4">
+                      <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-6">
+                        <PlaneTakeoff className="w-10 h-10 text-muted-foreground/40" />
                       </div>
-                      <p className="text-slate-600 dark:text-slate-400 font-medium">Belum ada pengajuan cuti</p>
-                      <p className="text-sm text-slate-400 mt-1">Isi formulir di sebelah untuk mengajukan cuti</p>
+                      <p className="font-bold text-xl text-foreground">Belum ada riwayat cuti</p>
+                      <p className="text-muted-foreground mt-2">Anda belum pernah mengajukan cuti.</p>
                     </div>
                   ) : (
                     data.requests.map(req => (
-                      <div key={req.id} className="flex justify-between items-start px-6 py-4 hover:bg-indigo-50/30 dark:hover:bg-slate-800/30 transition-colors">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-slate-800 dark:text-slate-200">
-                              {format(new Date(req.startDate), 'dd MMM')} – {format(new Date(req.endDate), 'dd MMM yyyy')}
+                      <div key={req.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-8 py-6 hover:bg-muted/50 transition-colors gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
+                            <span className="font-bold text-foreground text-lg">
+                              {format(new Date(req.startDate), 'dd MMM yyyy')} <span className="text-muted-foreground font-normal mx-1">s/d</span> {format(new Date(req.endDate), 'dd MMM yyyy')}
                             </span>
-                            <span className="text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 px-2 py-0.5 rounded-full font-semibold">
-                              {differenceInDays(new Date(req.endDate), new Date(req.startDate)) + 1} hari
+                            <span className="text-xs bg-secondary/50 text-foreground px-3 py-1 rounded-full font-bold border border-border">
+                              {differenceInDays(new Date(req.endDate), new Date(req.startDate)) + 1} Hari
                             </span>
                           </div>
-                          <p className="text-sm text-slate-500 max-w-xs">{req.reason}</p>
+                          <p className="text-foreground/80 leading-relaxed max-w-2xl">{req.reason}</p>
                         </div>
-                        {getStatusBadge(req.status)}
+                        <div className="shrink-0">
+                          {getStatusBadge(req.status)}
+                        </div>
                       </div>
                     ))
                   )}
@@ -244,66 +267,84 @@ export default function LeavePage() {
         </TabsContent>
 
         {canApprove && (
-          <TabsContent value="team" className="mt-6">
-            <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-              <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-brand-primary" /> Approval Cuti Tim
-                  </CardTitle>
-                  <CardDescription>Setujui atau tolak permintaan cuti anggota tim Anda.</CardDescription>
+          <TabsContent value="team" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-sm">
+              <div>
+                <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+                  <ShieldCheck className="w-6 h-6 text-primary" /> Menunggu Persetujuan Tim
+                </h3>
+                <p className="text-muted-foreground mt-1">Review permintaan cuti dari anggota tim Anda dengan cepat.</p>
+              </div>
+              <div className="bg-amber-100 text-amber-800 border border-amber-200 px-5 py-2 text-sm font-bold rounded-xl flex items-center gap-2 shadow-sm">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                </span>
+                {teamLeaves.filter(r => r.status === 'PENDING').length} Perlu Review
+              </div>
+            </div>
+            
+            {teamLeaves.length === 0 ? (
+              <Card className="bg-card border-dashed border-2 border-border shadow-none rounded-3xl py-20">
+                <div className="flex flex-col items-center justify-center text-center px-4">
+                  <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
+                    <CheckCircle className="w-10 h-10 text-muted-foreground/40" />
+                  </div>
+                  <p className="font-bold text-xl text-foreground">Semua Tuntas!</p>
+                  <p className="text-muted-foreground mt-2">Tidak ada pengajuan cuti yang perlu di-review saat ini.</p>
                 </div>
-                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50 rounded-full px-3 py-1 text-sm self-start md:self-auto">
-                  {teamLeaves.filter(r => r.status === 'PENDING').length} Menunggu Review
-                </Badge>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                  {teamLeaves.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-                        <CheckCircle className="w-8 h-8 text-slate-400" />
-                      </div>
-                      <p className="text-slate-600 dark:text-slate-400 font-medium">Tidak ada pengajuan cuti tim</p>
-                      <p className="text-sm text-slate-400 mt-1">Semua pengajuan sudah diproses</p>
-                    </div>
-                  ) : (
-                    teamLeaves.map(req => (
-                      <div key={req.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-6 py-5 hover:bg-indigo-50/30 dark:hover:bg-slate-800/30 transition-colors">
+              </Card>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {teamLeaves.map(req => (
+                  <Card key={req.id} className="rounded-3xl border border-border shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col">
+                    <div className="p-6 border-b border-border/50 bg-secondary/10 flex justify-between items-start">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-black text-lg shadow-sm">
+                          {req.user?.name.substring(0,2).toUpperCase()}
+                        </div>
                         <div>
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className="font-semibold text-slate-800 dark:text-slate-200">{req.user?.name || 'Unknown'}</span>
-                            <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800/50 rounded-md text-xs px-1.5">
-                              {req.user?.division?.name}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-slate-600 dark:text-slate-300">
-                            {format(new Date(req.startDate), 'dd MMM')} – {format(new Date(req.endDate), 'dd MMM yyyy')}
-                            <span className="ml-2 text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 px-2 py-0.5 rounded-full font-semibold">
-                              {differenceInDays(new Date(req.endDate), new Date(req.startDate)) + 1} hari
-                            </span>
-                          </p>
-                          <p className="text-sm text-slate-500 mt-1 max-w-sm">{req.reason}</p>
-                        </div>
-                        <div className="flex flex-col sm:items-end gap-2 shrink-0">
-                          {getStatusBadge(req.status)}
-                          {req.status === 'PENDING' && (
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline" className="border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 rounded-lg" onClick={() => handleApproval(req.id, 'REJECTED')}>
-                                <XCircle className="w-3.5 h-3.5 mr-1" /> Tolak
-                              </Button>
-                              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm" onClick={() => handleApproval(req.id, 'APPROVED')}>
-                                <CheckCircle className="w-3.5 h-3.5 mr-1" /> Setujui
-                              </Button>
-                            </div>
-                          )}
+                          <p className="font-bold text-foreground text-lg">{req.user?.name || 'Unknown'}</p>
+                          <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mt-0.5">{req.user?.division?.name}</p>
                         </div>
                       </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                      <div className="shrink-0">{getStatusBadge(req.status)}</div>
+                    </div>
+                    <div className="p-6 flex-1 flex flex-col">
+                      <div className="flex justify-between items-center mb-6 bg-muted/30 rounded-2xl p-4 border border-border/50">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mb-1">Mulai Cuti</span>
+                          <span className="font-black text-foreground">{format(new Date(req.startDate), 'dd MMM yyyy')}</span>
+                        </div>
+                        <div className="flex flex-col items-center justify-center px-4 border-x border-border/50">
+                           <span className="text-xs font-black text-primary bg-primary/10 px-2 py-1 rounded-md">
+                              {differenceInDays(new Date(req.endDate), new Date(req.startDate)) + 1}H
+                           </span>
+                        </div>
+                        <div className="flex flex-col text-right">
+                          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mb-1">Berakhir</span>
+                          <span className="font-black text-foreground">{format(new Date(req.endDate), 'dd MMM yyyy')}</span>
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Alasan Pengajuan</p>
+                        <p className="text-sm text-foreground/80 leading-relaxed line-clamp-3">{req.reason}</p>
+                      </div>
+                    </div>
+                    {req.status === 'PENDING' && (
+                      <div className="p-5 bg-card border-t border-border/50 flex gap-3">
+                        <Button variant="outline" className="flex-1 h-12 rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 font-bold shadow-sm" onClick={() => handleApproval(req.id, 'REJECTED')}>
+                          Tolak
+                        </Button>
+                        <Button className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md" onClick={() => handleApproval(req.id, 'APPROVED')}>
+                          Setujui
+                        </Button>
+                      </div>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
         )}
       </Tabs>

@@ -1,10 +1,10 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
-  title: "SikaryaERP — Sistem Operasional Terpadu",
-  description: "Aplikasi manajemen operasional perusahaan terpadu — Produksi, Gudang, Kasir, Karyawan, dan lebih banyak lagi.",
+  title: "SikaryaERP - Sistem Operasional Terpadu",
+  description: "Aplikasi manajemen operasional perusahaan terpadu - Produksi, Gudang, Kasir, Karyawan, dan lebih banyak lagi.",
 };
 
 export default function RootLayout({

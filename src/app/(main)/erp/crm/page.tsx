@@ -46,12 +46,12 @@ export default function CRMErpPage() {
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-brand-charcoal">CRM & Membership (ERP)</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">CRM & Membership (ERP)</h1>
           <p className="text-muted-foreground mt-2">Manajemen pelanggan, poin, dan riwayat transaksi.</p>
         </div>
         {!isLocked && (
-           <Button variant="outline" className="border-brand-sage text-brand-sage" disabled>
-             <Unlock className="w-4 h-4 mr-2" /> Modul Aktif
+           <Button variant="outline" className="border-brand-sage text-primary" disabled>
+             <Unlock className="w-4 h-4" /> Modul Aktif
            </Button>
         )}
       </div>
@@ -66,11 +66,11 @@ export default function CRMErpPage() {
             <div className="h-10 bg-gray-200 rounded w-full"></div>
           </div>
 
-          <div className="relative z-10 flex flex-col items-center bg-white/80 p-8 rounded-2xl backdrop-blur-sm border border-border shadow-sm">
+          <div className="relative z-10 flex flex-col items-center bg-white/80 p-8 rounded-2xl  border border-border shadow-sm">
             <div className="w-16 h-16 bg-brand-dusty-rose/20 rounded-full flex items-center justify-center mb-4 text-brand-dusty-rose">
               <Lock className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-bold mb-2 text-brand-charcoal text-center">Modul Premium Terkunci</h2>
+            <h2 className="text-2xl font-bold mb-2 text-foreground text-center">Modul Premium Terkunci</h2>
             <p className="text-muted-foreground text-center max-w-md mb-6">
               Fitur <b>Customer Relationship Management (CRM)</b> ini sudah diprogram di dalam sistem, namun membutuhkan lisensi ERP Enterprise untuk diakses.
             </p>
@@ -93,7 +93,7 @@ export default function CRMErpPage() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="text-xs text-muted-foreground uppercase bg-brand-oat-milk/50 border-b">
+                  <thead className="text-xs text-muted-foreground uppercase bg-muted/30 border-b">
                     <tr>
                       <th className="px-4 py-3">Nama</th>
                       <th className="px-4 py-3">Telepon</th>
@@ -107,7 +107,7 @@ export default function CRMErpPage() {
                         <td className="px-4 py-3 font-medium">{item.name}</td>
                         <td className="px-4 py-3">{item.phone || '-'}</td>
                         <td className="px-4 py-3">{item.email || '-'}</td>
-                        <td className="px-4 py-3 text-right font-medium text-brand-sage">{item.totalPoints} pts</td>
+                        <td className="px-4 py-3 text-right font-medium text-primary">{item.totalPoints} pts</td>
                       </tr>
                     ))}
                   </tbody>

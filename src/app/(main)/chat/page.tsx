@@ -113,16 +113,16 @@ export default function ChatPage() {
   return (
     <div className="flex flex-col gap-6 h-[calc(100vh-100px)]">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-brand-charcoal">Chat Internal</h1>
-        <p className="text-muted-foreground mt-2">Komunikasi antar karyawan divisi Anda.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Chat Internal</h1>
+        <p className="text-muted-foreground mt-1">Komunikasi antar karyawan divisi Anda.</p>
       </div>
 
       <div className="grid lg:grid-cols-4 gap-6 flex-1 min-h-0">
         {/* Sidebar Groups */}
         <Card className="lg:col-span-1 flex flex-col h-full overflow-hidden">
-          <CardHeader className="pb-3 border-b border-border bg-brand-oat-milk/50">
+          <CardHeader className="pb-3 border-b border-border shrink-0">
             <CardTitle className="text-lg flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-brand-sage" />
+              <MessageSquare className="w-5 h-5 text-primary" />
               Grup Anda
             </CardTitle>
           </CardHeader>
@@ -135,16 +135,16 @@ export default function ChatPage() {
                   <button
                     key={group.id}
                     onClick={() => setActiveGroup(group)}
-                    className={`flex items-start gap-3 p-4 text-left border-b border-border transition-colors hover:bg-brand-oat-milk/50 ${
-                      activeGroup?.id === group.id ? 'bg-brand-sage/10 border-l-4 border-l-brand-sage' : 'border-l-4 border-l-transparent'
+                    className={`flex items-center gap-3 p-4 text-left border-b border-border transition-colors hover:bg-muted/50 ${
+                      activeGroup?.id === group.id ? 'bg-primary/10 border-l-4 border-l-primary' : 'border-l-4 border-l-transparent'
                     }`}
                   >
-                    <div className="w-10 h-10 rounded-full bg-brand-sage flex items-center justify-center text-white shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
                       <Users className="w-5 h-5" />
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-brand-charcoal line-clamp-1">{group.name}</h4>
-                      <p className="text-xs text-muted-foreground mt-1">{group._count.members} Anggota</p>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-foreground truncate">{group.name}</h4>
+                      <p className="text-xs text-muted-foreground mt-0.5">{group._count.members} Anggota</p>
                     </div>
                   </button>
                 ))}
@@ -157,12 +157,12 @@ export default function ChatPage() {
         <Card className="lg:col-span-3 flex flex-col h-[60vh] lg:h-full overflow-hidden">
           {activeGroup ? (
             <>
-              <CardHeader className="pb-3 border-b border-border bg-brand-oat-milk/50">
-                <CardTitle>{activeGroup.name}</CardTitle>
+              <CardHeader className="pb-3 border-b border-border shrink-0">
+                <CardTitle className="text-foreground">{activeGroup.name}</CardTitle>
                 <CardDescription>{activeGroup.description || 'Grup diskusi resmi divisi'}</CardDescription>
               </CardHeader>
 
-              <CardContent className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 bg-[#f8f9fa]">
+              <CardContent className="flex-1 overflow-y-auto p-6 flex flex-col gap-3 bg-muted/20">
                 {messages.length === 0 ? (
                   <div className="flex-1 flex items-center justify-center">
                     <p className="text-muted-foreground text-sm">Belum ada pesan. Mulai sapa tim Anda!</p>
@@ -173,21 +173,23 @@ export default function ChatPage() {
                     const showHeader = index === 0 || messages[index - 1].senderId !== msg.senderId;
 
                     return (
-                      <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[80%]`}>
-                        {showHeader && !isMe && (
-                          <span className="text-xs font-medium text-brand-charcoal mb-1 ml-1">
-                            {msg.sender.name} <span className="text-[10px] text-muted-foreground font-normal">({msg.sender.role.name})</span>
-                          </span>
-                        )}
-                        <div className={`px-4 py-2 rounded-2xl ${
-                          isMe
-                            ? 'bg-brand-sage text-white rounded-tr-sm'
-                            : 'bg-white border border-border text-brand-charcoal rounded-tl-sm'
-                        }`}>
-                          <p className="text-sm leading-relaxed">{msg.content}</p>
-                          <span className={`text-[10px] block mt-1 text-right ${isMe ? 'text-brand-sage-foreground/70 text-gray-100' : 'text-muted-foreground'}`}>
-                            {format(new Date(msg.createdAt), 'HH:mm')}
-                          </span>
+                      <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`flex flex-col max-w-[70%] ${isMe ? 'items-end' : 'items-start'}`}>
+                          {showHeader && !isMe && (
+                            <span className="text-xs font-semibold text-foreground mb-1 ml-1">
+                              {msg.sender.name} <span className="text-[10px] text-muted-foreground font-normal">({msg.sender.role.name})</span>
+                            </span>
+                          )}
+                          <div className={`px-4 py-2.5 rounded-2xl ${
+                            isMe
+                              ? 'bg-primary text-primary-foreground rounded-tr-sm'
+                              : 'bg-card border border-border text-foreground rounded-tl-sm'
+                          }`}>
+                            <p className="text-sm leading-relaxed">{msg.content}</p>
+                            <span className={`text-[10px] block mt-1 ${isMe ? 'text-right text-primary-foreground/60' : 'text-muted-foreground'}`}>
+                              {format(new Date(msg.createdAt), 'HH:mm')}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     );
@@ -196,15 +198,15 @@ export default function ChatPage() {
                 <div ref={messagesEndRef} />
               </CardContent>
 
-              <div className="p-4 border-t border-border bg-white">
+              <div className="p-4 border-t border-border bg-card shrink-0">
                 <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                   <Input
                     placeholder="Tulis pesan..."
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
-                    className="flex-1 rounded-full bg-brand-oat-milk/50 border-border"
+                    className="flex-1 rounded-full bg-muted/50 border-border"
                   />
-                  <Button type="submit" size="icon" className="rounded-full bg-brand-sage hover:bg-brand-sage/90 shrink-0" disabled={!messageInput.trim()}>
+                  <Button type="submit" size="icon" className="rounded-full bg-primary hover:bg-primary/90 shrink-0" disabled={!messageInput.trim()}>
                     <Send className="w-4 h-4" />
                   </Button>
                 </form>

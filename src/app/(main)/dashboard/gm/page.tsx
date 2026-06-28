@@ -54,7 +54,7 @@ export default function GMDashboard() {
   return (
     <div className="flex flex-col gap-8">
       {/* GM Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/60 border border-[#D7CBB5] backdrop-blur-sm p-6 rounded-2xl shadow-md">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/60 border border-[#D7CBB5]  p-6 rounded-2xl shadow-md">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Building2 className="w-5 h-5 text-[#28374A]" />

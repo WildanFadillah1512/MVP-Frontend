@@ -26,14 +26,14 @@ const TYPE_CONFIG: Record<string, { icon: React.ReactNode; color: string; bg: st
   INFO: {
     icon: <Info className="w-5 h-5" />,
     color: 'text-indigo-600 dark:text-indigo-400',
-    bg: 'bg-indigo-100 dark:bg-indigo-900/30',
-    border: 'border-indigo-200 dark:border-indigo-800/50',
+    bg: 'bg-primary/10 dark:bg-primary/10',
+    border: 'border-primary/30 dark:border-primary/20',
     label: 'Informasi',
   },
   ANNOUNCEMENT: {
     icon: <Megaphone className="w-5 h-5" />,
     color: 'text-violet-600 dark:text-violet-400',
-    bg: 'bg-violet-100 dark:bg-violet-900/30',
+    bg: 'bg-primary/10 dark:bg-primary/10',
     border: 'border-violet-200 dark:border-violet-800/50',
     label: 'Pengumuman',
   },
@@ -90,17 +90,17 @@ export default function NotificationsPage() {
 
   if (loading) return (
     <div className="flex h-[60vh] items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
     </div>
   );
 
   return (
     <div className="flex flex-col gap-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/50 dark:bg-slate-900/50 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800 backdrop-blur-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-800 dark:text-white flex items-center gap-3">
-            <Bell className="w-8 h-8 text-brand-primary" />
+          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
+            <Bell className="w-8 h-8 text-primary" />
             Notifikasi
             {unreadCount > 0 && (
               <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-sm font-bold bg-rose-500 text-white min-w-[28px]">
@@ -108,19 +108,19 @@ export default function NotificationsPage() {
               </span>
             )}
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Pusat peringatan, reminder, dan pemberitahuan sistem.</p>
+          <p className="text-muted-foreground mt-1">Pusat peringatan, reminder, dan pemberitahuan sistem.</p>
         </div>
         <div className="flex items-center gap-3">
           {/* Filter */}
-          <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+          <div className="flex gap-1 bg-muted p-1 rounded-xl">
             {(['ALL', 'UNREAD'] as const).map(f => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
                 className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
                   filter === f
-                    ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-white'
-                    : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                    ? 'bg-card shadow-sm text-foreground'
+                    : 'text-muted-foreground hover:text-foreground dark:text-muted-foreground'
                 }`}
               >
                 {f === 'ALL' ? 'Semua' : `Belum Dibaca (${unreadCount})`}
@@ -130,7 +130,7 @@ export default function NotificationsPage() {
           {unreadCount > 0 && (
             <button
               onClick={markAllRead}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-white  text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
             >
               <CheckCheck className="w-4 h-4" /> Tandai Semua Dibaca
             </button>
@@ -139,22 +139,22 @@ export default function NotificationsPage() {
       </div>
 
       {/* Notification List */}
-      <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-        <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
-          <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">Daftar Notifikasi</CardTitle>
+      <Card className="border-border shadow-md rounded-2xl overflow-hidden">
+        <CardHeader className="bg-card/50 border-b border-border p-6">
+          <CardTitle className="text-xl font-bold text-foreground">Daftar Notifikasi</CardTitle>
           <CardDescription>Notifikasi otomatis dari stok, laporan, cuti, dan KPI sistem</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {displayed.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-                <BellOff className="w-10 h-10 text-slate-300 dark:text-slate-600" />
+              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
+                <BellOff className="w-10 h-10 text-muted-foreground dark:text-muted-foreground" />
               </div>
-              <p className="text-slate-600 dark:text-slate-400 font-semibold text-lg">
+              <p className="text-muted-foreground font-semibold text-lg">
                 {filter === 'UNREAD' ? 'Tidak ada notifikasi yang belum dibaca' : 'Belum ada notifikasi'}
               </p>
-              <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
-                {filter === 'UNREAD' ? 'Semua notifikasi sudah dibaca 🎉' : 'Notifikasi baru akan muncul di sini secara otomatis'}
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground mt-1">
+                {filter === 'UNREAD' ? 'Semua notifikasi sudah dibaca ??' : 'Notifikasi baru akan muncul di sini secara otomatis'}
               </p>
             </div>
           ) : (
@@ -166,8 +166,8 @@ export default function NotificationsPage() {
                     key={n.id}
                     className={`flex items-start gap-4 px-6 py-5 transition-colors ${
                       n.isRead
-                        ? 'hover:bg-slate-50/50 dark:hover:bg-slate-800/20'
-                        : 'bg-indigo-50/30 dark:bg-indigo-900/10 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20'
+                        ? 'hover:bg-muted/50/50 hover:bg-muted/50'
+                        : 'bg-muted/30 dark:bg-primary/10 hover:bg-muted/50 dark:hover:bg-indigo-900/20'
                     }`}
                   >
                     {/* Icon */}
@@ -180,26 +180,26 @@ export default function NotificationsPage() {
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className={`font-semibold text-slate-800 dark:text-slate-200 ${!n.isRead ? 'font-bold' : ''}`}>
+                            <h3 className={`font-semibold text-foreground ${!n.isRead ? 'font-bold' : ''}`}>
                               {n.title}
                             </h3>
                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${cfg.bg} ${cfg.color} ${cfg.border}`}>
                               {cfg.label}
                             </span>
                             {!n.isRead && (
-                              <span className="inline-block w-2 h-2 rounded-full bg-brand-primary"></span>
+                              <span className="inline-block w-2 h-2 rounded-full bg-primary"></span>
                             )}
                           </div>
-                          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{n.message}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{n.message}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-muted-foreground">
                             {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: localeId })}
                           </p>
                           {!n.isRead && (
                             <button
                               onClick={() => markRead(n.id)}
-                              className="text-xs font-medium text-brand-primary hover:text-brand-primary/80 mt-1 transition-colors"
+                              className="text-xs font-medium text-primary hover:text-primary/80 mt-1 transition-colors"
                             >
                               Tandai dibaca
                             </button>

@@ -97,7 +97,7 @@ export default function TrackingPage() {
   if (loading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-brand-primary" />
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary" />
       </div>
     );
   }
@@ -107,26 +107,29 @@ export default function TrackingPage() {
       <div className="flex h-[60vh] flex-col items-center justify-center gap-4 text-center">
         <MapPin className="h-16 w-16 text-rose-500 opacity-50" />
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Akses ditolak</h2>
-          <p className="mt-2 text-slate-500">Tracking lokasi hanya dapat dibuka oleh atasan sesuai struktur tim.</p>
+          <h2 className="text-2xl font-bold text-foreground">Akses ditolak</h2>
+          <p className="mt-2 text-muted-foreground">Tracking lokasi hanya dapat dibuka oleh atasan sesuai struktur tim.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 rounded-lg border border-[#D7CBB5]/70 bg-white/85 p-5 shadow-sm dark:border-[#754437] dark:bg-[#4A2B21]/80 md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#D7CBB5] bg-[#FAF3E0] px-3 py-1 text-xs font-semibold text-[#754437] dark:border-[#754437] dark:bg-[#3E231B] dark:text-[#D7CBB5]">
+    <div className="flex flex-col gap-6 pb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-secondary text-secondary-foreground p-8 rounded-3xl shadow-xl shadow-secondary/10 relative overflow-hidden">
+        {/* Decorative background pattern */}
+        <div className="absolute right-0 top-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+        
+        <div className="relative z-10">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold tracking-wide uppercase">
             <ShieldCheck className="h-3.5 w-3.5" />
             Akses sesuai hierarki
           </div>
-          <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight text-slate-800 dark:text-white">
-            <MapPin className="h-8 w-8 text-brand-primary" />
+          <h1 className="flex items-center gap-3 text-3xl md:text-4xl font-extrabold tracking-tight">
+            <MapPin className="h-8 w-8 text-secondary-foreground/80" />
             Tracking Lokasi Karyawan
           </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-2 text-secondary-foreground/70 font-medium">
             Pantau titik GPS dari check-in dan check-out tim yang berada di bawah wewenang akun ini.
           </p>
         </div>
@@ -134,80 +137,82 @@ export default function TrackingPage() {
           type="button"
           onClick={() => fetchLocations(true)}
           disabled={refreshing}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-brand-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-primary/90 disabled:opacity-60"
+          className="relative z-10 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 font-bold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
         >
           <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-          Refresh
+          Refresh Data
         </button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="rounded-lg border-[#D7CBB5]/70">
+      <div className="grid gap-5 md:grid-cols-3">
+        <Card className="border-border shadow-sm rounded-2xl hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
-            <CardDescription>Karyawan terpantau</CardDescription>
-            <CardTitle className="text-3xl">{latestLocations.length}</CardTitle>
+            <CardDescription className="font-medium">Karyawan terpantau</CardDescription>
+            <CardTitle className="text-4xl font-black text-foreground">{latestLocations.length}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="rounded-lg border-[#D7CBB5]/70">
+        <Card className="border-border shadow-sm rounded-2xl hover:shadow-md transition-shadow bg-emerald-50/50 dark:bg-emerald-900/10">
           <CardHeader className="pb-2">
-            <CardDescription>Lokasi terakhir check-in</CardDescription>
-            <CardTitle className="text-3xl text-emerald-700">{activitySummary.checkedIn}</CardTitle>
+            <CardDescription className="font-medium text-emerald-800 dark:text-emerald-300">Lokasi terakhir check-in</CardDescription>
+            <CardTitle className="text-4xl font-black text-emerald-700 dark:text-emerald-400">{activitySummary.checkedIn}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="rounded-lg border-[#D7CBB5]/70">
+        <Card className="border-border shadow-sm rounded-2xl hover:shadow-md transition-shadow bg-amber-50/50 dark:bg-amber-900/10">
           <CardHeader className="pb-2">
-            <CardDescription>Lokasi terakhir check-out</CardDescription>
-            <CardTitle className="text-3xl text-amber-700">{activitySummary.checkedOut}</CardTitle>
+            <CardDescription className="font-medium text-amber-800 dark:text-amber-300">Lokasi terakhir check-out</CardDescription>
+            <CardTitle className="text-4xl font-black text-amber-700 dark:text-amber-400">{activitySummary.checkedOut}</CardTitle>
           </CardHeader>
         </Card>
       </div>
 
-      <Card className="rounded-lg border-[#D7CBB5]/70 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">Lokasi terakhir per karyawan</CardTitle>
-          <CardDescription>Posisi terbaru berdasarkan aktivitas absensi terakhir.</CardDescription>
+      <Card className="border-border shadow-sm rounded-2xl overflow-hidden">
+        <CardHeader className="bg-card border-b border-border/50 px-6 py-5">
+          <CardTitle className="text-xl font-bold text-foreground">Lokasi Terbaru Per Karyawan</CardTitle>
+          <CardDescription>Posisi terkini berdasarkan aktivitas absensi terakhir.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6 bg-muted/10">
           {latestLocations.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-slate-300 px-6 py-10 text-center text-sm text-slate-500">
-              Belum ada titik lokasi dari check-in atau check-out tim.
+            <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+              <MapPin className="h-12 w-12 opacity-20 mb-3" />
+              <p className="font-semibold text-foreground">Belum ada titik lokasi</p>
+              <p className="text-sm">Tidak ada catatan check-in atau check-out dari tim Anda.</p>
             </div>
           ) : (
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {latestLocations.map((location) => (
-                <div key={location.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div key={location.id} className="rounded-xl border border-border bg-card p-5 shadow-sm hover:shadow-md transition-all group">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate font-semibold text-slate-800 dark:text-slate-100">{location.user.name}</p>
-                      <p className="truncate text-xs text-slate-500">
+                      <p className="truncate font-bold text-foreground text-lg">{location.user.name}</p>
+                      <p className="truncate text-xs text-muted-foreground font-medium mt-0.5">
                         {location.user.division.name} - {location.user.role.name}
                       </p>
                     </div>
                     <span
-                      className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${
+                      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${
                         location.activity === "CHECK_IN"
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-800"
+                          : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:border-amber-800"
                       }`}
                     >
                       {getActivityLabel(location.activity)}
                     </span>
                   </div>
-                  <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
-                    <Clock className="h-3.5 w-3.5" />
+                  <div className="mt-5 flex items-center gap-2 text-sm font-medium text-muted-foreground bg-muted/50 p-2.5 rounded-lg">
+                    <Clock className="h-4 w-4" />
                     {formatDistanceToNow(new Date(location.createdAt), { addSuffix: true, locale: localeId })}
                   </div>
-                  <div className="mt-2 font-mono text-[11px] text-slate-400">
-                    {location.latitude}, {location.longitude}
+                  <div className="mt-3 font-mono text-xs text-muted-foreground/60 truncate">
+                    📍 {location.latitude}, {location.longitude}
                   </div>
                   <a
                     href={getMapsUrl(location)}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-brand-primary/30 text-xs font-semibold text-brand-primary transition-colors hover:bg-brand-primary hover:text-white"
+                    className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary text-sm font-bold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
                   >
-                    <Navigation className="h-3.5 w-3.5" />
-                    Buka Google Maps
+                    <Navigation className="h-4 w-4" />
+                    Buka di Google Maps
                   </a>
                 </div>
               ))}
@@ -216,47 +221,47 @@ export default function TrackingPage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-lg border-[#D7CBB5]/70 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">Riwayat lokasi absensi</CardTitle>
-          <CardDescription>{logs.length} catatan GPS terbaru.</CardDescription>
+      <Card className="border-border shadow-sm rounded-2xl overflow-hidden">
+        <CardHeader className="bg-card border-b border-border/50 px-6 py-5">
+          <CardTitle className="text-xl font-bold text-foreground">Riwayat Semua Lokasi Absensi</CardTitle>
+          <CardDescription>{logs.length} catatan GPS terbaru dari seluruh anggota tim.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="border-y border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/50">
+              <thead className="border-b border-border bg-muted/20">
                 <tr>
-                  <th className="px-6 py-3 font-semibold text-slate-600 dark:text-slate-300">Waktu</th>
-                  <th className="px-6 py-3 font-semibold text-slate-600 dark:text-slate-300">Karyawan</th>
-                  <th className="px-6 py-3 text-center font-semibold text-slate-600 dark:text-slate-300">Aktivitas</th>
-                  <th className="px-6 py-3 font-semibold text-slate-600 dark:text-slate-300">Catatan</th>
-                  <th className="px-6 py-3 text-right font-semibold text-slate-600 dark:text-slate-300">Aksi</th>
+                  <th className="px-6 py-4 font-semibold text-muted-foreground">Waktu</th>
+                  <th className="px-6 py-4 font-semibold text-muted-foreground">Karyawan</th>
+                  <th className="px-6 py-4 text-center font-semibold text-muted-foreground">Aktivitas</th>
+                  <th className="px-6 py-4 font-semibold text-muted-foreground">Titik GPS & Catatan</th>
+                  <th className="px-6 py-4 text-right font-semibold text-muted-foreground">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+              <tbody className="divide-y divide-border/50">
                 {logs.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                    <td colSpan={5} className="px-6 py-16 text-center text-muted-foreground font-medium">
                       Belum ada data tracking lokasi
                     </td>
                   </tr>
                 ) : (
                   logs.map((location) => (
-                    <tr key={location.id} className="transition-colors hover:bg-[#FAF3E0]/45 dark:hover:bg-slate-800/40">
-                      <td className="whitespace-nowrap px-6 py-4 text-xs text-slate-500">
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          {format(new Date(location.createdAt), "dd MMM yyyy, HH:mm", { locale: localeId })}
+                    <tr key={location.id} className="transition-colors hover:bg-muted/50">
+                      <td className="whitespace-nowrap px-6 py-4 font-mono text-sm text-muted-foreground">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-foreground">{format(new Date(location.createdAt), "HH:mm")}</span>
+                          <span className="text-xs">{format(new Date(location.createdAt), "dd MMM yyyy", { locale: localeId })}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#28374A] text-white">
-                            <UserIcon className="h-4 w-4" />
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
+                            {location.user.name.substring(0, 2).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-semibold text-slate-800 dark:text-slate-200">{location.user.name}</p>
-                            <p className="text-xs text-slate-400">
+                            <p className="font-bold text-foreground text-sm">{location.user.name}</p>
+                            <p className="text-xs font-medium text-muted-foreground mt-0.5">
                               {location.user.division.name} - {location.user.role.name}
                             </p>
                           </div>
@@ -264,18 +269,18 @@ export default function TrackingPage() {
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${
+                          className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-bold ${
                             location.activity === "CHECK_IN"
-                              ? "border-emerald-200 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
-                              : "border-amber-200 bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800"
+                              : "border-amber-200 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:border-amber-800"
                           }`}
                         >
                           {getActivityLabel(location.activity)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-xs text-slate-600 dark:text-slate-300">
-                        {location.notes || "-"}
-                        <div className="mt-1 font-mono text-[10px] text-slate-400">
+                      <td className="px-6 py-4 text-sm text-foreground">
+                        <span className="block font-medium mb-1">{location.notes || "-"}</span>
+                        <div className="font-mono text-xs text-muted-foreground/60">
                           {location.latitude}, {location.longitude}
                         </div>
                       </td>
@@ -284,7 +289,7 @@ export default function TrackingPage() {
                           href={getMapsUrl(location)}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-brand-primary/90"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-bold text-foreground transition-all hover:bg-primary hover:text-primary-foreground hover:border-primary shadow-sm"
                         >
                           <Navigation className="h-3 w-3" />
                           Peta

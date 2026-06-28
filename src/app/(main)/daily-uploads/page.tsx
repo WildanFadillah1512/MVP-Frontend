@@ -60,17 +60,17 @@ export default function DailyUploadsPage() {
   return (
     <div className="flex flex-col gap-8">
       {/* Header */}
-      <div className="bg-white/50 dark:bg-slate-900/50 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800 backdrop-blur-sm">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-800 dark:text-white">Upload Harian</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Unggah file bukti pekerjaan, foto, atau dokumen harian Anda ke Google Drive perusahaan.</p>
+      <div className="pb-2">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Upload Harian</h1>
+        <p className="text-muted-foreground mt-1">Unggah file bukti pekerjaan, foto, atau dokumen harian Anda ke Google Drive perusahaan.</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
         {/* Upload Form */}
-        <Card className="lg:col-span-2 glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
-            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <CloudUpload className="w-5 h-5 text-brand-primary" /> Upload Dokumen
+        <Card className="lg:col-span-2 border-border shadow-md rounded-2xl overflow-hidden">
+          <CardHeader className="bg-card/50 border-b border-border p-6">
+            <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+              <CloudUpload className="w-5 h-5 text-primary" /> Upload Dokumen
             </CardTitle>
             <CardDescription>File disimpan terpusat di Google Drive perusahaan</CardDescription>
           </CardHeader>
@@ -84,10 +84,10 @@ export default function DailyUploadsPage() {
                 onClick={() => fileInputRef.current?.click()}
                 className={`relative flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed cursor-pointer transition-all ${
                   dragActive
-                    ? 'border-brand-primary bg-indigo-50 dark:bg-indigo-900/20'
+                    ? 'border-primary bg-muted/50 dark:bg-primary/10'
                     : selectedFile
                       ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/10'
-                      : 'border-slate-200 dark:border-slate-700 hover:border-brand-primary/50 hover:bg-indigo-50/30 dark:hover:bg-slate-800/50'
+                      : 'border-border hover:border-primary/50 hover:bg-muted/50'
                 }`}
               >
                 <input
@@ -104,24 +104,24 @@ export default function DailyUploadsPage() {
                     </div>
                     <div className="text-center">
                       <p className="font-semibold text-emerald-700 dark:text-emerald-400">{selectedFile.name}</p>
-                      <p className="text-sm text-slate-400 mt-0.5">{formatFileSize(selectedFile.size)}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">{formatFileSize(selectedFile.size)}</p>
                     </div>
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                      className="text-xs text-slate-400 hover:text-rose-500 transition-colors"
+                      className="text-xs text-muted-foreground hover:text-rose-500 transition-colors"
                     >
                       Ganti file
                     </button>
                   </>
                 ) : (
                   <>
-                    <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                      <UploadCloud className="w-8 h-8 text-slate-400" />
+                    <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
+                      <UploadCloud className="w-8 h-8 text-muted-foreground" />
                     </div>
                     <div className="text-center">
-                      <p className="font-semibold text-slate-700 dark:text-slate-300">Drag & drop atau klik di sini</p>
-                      <p className="text-sm text-slate-400 mt-1">JPG, PNG, PDF, Excel · Maks. 10MB</p>
+                      <p className="font-semibold text-foreground dark:text-muted-foreground">Drag & drop atau klik di sini</p>
+                      <p className="text-sm text-muted-foreground mt-1">JPG, PNG, PDF, Excel · Maks. 10MB</p>
                     </div>
                   </>
                 )}
@@ -130,7 +130,7 @@ export default function DailyUploadsPage() {
               <button
                 type="submit"
                 disabled={isUploading || !selectedFile}
-                className="w-full h-11 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold transition-colors shadow-lg shadow-brand-primary/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full h-11 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isUploading ? (
                   <>
@@ -146,48 +146,48 @@ export default function DailyUploadsPage() {
         </Card>
 
         {/* History */}
-        <Card className="lg:col-span-3 glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
-            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <FileImage className="w-5 h-5 text-brand-primary" /> Riwayat Unggahan
+        <Card className="lg:col-span-3 border-border shadow-md rounded-2xl overflow-hidden">
+          <CardHeader className="bg-card/50 border-b border-border p-6">
+            <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+              <FileImage className="w-5 h-5 text-primary" /> Riwayat Unggahan
             </CardTitle>
             <CardDescription>{uploads.length} file tersimpan di cloud</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             {uploads.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-                  <FileImage className="w-8 h-8 text-slate-400" />
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <FileImage className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 font-medium">Belum ada file yang diunggah</p>
-                <p className="text-sm text-slate-400 mt-1">File yang di-upload akan tampil di sini</p>
+                <p className="text-muted-foreground font-medium">Belum ada file yang diunggah</p>
+                <p className="text-sm text-muted-foreground mt-1">File yang di-upload akan tampil di sini</p>
               </div>
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
                 {uploads.map((upload) => (
-                  <div key={upload.id} className="flex items-center justify-between px-6 py-4 hover:bg-indigo-50/30 dark:hover:bg-slate-800/30 transition-colors gap-4">
+                  <div key={upload.id} className="flex items-center justify-between px-6 py-4 hover:bg-muted/50 transition-colors gap-4">
                     <div className="flex items-center gap-4 overflow-hidden">
-                      <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/10 flex items-center justify-center shrink-0">
                         <File className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                       </div>
                       <div className="overflow-hidden">
-                        <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm truncate" title={upload.fileName}>
+                        <p className="font-semibold text-foreground text-sm truncate" title={upload.fileName}>
                           {upload.fileName}
                         </p>
-                        <p className="text-xs text-slate-400 mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-0.5">
                           {format(new Date(upload.createdAt), "dd MMM yyyy 'pukul' HH:mm", { locale: localeId })}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/50">
-                        ✓ Cloud
+                        ? Cloud
                       </span>
                       <a
                         href={upload.fileUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 text-xs font-medium hover:bg-indigo-100 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 dark:border-indigo-800 bg-muted/50 dark:bg-primary/10 text-primary dark:text-primary text-xs font-medium hover:bg-primary/10 transition-colors"
                       >
                         <ExternalLink className="w-3 h-3" /> Lihat
                       </a>

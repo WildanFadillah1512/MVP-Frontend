@@ -93,32 +93,42 @@ export default function DailyReportsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 pb-10">
       {/* Header */}
-      <div className="bg-white/50 dark:bg-slate-900/50 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800 backdrop-blur-sm">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-800 dark:text-white">Laporan Harian</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Isi laporan pekerjaan harian sebelum terkunci otomatis dalam 24 jam.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-secondary text-secondary-foreground p-8 rounded-3xl shadow-xl shadow-secondary/10 relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+        <div className="relative z-10">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Laporan Harian</h1>
+          <p className="text-secondary-foreground/70 mt-2 font-medium">Isi laporan pekerjaan sebelum terkunci otomatis dalam 24 jam.</p>
+        </div>
+        <div className="relative z-10 flex items-center gap-2 bg-white/10 border border-white/10 rounded-2xl px-6 py-4 ">
+          <ClipboardList className="w-5 h-5 text-secondary-foreground/70 mr-1" />
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-secondary-foreground/50">Total Laporan</p>
+            <p className="text-3xl font-black">{reports.length}</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
         {/* Form Card */}
-        <Card className={`lg:col-span-2 glass-card border-0 shadow-md rounded-2xl overflow-hidden ${isLocked ? 'ring-2 ring-rose-300 dark:ring-rose-800' : ''}`}>
-          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
+        <Card className={`lg:col-span-2 bg-card border-border shadow-sm rounded-2xl overflow-hidden ${isLocked ? 'ring-2 ring-rose-400 dark:ring-rose-700' : ''}`}>
+          <CardHeader className="bg-secondary text-secondary-foreground px-6 py-5">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">Laporan Hari Ini</CardTitle>
-                <CardDescription>{format(new Date(), 'EEEE, dd MMMM yyyy', { locale: id })}</CardDescription>
+                <CardTitle className="text-base font-bold">Laporan Hari Ini</CardTitle>
+                <CardDescription className="text-secondary-foreground/60">{format(new Date(), 'EEEE, dd MMMM yyyy', { locale: id })}</CardDescription>
               </div>
               {isLocked ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-800/50">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/30 text-white border border-rose-400/30">
                   <Lock className="w-3 h-3" /> Terkunci
                 </span>
               ) : isSubmitted ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/50">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/30 text-white border border-emerald-400/30">
                   <CheckCircle2 className="w-3 h-3" /> Terkirim
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/10 text-secondary-foreground border border-white/10">
                   Draft
                 </span>
               )}
@@ -126,14 +136,14 @@ export default function DailyReportsPage() {
           </CardHeader>
           <CardContent className="p-6">
             {isLocked ? (
-              <div className="flex flex-col items-center justify-center py-10 text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/20 flex items-center justify-center">
+              <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+                <div className="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center border border-rose-200 dark:border-rose-800/50">
                   <Lock className="w-8 h-8 text-rose-500" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-800 dark:text-slate-200">Laporan Telah Terkunci</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-xs">
-                    Waktu pengisian laporan sudah melewati batas 24 jam. Hubungi Manager atau Admin untuk membuka kunci.
+                  <h3 className="font-black text-foreground text-lg">Laporan Telah Terkunci</h3>
+                  <p className="text-sm text-muted-foreground mt-2 max-w-xs">
+                    Waktu pengisian sudah melewati batas 24 jam. Hubungi Manager atau Admin untuk membuka kunci.
                   </p>
                 </div>
               </div>
@@ -142,9 +152,9 @@ export default function DailyReportsPage() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                   <FormField control={form.control} name="description" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-600 dark:text-slate-300 font-medium">Deskripsi Pekerjaan <span className="text-rose-500">*</span></FormLabel>
+                      <FormLabel className="font-bold text-foreground">Deskripsi Pekerjaan <span className="text-rose-500">*</span></FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Jelaskan apa yang Anda kerjakan hari ini..." className="min-h-[100px] resize-none rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus-visible:ring-brand-primary" {...field} />
+                        <Textarea placeholder="Jelaskan apa yang Anda kerjakan hari ini..." className="min-h-[100px] resize-none rounded-xl bg-muted/20 border-border focus-visible:ring-primary" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -152,9 +162,9 @@ export default function DailyReportsPage() {
 
                   <FormField control={form.control} name="output" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-600 dark:text-slate-300 font-medium">Output / Hasil <span className="text-rose-500">*</span></FormLabel>
+                      <FormLabel className="font-bold text-foreground">Output / Hasil <span className="text-rose-500">*</span></FormLabel>
                       <FormControl>
-                        <Input placeholder="Contoh: Selesaikan 5 modul, 10 desain UI" {...field} className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus-visible:ring-brand-primary" />
+                        <Input placeholder="Contoh: Selesaikan 5 modul, 10 desain UI" {...field} className="h-11 rounded-xl bg-muted/20 border-border focus-visible:ring-primary" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -162,9 +172,9 @@ export default function DailyReportsPage() {
 
                   <FormField control={form.control} name="obstacles" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-600 dark:text-slate-300 font-medium">Kendala <span className="text-slate-400 font-normal text-xs">(Opsional)</span></FormLabel>
+                      <FormLabel className="font-bold text-foreground">Kendala <span className="text-muted-foreground font-normal text-xs">(Opsional)</span></FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Apakah ada hambatan saat bekerja?" className="resize-none rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus-visible:ring-brand-primary" {...field} />
+                        <Textarea placeholder="Apakah ada hambatan saat bekerja?" className="resize-none rounded-xl bg-muted/20 border-border focus-visible:ring-primary" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -172,16 +182,16 @@ export default function DailyReportsPage() {
 
                   <FormField control={form.control} name="notes" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-600 dark:text-slate-300 font-medium">Catatan Tambahan <span className="text-slate-400 font-normal text-xs">(Opsional)</span></FormLabel>
+                      <FormLabel className="font-bold text-foreground">Catatan Tambahan <span className="text-muted-foreground font-normal text-xs">(Opsional)</span></FormLabel>
                       <FormControl>
-                        <Input placeholder="Catatan untuk atasan..." {...field} className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus-visible:ring-brand-primary" />
+                        <Input placeholder="Catatan untuk atasan..." {...field} className="h-11 rounded-xl bg-muted/20 border-border focus-visible:ring-primary" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
 
-                  <Button type="submit" className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white rounded-xl shadow-lg shadow-brand-primary/20 h-11" disabled={isLoading}>
-                    <Send className="w-4 h-4 mr-2" />
+                  <Button type="submit" className="w-full h-12 rounded-xl shadow-md font-bold transition-all hover:-translate-y-0.5" disabled={isLoading}>
+                    <Send className="w-4 h-4" />
                     {isLoading ? 'Menyimpan...' : isSubmitted ? 'Perbarui Laporan' : 'Kirim Laporan'}
                   </Button>
                 </form>
@@ -190,42 +200,42 @@ export default function DailyReportsPage() {
           </CardContent>
         </Card>
 
-        {/* History Card */}
-        <Card className="lg:col-span-3 glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
-            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-brand-primary" /> Riwayat Laporan
+        {/* History Card — Timeline Style */}
+        <Card className="lg:col-span-3 bg-card border-border shadow-sm rounded-2xl overflow-hidden">
+          <CardHeader className="border-b border-border/50 bg-muted/10 px-6 py-5">
+            <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-primary" /> Riwayat Laporan
             </CardTitle>
             <CardDescription>30 hari terakhir · {reports.length} laporan</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+            <div className="divide-y divide-border/50">
               {reports.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-                    <FileText className="w-8 h-8 text-slate-400" />
+                <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                    <FileText className="w-8 h-8 text-muted-foreground/40" />
                   </div>
-                  <p className="text-slate-600 dark:text-slate-400 font-medium">Belum ada riwayat laporan</p>
-                  <p className="text-sm text-slate-400 mt-1">Mulai isi laporan harian Anda hari ini</p>
+                  <p className="font-bold text-foreground">Belum ada riwayat laporan</p>
+                  <p className="text-sm text-muted-foreground mt-1">Mulai isi laporan harian Anda hari ini</p>
                 </div>
               ) : (
                 reports.map((report) => (
-                  <div key={report.id} className="flex gap-4 px-6 py-4 hover:bg-indigo-50/30 dark:hover:bg-slate-800/30 transition-colors">
-                    <div className="mt-1 shrink-0">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                  <div key={report.id} className="flex gap-4 px-6 py-5 hover:bg-muted/50 transition-colors">
+                    <div className="mt-0.5 shrink-0">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                         report.status === 'LOCKED'
-                          ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400'
-                          : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
+                          ? 'bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50'
+                          : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50'
                       }`}>
                         {report.status === 'LOCKED' ? <Lock className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <p className="font-bold text-foreground text-sm">
                           {format(new Date(report.date), 'EEEE, dd MMM yyyy', { locale: id })}
                         </p>
-                        <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                        <span className={`shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
                           report.status === 'LOCKED'
                             ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-800/50'
                             : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/50'
@@ -233,9 +243,9 @@ export default function DailyReportsPage() {
                           {report.status === 'LOCKED' ? 'Terkunci' : 'Terkirim'}
                         </span>
                       </div>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">{report.description}</p>
+                      <p className="text-sm text-muted-foreground line-clamp-1">{report.description}</p>
                       {report.output && (
-                        <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400 mt-1 flex items-center gap-1">
+                        <p className="text-xs font-bold text-primary mt-1.5 flex items-center gap-1">
                           <CheckCircle2 className="w-3 h-3" /> {report.output}
                         </p>
                       )}
@@ -249,27 +259,29 @@ export default function DailyReportsPage() {
       </div>
 
       {canUnlock && (
-        <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
-            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <Unlock className="w-5 h-5 text-brand-primary" /> Laporan Terkunci Tim
+        <Card className="bg-card border-border shadow-sm rounded-2xl overflow-hidden">
+          <CardHeader className="border-b border-border/50 bg-muted/10 px-6 py-5">
+            <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+              <Unlock className="w-5 h-5 text-primary" /> Laporan Terkunci Tim
             </CardTitle>
             <CardDescription>{lockedReports.length} laporan menunggu pembukaan oleh atasan</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+            <div className="divide-y divide-border/50">
               {lockedReports.length === 0 ? (
-                <p className="text-center text-slate-400 py-10">Tidak ada laporan terkunci</p>
+                <div className="flex flex-col items-center justify-center py-10 text-center px-4">
+                  <p className="font-medium text-muted-foreground">Tidak ada laporan terkunci</p>
+                </div>
               ) : lockedReports.map((report) => (
-                <div key={report.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-4 hover:bg-indigo-50/30 dark:hover:bg-slate-800/30 transition-colors">
+                <div key={report.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-5 hover:bg-muted/50 transition-colors">
                   <div>
-                    <p className="font-semibold text-slate-800 dark:text-slate-200">{report.user?.name}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="font-bold text-foreground">{report.user?.name}</p>
+                    <p className="text-xs font-medium text-muted-foreground mt-0.5">
                       {report.user?.role?.name} / {report.user?.division?.name} · {format(new Date(report.date), 'dd MMM yyyy', { locale: id })}
                     </p>
                   </div>
-                  <Button size="sm" className="bg-brand-primary text-white rounded-lg" onClick={() => handleUnlock(report.id)}>
-                    <Unlock className="w-3.5 h-3.5 mr-1" /> Buka Laporan
+                  <Button size="sm" className="rounded-xl font-bold shadow-sm transition-all hover:-translate-y-0.5" onClick={() => handleUnlock(report.id)}>
+                    <Unlock className="w-3.5 h-3.5 mr-1.5" /> Buka Laporan
                   </Button>
                 </div>
               ))}

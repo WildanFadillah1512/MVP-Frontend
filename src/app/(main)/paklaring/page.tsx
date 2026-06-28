@@ -143,26 +143,26 @@ export default function PaklaringPage() {
 
   if (loading) return (
     <div className="flex h-[60vh] items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
     </div>
   );
 
   return (
     <div className="flex flex-col gap-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/50 dark:bg-slate-900/50 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800 backdrop-blur-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-800 dark:text-white flex items-center gap-2">
-            <FileText className="w-8 h-8 text-brand-primary" /> Surat Paklaring
+          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <FileText className="w-8 h-8 text-primary" /> Surat Paklaring
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Terbitkan dan kelola surat keterangan kerja karyawan.</p>
+          <p className="text-muted-foreground mt-1">Terbitkan dan kelola surat keterangan kerja karyawan.</p>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger
             render={
-              <Button className="rounded-xl bg-brand-primary hover:bg-brand-primary/90 shadow-lg">
-                <Plus className="w-4 h-4 mr-2" /> Terbitkan Paklaring
+              <Button className="rounded-xl shadow-sm">
+                <Plus className="w-4 h-4" /> Terbitkan Paklaring
               </Button>
             }
           />
@@ -211,7 +211,7 @@ export default function PaklaringPage() {
               <div className="space-y-2">
                 <Label>Penilaian Performa</Label>
                 <Input value={form.performance} onChange={e => setForm({...form, performance: e.target.value})} placeholder="Misal: Sangat Baik / Memuaskan" className="rounded-xl" />
-                <p className="text-[11px] text-slate-500">Opsional. Default: 'baik'</p>
+                <p className="text-[11px] text-muted-foreground">Opsional. Default: 'baik'</p>
               </div>
 
               <div className="space-y-2">
@@ -221,7 +221,7 @@ export default function PaklaringPage() {
 
               <div className="pt-4 flex justify-end">
                 <Button type="submit" disabled={isSubmitting} className="rounded-xl w-full sm:w-auto">
-                  {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memproses...</> : 'Terbitkan Surat'}
+                  {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Memproses...</> : 'Terbitkan Surat'}
                 </Button>
               </div>
             </form>
@@ -230,42 +230,42 @@ export default function PaklaringPage() {
       </div>
 
       {/* List */}
-      <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-        <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
-          <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">Riwayat Paklaring</CardTitle>
+      <Card className="border-border shadow-md rounded-2xl overflow-hidden">
+        <CardHeader className="bg-card/50 border-b border-border p-6">
+          <CardTitle className="text-xl font-bold text-foreground">Riwayat Paklaring</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
             {paklarings.length === 0 ? (
               <div className="flex flex-col items-center py-16 text-center">
-                <FileText className="w-12 h-12 text-slate-300 mb-3" />
-                <p className="text-slate-500">Belum ada surat paklaring yang diterbitkan</p>
+                <FileText className="w-12 h-12 text-muted-foreground mb-3" />
+                <p className="text-muted-foreground">Belum ada surat paklaring yang diterbitkan</p>
               </div>
             ) : paklarings.map(paklaring => (
-              <div key={paklaring.id} className="p-5 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors flex items-center justify-between">
+              <div key={paklaring.id} className="p-5 hover:bg-muted/50/50 hover:bg-muted/50 transition-colors flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded-md">
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
                       {paklaring.letterNumber}
                     </span>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-muted-foreground">
                       Diterbitkan: {format(new Date(paklaring.createdAt), 'dd MMM yyyy')}
                     </span>
                   </div>
-                  <p className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                    <User className="w-4 h-4 text-slate-400" /> {paklaring.employee?.name}
+                  <p className="font-bold text-foreground flex items-center gap-2">
+                    <User className="w-4 h-4 text-muted-foreground" /> {paklaring.employee?.name}
                   </p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2 mt-1">
-                    <Briefcase className="w-4 h-4 text-slate-400" /> {paklaring.position} ({paklaring.department})
+                  <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                    <Briefcase className="w-4 h-4 text-muted-foreground" /> {paklaring.position} ({paklaring.department})
                   </p>
-                  <p className="text-xs text-slate-500 flex items-center gap-2 mt-1">
-                    <Calendar className="w-4 h-4 text-slate-400" /> 
+                  <p className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
+                    <Calendar className="w-4 h-4 text-muted-foreground" /> 
                     {format(new Date(paklaring.startDate), 'dd MMM yyyy')} - {format(new Date(paklaring.endDate), 'dd MMM yyyy')}
                   </p>
                 </div>
                 <div>
                   <Button variant="outline" size="sm" onClick={() => handlePrint(paklaring)} className="rounded-lg shadow-sm">
-                    <Printer className="w-4 h-4 mr-2" /> Cetak
+                    <Printer className="w-4 h-4" /> Cetak
                   </Button>
                 </div>
               </div>

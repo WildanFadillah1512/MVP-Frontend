@@ -1,27 +1,23 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { attendanceApi } from '@/features/attendance/api/attendance.api';
 import { api } from '@/lib/api/axios';
 import { toast } from 'sonner';
-import { Clock, CheckCircle, LogOut, Calendar, TrendingUp, AlertCircle, Plus, Timer } from 'lucide-react';
+import { Clock, CheckCircle, LogOut, Calendar, TrendingUp, AlertCircle, Timer, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 export default function AttendancePage() {
+  const router = useRouter();
   const [attendances, setAttendances] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [todayAttendance, setTodayAttendance] = useState<any>(null);
   const [time, setTime] = useState<Date>(new Date());
-  const [overtimes, setOvertimes] = useState<any[]>([]);
-  const [allOvertimes, setAllOvertimes] = useState<any[]>([]);
-  const [showOvertimeForm, setShowOvertimeForm] = useState(false);
-  const [overtimeForm, setOvertimeForm] = useState({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '', endTime: '', reason: '', notes: '' });
-  const [submittingOT, setSubmittingOT] = useState(false);
+  
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [allAttendanceToday, setAllAttendanceToday] = useState<any[]>([]);
 
@@ -59,48 +55,10 @@ export default function AttendancePage() {
         api.get('/attendances/today/all')
           .then(r => { if (r.data.success) setAllAttendanceToday(r.data.data); })
           .catch(() => {});
-        api.get('/overtime/all')
-          .then(r => { if (r.data.success) setAllOvertimes(r.data.data); })
-          .catch(() => {});
       }
     }
     fetchAttendances();
-    api.get('/overtime/me').then(r => { if (r.data.success) setOvertimes(r.data.data); }).catch(() => {});
   }, []);
-
-  const handleOvertimeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmittingOT(true);
-    try {
-      const payload = {
-        ...overtimeForm,
-        startTime: `${overtimeForm.date}T${overtimeForm.startTime}:00`,
-        endTime: `${overtimeForm.date}T${overtimeForm.endTime}:00`
-      };
-      const res = await api.post('/overtime', payload);
-      if (res.data.success) {
-        toast.success('Pengajuan lembur berhasil dikirim');
-        setShowOvertimeForm(false);
-        setOvertimeForm({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '', endTime: '', reason: '', notes: '' });
-        const r = await api.get('/overtime/me');
-        if (r.data.success) setOvertimes(r.data.data);
-      }
-    } catch { toast.error('Gagal mengajukan lembur'); }
-    finally { setSubmittingOT(false); }
-  };
-
-  const handleOvertimeApproval = async (id: string, status: 'APPROVED' | 'REJECTED') => {
-    try {
-      const res = await api.patch(`/overtime/${id}/status`, { status });
-      if (res.data.success) {
-        toast.success(`Lembur berhasil di-${status === 'APPROVED' ? 'setujui' : 'tolak'}`);
-        const r = await api.get('/overtime/all');
-        if (r.data.success) setAllOvertimes(r.data.data);
-      }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal memproses lembur');
-    }
-  };
 
   const handleCheckIn = async () => {
     setIsLoading(true);
@@ -168,164 +126,133 @@ export default function AttendancePage() {
   const telatCount = attendances.filter(a => a.status === 'TELAT').length;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 pb-10">
       {/* Page Header */}
-      <div className="bg-white/50 dark:bg-slate-900/50 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800 backdrop-blur-sm">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-800 dark:text-white">Absensi Harian</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">
-          {currentUser ? (
-            <span>Login sebagai: <strong className="text-slate-700 dark:text-slate-200">{currentUser.name}</strong> — {currentUser.role?.name} / {currentUser.division?.name}</span>
-          ) : 'Catat jam masuk dan pulang kerja Anda setiap hari.'}
-        </p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Absensi Harian</h1>
+          <p className="text-muted-foreground mt-1">
+            {currentUser ? (
+              <span>Login sebagai: <strong className="text-foreground">{currentUser.name}</strong> — {currentUser.role?.name} / {currentUser.division?.name}</span>
+            ) : 'Catat jam masuk dan pulang kerja Anda setiap hari.'}
+          </p>
+        </div>
+        <div className="flex gap-3">
+            <Button onClick={() => router.push('/overtime')} className="rounded-xl h-11 px-6 shadow-sm font-semibold transition-all hover:scale-[1.02]">
+              <Timer className="w-4 h-4" /> Kelola Lembur
+            </Button>
+        </div>
       </div>
 
-      {/* Rekap Absensi Semua Karyawan Hari Ini — Hanya untuk Atasan */}
-      {currentUser && EXECUTIVE_ROLES.includes(currentUser.role?.name) && allAttendanceToday.length > 0 && (
-        <div className="bg-white/80 dark:bg-slate-900/80 rounded-2xl border border-slate-200/60 dark:border-slate-800 p-6">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">📋 Rekap Absensi Hari Ini — Semua Karyawan ({allAttendanceToday.length} orang)</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-700">
-                  <th className="text-left py-2 px-3 text-slate-500">Nama</th>
-                  <th className="text-left py-2 px-3 text-slate-500">Divisi</th>
-                  <th className="text-left py-2 px-3 text-slate-500">Jabatan</th>
-                  <th className="text-left py-2 px-3 text-slate-500">Check-In</th>
-                  <th className="text-left py-2 px-3 text-slate-500">Check-Out</th>
-                  <th className="text-left py-2 px-3 text-slate-500">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allAttendanceToday.map((att: any) => (
-                  <tr key={att.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                    <td className="py-2 px-3 font-medium text-slate-800 dark:text-slate-200">{att.user?.name}</td>
-                    <td className="py-2 px-3 text-slate-500">{att.user?.division?.name}</td>
-                    <td className="py-2 px-3 text-slate-500">{att.user?.role?.name}</td>
-                    <td className="py-2 px-3 text-emerald-600">{att.checkIn ? format(new Date(att.checkIn), 'HH:mm') : '-'}</td>
-                    <td className="py-2 px-3 text-rose-600">{att.checkOut ? format(new Date(att.checkOut), 'HH:mm') : '—'}</td>
-                    <td className="py-2 px-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        att.status === 'HADIR' ? 'bg-emerald-100 text-emerald-700' :
-                        att.status === 'TELAT' ? 'bg-amber-100 text-amber-700' :
-                        'bg-rose-100 text-rose-700'
-                      }`}>{att.status}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Summary Stats */}
+      {/* Summary Stats - Clean card style */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl p-5 text-white shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-indigo-100 text-sm font-medium">Total Hari Tercatat</p>
-              <p className="text-4xl font-bold mt-1">{attendances.length}</p>
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-11 h-11 rounded-xl bg-secondary/30 flex items-center justify-center text-secondary-foreground">
+              <Calendar className="w-5 h-5" />
             </div>
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-              <Calendar className="w-6 h-6" />
-            </div>
+            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Total</span>
           </div>
+          <p className="text-4xl font-black text-foreground">{attendances.length}</p>
+          <p className="text-sm font-medium text-muted-foreground mt-1">Hari Tercatat</p>
         </div>
-        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-5 text-white shadow-lg shadow-emerald-200 dark:shadow-emerald-900/30">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-emerald-100 text-sm font-medium">Hari Hadir Tepat Waktu</p>
-              <p className="text-4xl font-bold mt-1">{hadirCount}</p>
+        
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <TrendingUp className="w-5 h-5" />
             </div>
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-              <TrendingUp className="w-6 h-6" />
-            </div>
+            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Tepat Waktu</span>
           </div>
+          <p className="text-4xl font-black text-foreground">{hadirCount}</p>
+          <p className="text-sm font-medium text-muted-foreground mt-1">Hadir Tepat Waktu</p>
         </div>
-        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-5 text-white shadow-lg shadow-amber-200 dark:shadow-amber-900/30">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-amber-100 text-sm font-medium">Hari Terlambat</p>
-              <p className="text-4xl font-bold mt-1">{telatCount}</p>
+        
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-11 h-11 rounded-xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center text-rose-600 dark:text-rose-400">
+              <AlertCircle className="w-5 h-5" />
             </div>
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-              <AlertCircle className="w-6 h-6" />
-            </div>
+            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Terlambat</span>
           </div>
+          <p className="text-4xl font-black text-rose-600 dark:text-rose-400">{telatCount}</p>
+          <p className="text-sm font-medium text-muted-foreground mt-1">Hari Terlambat</p>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="grid gap-6 lg:grid-cols-5">
-        {/* Clock-in Card */}
-        <Card className="lg:col-span-2 glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
-            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">Status Hari Ini</CardTitle>
-            <CardDescription>{format(new Date(), 'EEEE, dd MMMM yyyy', { locale: id })}</CardDescription>
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Clock-in Card — Full Premium Layout */}
+        <Card className="lg:col-span-1 border-border shadow-sm rounded-2xl overflow-hidden flex flex-col">
+          <CardHeader className="bg-secondary text-secondary-foreground px-6 py-5">
+            <CardTitle className="text-base font-bold">Status Hari Ini</CardTitle>
+            <CardDescription className="text-secondary-foreground/60">{format(new Date(), 'EEEE, dd MMMM yyyy', { locale: id })}</CardDescription>
           </CardHeader>
-          <CardContent className="p-6 space-y-6">
-            {/* Live Clock */}
-            <div className="flex flex-col items-center justify-center py-6 bg-gradient-to-br from-indigo-50 to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl">
-              <p className="text-xs font-semibold uppercase tracking-widest text-indigo-400 dark:text-indigo-500 mb-2">Waktu Sekarang</p>
-              <div className="text-6xl font-bold font-mono tracking-tighter text-slate-800 dark:text-white">
-                {format(time, 'HH:mm:ss')}
+          <CardContent className="p-6 flex-1 flex flex-col gap-6">
+            {/* Live Clock - Big centerpiece */}
+            <div className="flex flex-col items-center justify-center text-center py-4">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground mb-3">Waktu Sekarang</p>
+              <div className="text-6xl lg:text-7xl font-black font-mono tracking-tighter text-foreground tabular-nums leading-none">
+                {format(time, 'HH:mm')}
               </div>
-              <p className="text-sm text-slate-400 mt-2">{format(time, 'dd MMM yyyy')}</p>
+              <div className="text-2xl font-bold font-mono text-muted-foreground tabular-nums mt-1">
+                {format(time, 'ss')}
+              </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="space-y-3">
+            <div className="border-t border-border/50 pt-6">
               {!todayAttendance ? (
                 <Button
                   size="lg"
-                  className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white rounded-xl shadow-lg shadow-brand-primary/20 h-12 text-base"
+                  className="w-full h-14 text-base font-black rounded-2xl shadow-md transition-all hover:-translate-y-0.5 hover:shadow-xl"
                   onClick={handleCheckIn}
                   disabled={isLoading}
                 >
-                  <CheckCircle className="mr-2 h-5 w-5" />
+                  <CheckCircle className="h-5 w-5" />
                   {isLoading ? 'Memproses...' : 'Check In Sekarang'}
                 </Button>
               ) : !todayAttendance.checkOut ? (
-                <>
+                <div className="space-y-4">
                   <div className="rounded-xl bg-emerald-50 dark:bg-emerald-900/20 p-4 border border-emerald-200 dark:border-emerald-800/50 flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">✓ Check-in Berhasil</p>
-                      <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
+                      <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-widest">✓ Check-in Berhasil</p>
+                      <p className="text-3xl font-black text-emerald-700 dark:text-emerald-400 mt-1 tabular-nums font-mono">
                         {format(new Date(todayAttendance.checkIn), 'HH:mm')}
                       </p>
                     </div>
-                    <CheckCircle className="h-8 w-8 text-emerald-500" />
+                    <CheckCircle className="w-8 h-8 text-emerald-400" />
                   </div>
                   <Button
                     size="lg"
                     variant="outline"
-                    className="w-full border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-900/20 rounded-xl h-12 text-base"
+                    className="w-full border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-400 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-900/20 rounded-2xl h-14 text-base font-black transition-all hover:-translate-y-0.5"
                     onClick={handleCheckOut}
                     disabled={isLoading}
                   >
-                    <LogOut className="mr-2 h-5 w-5" />
+                    <LogOut className="h-5 w-5" />
                     {isLoading ? 'Memproses...' : 'Check Out'}
                   </Button>
-                </>
+                </div>
               ) : (
-                <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-4 border border-slate-200 dark:border-slate-700 space-y-3">
-                  <div className="flex items-center justify-between">
+                <div className="rounded-2xl bg-card border border-border overflow-hidden">
+                  <div className="p-4 flex items-center justify-between border-b border-border/50">
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Check-in</p>
-                      <p className="text-xl font-bold text-slate-800 dark:text-slate-200">{format(new Date(todayAttendance.checkIn), 'HH:mm:ss')}</p>
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">Check-in</p>
+                      <p className="text-2xl font-black text-emerald-600 tabular-nums font-mono">{format(new Date(todayAttendance.checkIn), 'HH:mm:ss')}</p>
                     </div>
-                    <Clock className="h-5 w-5 text-slate-400" />
+                    <Clock className="h-6 w-6 text-muted-foreground/30" />
                   </div>
-                  <div className="border-t border-slate-200 dark:border-slate-700 pt-3 flex items-center justify-between">
+                  <div className="p-4 flex items-center justify-between border-b border-border/50">
                     <div>
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Check-out</p>
-                      <p className="text-xl font-bold text-slate-800 dark:text-slate-200">{format(new Date(todayAttendance.checkOut), 'HH:mm:ss')}</p>
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">Check-out</p>
+                      <p className="text-2xl font-black text-rose-600 tabular-nums font-mono">{format(new Date(todayAttendance.checkOut), 'HH:mm:ss')}</p>
                     </div>
-                    <Clock className="h-5 w-5 text-slate-400" />
+                    <Clock className="h-6 w-6 text-muted-foreground/30" />
                   </div>
-                  <div className="border-t border-slate-200 dark:border-slate-700 pt-3 flex items-center justify-between bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-3 -mx-1">
-                    <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">Total Jam Kerja</p>
-                    <p className="text-lg font-bold text-indigo-700 dark:text-indigo-300">{todayAttendance.totalHours} Jam</p>
+                  <div className="p-4 bg-secondary/30 flex items-center justify-between">
+                    <p className="text-sm font-bold text-foreground">Total Jam Kerja</p>
+                    <p className="text-xl font-black text-primary tabular-nums">{todayAttendance.totalHours} jam</p>
                   </div>
                 </div>
               )}
@@ -334,39 +261,42 @@ export default function AttendancePage() {
         </Card>
 
         {/* History Card */}
-        <Card className="lg:col-span-3 glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
-            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">Riwayat Absensi</CardTitle>
-            <CardDescription>30 hari terakhir</CardDescription>
+        <Card className="lg:col-span-2 border-border shadow-sm rounded-2xl overflow-hidden flex flex-col">
+          <CardHeader className="bg-card border-b border-border/50 px-6 py-5 flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-lg font-bold text-foreground">Riwayat Kehadiran</CardTitle>
+              <CardDescription>Bulan Ini</CardDescription>
+            </div>
           </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+          <CardContent className="p-0 flex-1">
+            <div className="divide-y divide-border/50">
               {attendances.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-                    <Calendar className="w-8 h-8 text-slate-400" />
+                <div className="flex flex-col items-center justify-center py-24 text-center px-4">
+                  <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-6">
+                    <Calendar className="w-10 h-10 text-muted-foreground/50" />
                   </div>
-                  <p className="text-slate-600 dark:text-slate-400 font-medium">Belum ada riwayat absensi</p>
-                  <p className="text-sm text-slate-400 mt-1">Mulai dengan check-in hari ini</p>
+                  <p className="text-lg text-foreground font-semibold">Belum Ada Data</p>
+                  <p className="text-muted-foreground mt-2 max-w-sm">Riwayat kehadiran Anda akan muncul di sini setelah melakukan check-in pertama.</p>
                 </div>
               ) : (
                 attendances.map((record) => {
-                  const cfg = statusConfig[record.status] || { label: record.status, color: 'text-slate-600', bg: 'bg-slate-50 border-slate-200' };
+                  const cfg = statusConfig[record.status] || { label: record.status, color: 'text-muted-foreground', bg: 'bg-muted border-border' };
                   return (
-                    <div key={record.id} className="flex items-center justify-between px-6 py-4 hover:bg-indigo-50/30 dark:hover:bg-slate-800/30 transition-colors">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                          <Calendar className="w-5 h-5 text-slate-500" />
+                    <div key={record.id} className="flex items-center justify-between px-6 py-4 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-5">
+                        <div className="w-12 h-12 rounded-xl bg-card border border-border flex flex-col items-center justify-center shrink-0">
+                          <span className="text-xs font-medium text-muted-foreground uppercase">{format(new Date(record.date), 'MMM')}</span>
+                          <span className="text-lg font-bold text-foreground leading-none">{format(new Date(record.date), 'dd')}</span>
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-800 dark:text-slate-200">
-                            {format(new Date(record.date), 'EEEE, dd MMM yyyy', { locale: id })}
+                          <p className="font-semibold text-foreground">
+                            {format(new Date(record.date), 'EEEE', { locale: id })}
                           </p>
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            {record.checkIn ? format(new Date(record.checkIn), 'HH:mm') : '--:--'}
-                            {' → '}
-                            {record.checkOut ? format(new Date(record.checkOut), 'HH:mm') : '--:--'}
-                            {record.totalHours ? ` · ${record.totalHours} jam` : ''}
+                          <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
+                            <span className="font-mono">{record.checkIn ? format(new Date(record.checkIn), 'HH:mm') : '--:--'}</span>
+                            <span className="text-border">→</span>
+                            <span className="font-mono">{record.checkOut ? format(new Date(record.checkOut), 'HH:mm') : '--:--'}</span>
+                            {record.totalHours ? <span className="hidden sm:inline">({record.totalHours} jam)</span> : null}
                           </p>
                         </div>
                       </div>
@@ -382,127 +312,58 @@ export default function AttendancePage() {
         </Card>
       </div>
 
-      {/* LEMBUR SECTION */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Form Pengajuan Lembur */}
-        <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                  <Timer className="w-5 h-5 text-amber-500" /> Pengajuan Lembur
-                </CardTitle>
-                <CardDescription>Ajukan jam kerja lembur untuk persetujuan atasan</CardDescription>
-              </div>
-              <button onClick={() => setShowOvertimeForm(!showOvertimeForm)}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl bg-amber-500 text-white hover:bg-amber-600 transition-colors">
-                <Plus className="w-4 h-4" /> Ajukan
-              </button>
+      {/* Rekap Absensi Semua Karyawan Hari Ini — Hanya untuk Atasan */}
+      {currentUser && EXECUTIVE_ROLES.includes(currentUser.role?.name) && allAttendanceToday.length > 0 && (
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" /> Pemantauan Kehadiran Tim
+            </h2>
+            <span className="text-sm text-muted-foreground">{allAttendanceToday.length} karyawan hadir hari ini</span>
+          </div>
+          
+          <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/20">
+                    <th className="text-left py-3 px-5 text-muted-foreground font-semibold">Nama & Jabatan</th>
+                    <th className="text-left py-3 px-5 text-muted-foreground font-semibold">Check-In</th>
+                    <th className="text-left py-3 px-5 text-muted-foreground font-semibold">Check-Out</th>
+                    <th className="text-left py-3 px-5 text-muted-foreground font-semibold">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {allAttendanceToday.map((att: any) => (
+                    <tr key={att.id} className="hover:bg-muted/50 transition-colors">
+                      <td className="py-4 px-5">
+                        <p className="font-semibold text-foreground">{att.user?.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{att.user?.role?.name} · {att.user?.division?.name}</p>
+                      </td>
+                      <td className="py-4 px-5">
+                        <span className="font-mono text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-md">
+                          {att.checkIn ? format(new Date(att.checkIn), 'HH:mm') : '-'}
+                        </span>
+                      </td>
+                      <td className="py-4 px-5">
+                        <span className="font-mono text-rose-600 dark:text-rose-400 font-medium bg-rose-50 dark:bg-rose-900/20 px-2 py-1 rounded-md">
+                          {att.checkOut ? format(new Date(att.checkOut), 'HH:mm') : '—'}
+                        </span>
+                      </td>
+                      <td className="py-4 px-5">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          att.status === 'HADIR' ? 'bg-emerald-100 text-emerald-700' :
+                          att.status === 'TELAT' ? 'bg-amber-100 text-amber-700' :
+                          'bg-rose-100 text-rose-700'
+                        }`}>{att.status}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </CardHeader>
-          {showOvertimeForm && (
-            <CardContent className="p-6">
-              <form onSubmit={handleOvertimeSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="font-medium text-slate-600 dark:text-slate-300">Tanggal Lembur</Label>
-                  <Input type="date" required value={overtimeForm.date} onChange={e => setOvertimeForm({...overtimeForm, date: e.target.value})} className="rounded-xl" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label className="font-medium text-slate-600 dark:text-slate-300">Jam Mulai <span className="text-rose-500">*</span></Label>
-                    <Input type="time" required value={overtimeForm.startTime} onChange={e => setOvertimeForm({...overtimeForm, startTime: e.target.value})} className="rounded-xl" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="font-medium text-slate-600 dark:text-slate-300">Jam Selesai <span className="text-rose-500">*</span></Label>
-                    <Input type="time" required value={overtimeForm.endTime} onChange={e => setOvertimeForm({...overtimeForm, endTime: e.target.value})} className="rounded-xl" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-medium text-slate-600 dark:text-slate-300">Alasan Lembur <span className="text-rose-500">*</span></Label>
-                  <Input required value={overtimeForm.reason} onChange={e => setOvertimeForm({...overtimeForm, reason: e.target.value})} placeholder="Misal: Menyelesaikan target produksi" className="rounded-xl" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-medium text-slate-600 dark:text-slate-300">Catatan Tambahan</Label>
-                  <Input value={overtimeForm.notes} onChange={e => setOvertimeForm({...overtimeForm, notes: e.target.value})} placeholder="Opsional" className="rounded-xl" />
-                </div>
-                <button type="submit" disabled={submittingOT}
-                  className="w-full h-11 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold transition-colors disabled:opacity-50">
-                  {submittingOT ? 'Mengirim...' : 'Kirim Pengajuan Lembur'}
-                </button>
-              </form>
-            </CardContent>
-          )}
-        </Card>
-
-        {/* Riwayat Lembur */}
-        <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
-            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">Riwayat Pengajuan Lembur</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
-              {overtimes.length === 0 ? (
-                <p className="text-center text-slate-400 py-10">Belum ada pengajuan lembur</p>
-              ) : overtimes.map(ot => (
-                <div key={ot.id} className="flex items-center justify-between px-5 py-4">
-                  <div>
-                    <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">{ot.reason}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {format(new Date(ot.date), 'dd MMM yyyy', { locale: id })} · {ot.totalHours.toFixed(1)} jam
-                    </p>
-                  </div>
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                    ot.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
-                    ot.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' :
-                    'bg-amber-100 text-amber-700'
-                  }`}>
-                    {ot.status === 'APPROVED' ? 'Disetujui' : ot.status === 'REJECTED' ? 'Ditolak' : 'Menunggu'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {currentUser && EXECUTIVE_ROLES.includes(currentUser.role?.name) && (
-        <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
-          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
-            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">Approval Lembur Tim</CardTitle>
-            <CardDescription>{allOvertimes.filter(ot => ot.status === 'PENDING').length} pengajuan menunggu persetujuan</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
-              {allOvertimes.length === 0 ? (
-                <p className="text-center text-slate-400 py-10">Belum ada pengajuan lembur tim</p>
-              ) : allOvertimes.map((ot) => (
-                <div key={ot.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4">
-                  <div>
-                    <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">{ot.user?.name} · {ot.user?.division?.name}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {format(new Date(ot.date), 'dd MMM yyyy', { locale: id })} · {ot.totalHours.toFixed(1)} jam · {ot.reason}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                      ot.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
-                      ot.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' :
-                      'bg-amber-100 text-amber-700'
-                    }`}>
-                      {ot.status === 'APPROVED' ? 'Disetujui' : ot.status === 'REJECTED' ? 'Ditolak' : 'Menunggu'}
-                    </span>
-                    {ot.status === 'PENDING' && (
-                      <>
-                        <Button size="sm" variant="outline" className="rounded-lg border-rose-300 text-rose-600" onClick={() => handleOvertimeApproval(ot.id, 'REJECTED')}>Tolak</Button>
-                        <Button size="sm" className="rounded-lg bg-emerald-600 text-white hover:bg-emerald-700" onClick={() => handleOvertimeApproval(ot.id, 'APPROVED')}>Setujui</Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   );

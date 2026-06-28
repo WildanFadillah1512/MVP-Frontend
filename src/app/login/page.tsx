@@ -1,9 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { ShieldCheck } from "lucide-react";
 import { loginSchema, LoginInput, authApi } from "@/features/auth/api/auth.api";
 
@@ -46,32 +47,69 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4" suppressHydrationWarning>
-      <Card className="w-full max-w-md border-[#D7CBB5] shadow-xl shadow-[#3E231B]/10">
-        <CardHeader className="space-y-4">
-          <div className="flex items-center gap-3">
-            <img src="/logo.jpeg" alt="SikaryaERP" className="h-12 w-12 rounded-lg object-cover shadow-sm" />
-            <div>
-              <CardTitle className="text-2xl font-bold tracking-tight text-[#3E231B]">SikaryaERP</CardTitle>
-              <CardDescription>Sistem operasional terpadu</CardDescription>
+    <div className="flex min-h-screen bg-background" suppressHydrationWarning>
+      {/* Left Pane - Branding & Visuals (Hidden on small screens) */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-foreground text-background p-12 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('/abstract-pattern.svg')] bg-cover bg-center"></div>
+        <div className="absolute -left-20 -bottom-20 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
+        <div className="absolute right-10 top-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl"></div>
+        
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="w-12 h-12 relative rounded-xl overflow-hidden shadow-lg shadow-primary/20">
+            <Image src="/logo.jpeg" alt="SikaryaERP Logo" fill className="object-cover" />
+          </div>
+          <span className="text-2xl font-black tracking-tight text-[#FAF3E0]">SikaryaERP</span>
+        </div>
+
+        <div className="relative z-10 max-w-lg">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-widest mb-6">
+            <ShieldCheck className="h-4 w-4" />
+            Akses Internal
+          </div>
+          <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-6 text-[#FAF3E0]">
+            Sistem operasional terpadu kelas <span className="text-primary">enterprise</span>.
+          </h1>
+          <p className="text-lg text-[#FAF3E0]/70 font-medium">
+            Kelola absensi, laporan, tugas, dan cuti karyawan Anda dalam satu pintu yang aman, rapi, dan terkontrol.
+          </p>
+        </div>
+
+        <div className="relative z-10">
+          <p className="text-sm font-medium text-[#FAF3E0]/50">&copy; 2026 PT Sikarya. Hak Cipta Dilindungi.</p>
+        </div>
+      </div>
+
+      {/* Right Pane - Form (Centered on all screens) */}
+      <div className="flex-1 flex flex-col justify-center px-6 py-12 lg:px-24 xl:px-32 relative">
+        <div className="w-full max-w-sm mx-auto">
+          {/* Logo on mobile only */}
+          <div className="lg:hidden flex flex-col items-center mb-10">
+            <div className="w-16 h-16 relative rounded-2xl overflow-hidden shadow-xl shadow-primary/20 mb-4">
+              <Image src="/logo.jpeg" alt="SikaryaERP Logo" fill className="object-cover" />
             </div>
+            <h1 className="text-2xl font-black tracking-tight text-foreground">SikaryaERP</h1>
           </div>
-          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#D7CBB5] bg-[#FAF3E0] px-3 py-1 text-xs font-semibold text-[#754437]">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            Akses internal perusahaan
+
+          <div className="mb-10 text-center lg:text-left">
+            <h2 className="text-3xl font-extrabold text-foreground tracking-tight mb-2">Selamat Datang</h2>
+            <p className="text-muted-foreground font-medium">Masukkan email dan kata sandi Anda untuk mengakses sistem.</p>
           </div>
-        </CardHeader>
-        <CardContent>
+
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel className="text-foreground font-bold">Alamat Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="email@company.com" {...field} />
+                      <Input 
+                        placeholder="Password" 
+                        {...field} 
+                        className="h-14 rounded-xl bg-card border-border px-4 text-base shadow-sm focus:ring-primary/50 focus:border-primary transition-colors"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -82,25 +120,31 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel className="text-foreground font-bold">Kata Sandi</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Password" {...field} />
+                      <Input 
+                        type="password" 
+                        placeholder="Password"
+                        {...field}
+                        className="h-14 rounded-xl bg-card border-border px-4 text-base shadow-sm focus:ring-primary/50 focus:border-primary transition-colors"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              
               <Button
                 type="submit"
-                className="w-full bg-brand-primary text-white hover:bg-brand-primary/90"
+                className="w-full h-14 rounded-xl bg-primary text-primary-foreground text-lg font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 hover:-translate-y-0.5 hover:shadow-xl transition-all"
                 disabled={isLoading}
               >
-                {isLoading ? "Memproses..." : "Masuk"}
+                {isLoading ? "Otentikasi..." : "Masuk ke Sistem"}
               </Button>
             </form>
           </Form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

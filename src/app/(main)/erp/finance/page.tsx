@@ -46,12 +46,12 @@ export default function FinanceErpPage() {
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-brand-charcoal">Keuangan & Accounting (ERP)</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Keuangan & Accounting (ERP)</h1>
           <p className="text-muted-foreground mt-2">Buku besar, cash flow, dan laporan laba rugi perusahaan.</p>
         </div>
         {!isLocked && (
-           <Button variant="outline" className="border-brand-sage text-brand-sage" disabled>
-             <Unlock className="w-4 h-4 mr-2" /> Modul Aktif
+           <Button variant="outline" className="border-brand-sage text-primary" disabled>
+             <Unlock className="w-4 h-4" /> Modul Aktif
            </Button>
         )}
       </div>
@@ -64,11 +64,11 @@ export default function FinanceErpPage() {
             <div className="h-40 bg-gray-200 rounded w-1/3"></div>
           </div>
 
-          <div className="relative z-10 flex flex-col items-center bg-white/80 p-8 rounded-2xl backdrop-blur-sm border border-border shadow-sm">
+          <div className="relative z-10 flex flex-col items-center bg-white/80 p-8 rounded-2xl  border border-border shadow-sm">
             <div className="w-16 h-16 bg-brand-dusty-rose/20 rounded-full flex items-center justify-center mb-4 text-brand-dusty-rose">
               <Lock className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-bold mb-2 text-brand-charcoal text-center">Modul Premium Terkunci</h2>
+            <h2 className="text-2xl font-bold mb-2 text-foreground text-center">Modul Premium Terkunci</h2>
             <p className="text-muted-foreground text-center max-w-md mb-6">
               Sistem <b>Accounting Otomatis</b> ini sudah diprogram di backend, namun membutuhkan lisensi ERP Enterprise untuk diakses.
             </p>
@@ -91,7 +91,7 @@ export default function FinanceErpPage() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="text-xs text-muted-foreground uppercase bg-brand-oat-milk/50 border-b">
+                  <thead className="text-xs text-muted-foreground uppercase bg-muted/30 border-b">
                     <tr>
                       <th className="px-4 py-3">Tanggal</th>
                       <th className="px-4 py-3">Deskripsi</th>
