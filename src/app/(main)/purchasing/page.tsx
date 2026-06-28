@@ -87,6 +87,23 @@ export default function PurchasingPage() {
     } catch { toast.error('Gagal update status'); }
   };
 
+  const createNeedFromRecommendation = async (item: any) => {
+    try {
+      const res = await purchasingApi.createNeed({
+        itemName: item.name,
+        quantity: item.recommendedQty,
+        priority: item.priority,
+        notes: `Dari rekomendasi stok gudang. Sisa ${item.currentStock} ${item.unit}, minimum ${item.minStock} ${item.unit}.`
+      });
+      if (res.success) {
+        toast.success('Rekomendasi berhasil masuk ke request belanja');
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Gagal membuat request dari rekomendasi');
+    }
+  };
+
   const isPurchasingOrAbove = ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(userRole) || userDivision === 'PURCHASING';
   const pendingCount = needs.filter(n => n.status !== 'PURCHASED').length;
   const totalSpend = purchases.reduce((s, p) => s + (p.totalPrice || 0), 0);
@@ -162,6 +179,11 @@ export default function PurchasingPage() {
                 }`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{item.name}</p>
+                  {isPurchasingOrAbove && (
+                    <button onClick={() => createNeedFromRecommendation(item)} className="mt-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors">
+                      Buat Request
+                    </button>
+                  )}
                   <p className="text-xs text-slate-500">Sisa: {item.currentStock} {item.unit} · Rekomendasi beli: <span className="font-bold text-amber-700 dark:text-amber-300">{item.recommendedQty} {item.unit}</span></p>
                 </div>
               </div>

@@ -13,12 +13,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { FileText, Send, Lock, CheckCircle2, ClipboardList } from 'lucide-react';
+import { FileText, Send, Lock, CheckCircle2, ClipboardList, Unlock } from 'lucide-react';
 
 export default function DailyReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
+  const [lockedReports, setLockedReports] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [todayReport, setTodayReport] = useState<any>(null);
+  const [userRole, setUserRole] = useState('');
 
   const form = useForm<ReportInput>({
     resolver: zodResolver(reportSchema),
@@ -44,10 +46,22 @@ export default function DailyReportsPage() {
           });
         }
       }
+      if (['OWNER', 'CEO', 'GM', 'ADMIN', 'MANAGER', 'LEADER'].includes(userRole)) {
+        const lockedRes = await reportApi.getLockedReports().catch(() => ({ success: false, data: [] }));
+        if (lockedRes.success) setLockedReports(lockedRes.data || []);
+      }
     } catch (error) { console.error('Error fetching reports:', error); }
   };
 
-  useEffect(() => { fetchReports(); }, []);
+  useEffect(() => {
+    const userStr = sessionStorage.getItem('user');
+    if (userStr) {
+      const current = JSON.parse(userStr);
+      setUserRole(current.role?.name || '');
+    }
+  }, []);
+
+  useEffect(() => { fetchReports(); }, [userRole]);
 
   const onSubmit = async (data: ReportInput) => {
     setIsLoading(true);
@@ -64,6 +78,19 @@ export default function DailyReportsPage() {
 
   const isLocked = todayReport?.status === 'LOCKED';
   const isSubmitted = !!todayReport && !isLocked;
+  const canUnlock = ['OWNER', 'CEO', 'GM', 'ADMIN', 'MANAGER', 'LEADER'].includes(userRole);
+
+  const handleUnlock = async (reportId: string) => {
+    try {
+      const response = await reportApi.unlockReport(reportId);
+      if (response.success) {
+        toast.success('Laporan berhasil dibuka');
+        fetchReports();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal membuka laporan');
+    }
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -220,6 +247,36 @@ export default function DailyReportsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {canUnlock && (
+        <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
+          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
+            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <Unlock className="w-5 h-5 text-brand-primary" /> Laporan Terkunci Tim
+            </CardTitle>
+            <CardDescription>{lockedReports.length} laporan menunggu pembukaan oleh atasan</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+              {lockedReports.length === 0 ? (
+                <p className="text-center text-slate-400 py-10">Tidak ada laporan terkunci</p>
+              ) : lockedReports.map((report) => (
+                <div key={report.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-4 hover:bg-indigo-50/30 dark:hover:bg-slate-800/30 transition-colors">
+                  <div>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200">{report.user?.name}</p>
+                    <p className="text-xs text-slate-500">
+                      {report.user?.role?.name} / {report.user?.division?.name} · {format(new Date(report.date), 'dd MMM yyyy', { locale: id })}
+                    </p>
+                  </div>
+                  <Button size="sm" className="bg-brand-primary text-white rounded-lg" onClick={() => handleUnlock(report.id)}>
+                    <Unlock className="w-3.5 h-3.5 mr-1" /> Buka Laporan
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

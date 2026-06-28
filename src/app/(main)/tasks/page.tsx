@@ -48,7 +48,7 @@ export default function TasksPage() {
         canAssign ? api.get('/tasks/users') : Promise.resolve({ data: { data: [] } })
       ]);
       if (tasksRes.data.success) setTasks(tasksRes.data.data);
-      if (usersRes.data?.data?.success !== false) setAllUsers(usersRes.data?.data?.data || []);
+      if (usersRes.data?.success) setAllUsers(usersRes.data.data || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };

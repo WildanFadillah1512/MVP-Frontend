@@ -36,6 +36,10 @@ export const dashboardApi = {
   getBranchPerformance: async () => {
     const response = await api.get('/dashboard/branch-performance');
     return response.data;
+  },
+  getEmployeeLeaderboard: async () => {
+    const response = await api.get('/dashboard/employee-leaderboard');
+    return response.data;
   }
 };
 

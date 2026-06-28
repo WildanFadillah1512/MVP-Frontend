@@ -30,6 +30,12 @@ export default function CashierPage() {
     notes: ''
   });
 
+  const [branchForm, setBranchForm] = useState({
+    code: '',
+    name: '',
+    address: ''
+  });
+
   const fetchData = async () => {
     try {
       const [branchRes, reportsRes, prodRes] = await Promise.all([
@@ -87,6 +93,27 @@ export default function CashierPage() {
     finally { setIsSubmitting(false); }
   };
 
+  const handleCreateBranch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!branchForm.code || !branchForm.name) {
+      toast.error('Kode dan nama cabang wajib diisi');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await cashierApi.createBranch(branchForm);
+      if (res.success) {
+        toast.success('Cabang berhasil dibuat');
+        setBranchForm({ code: '', name: '', address: '' });
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Gagal membuat cabang');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const totalIncome = (Number(formData.totalCash) || 0) + (Number(formData.totalTransfer) || 0) + (Number(formData.totalQris) || 0);
   const netTotal = totalIncome - (Number(formData.totalExpense) || 0);
 
@@ -95,6 +122,7 @@ export default function CashierPage() {
   const todayReports = reports.filter(r => format(new Date(r.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd'));
 
   const isCashierOrAbove = ['OWNER', 'CEO', 'ADMIN'].includes(userRole) || userDivision === 'KASIR';
+  const canSetupBranch = ['OWNER', 'CEO', 'ADMIN'].includes(userRole);
 
   if (loading) return (
     <div className="flex h-[60vh] items-center justify-center">
@@ -155,6 +183,27 @@ export default function CashierPage() {
           {branches.length === 0 && <p className="text-violet-200 text-xs mt-2">*Hubungi Admin untuk tambah cabang</p>}
         </div>
       </div>
+
+      {canSetupBranch && (
+        <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
+          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
+            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <Plus className="w-5 h-5 text-brand-primary" /> Setup Cabang
+            </CardTitle>
+            <CardDescription>Tambahkan cabang kasir baru untuk laporan omzet harian</CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <form onSubmit={handleCreateBranch} className="grid gap-3 md:grid-cols-4">
+              <Input value={branchForm.code} onChange={(e) => setBranchForm({...branchForm, code: e.target.value})} placeholder="Kode cabang" className="rounded-xl" />
+              <Input value={branchForm.name} onChange={(e) => setBranchForm({...branchForm, name: e.target.value})} placeholder="Nama cabang" className="rounded-xl" />
+              <Input value={branchForm.address} onChange={(e) => setBranchForm({...branchForm, address: e.target.value})} placeholder="Alamat" className="rounded-xl md:col-span-2" />
+              <button type="submit" disabled={isSubmitting} className="md:col-span-4 h-10 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold transition-colors disabled:opacity-50">
+                {isSubmitting ? 'Menyimpan...' : 'Tambah Cabang'}
+              </button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Main Content */}
       <div className="grid gap-6 lg:grid-cols-5">

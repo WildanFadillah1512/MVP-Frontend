@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-
-const outfit = Outfit({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"] });
 
 export const metadata: Metadata = {
   title: "SikaryaERP — Sistem Operasional Terpadu",
@@ -17,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" suppressHydrationWarning>
-      <body className={`${outfit.className} min-h-screen bg-background text-foreground antialiased`} suppressHydrationWarning>
+      <body className="min-h-screen bg-background text-foreground antialiased" suppressHydrationWarning>
         {children}
         <Toaster position="top-right" richColors />
       </body>

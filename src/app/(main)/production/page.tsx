@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { productionApi } from '@/features/production/api/production.api';
 import { warehouseApi } from '@/features/warehouse/api/warehouse.api';
-import { Package, Plus, ClipboardList, BarChart3, AlertTriangle, TrendingUp, Box } from "lucide-react";
+import { Package, Plus, ClipboardList, BarChart3, AlertTriangle, TrendingUp, Box, Target, PackagePlus } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -15,14 +15,18 @@ import { Label } from "@/components/ui/label";
 export default function ProductionPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [records, setRecords] = useState<any[]>([]);
+  const [targets, setTargets] = useState<any[]>([]);
+  const [stockSummary, setStockSummary] = useState<any[]>([]);
   const [warehouseItems, setWarehouseItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'input' | 'matrix' | 'materials'>('input');
+  const [activeTab, setActiveTab] = useState<'input' | 'matrix' | 'materials' | 'targets'>('input');
 
   const [formData, setFormData] = useState({
     productId: '',
     quantity: '',
+    rejectQty: '',
+    rejectReason: '',
     date: format(new Date(), 'yyyy-MM-dd'),
     notes: ''
   });
@@ -33,20 +37,45 @@ export default function ProductionPage() {
     date: format(new Date(), 'yyyy-MM-dd'),
     notes: ''
   });
+
+  const [targetForm, setTargetForm] = useState({
+    productId: '',
+    targetMonth: format(new Date(), 'yyyy-MM'),
+    targetQty: '',
+    notes: ''
+  });
+
+  const [productForm, setProductForm] = useState({
+    code: '',
+    name: '',
+    category: '',
+    basePrice: ''
+  });
+
+  const [initialStockForm, setInitialStockForm] = useState({
+    productId: '',
+    quantity: '',
+    stockDate: format(new Date(), 'yyyy-MM-dd'),
+    notes: ''
+  });
   
   const [userRole, setUserRole] = useState('');
   const [userDivision, setUserDivision] = useState('');
 
   const fetchData = async () => {
     try {
-      const [prodRes, recRes, whRes] = await Promise.all([
+      const [prodRes, recRes, whRes, targetRes, stockRes] = await Promise.all([
         productionApi.getProducts(),
         productionApi.getRecords(),
-        warehouseApi.getItems()
+        warehouseApi.getItems(),
+        productionApi.getTargets({ month: format(new Date(), 'MM'), year: format(new Date(), 'yyyy') }),
+        productionApi.getStockSummary()
       ]);
       if (prodRes.success) setProducts(prodRes.data);
       if (recRes.success) setRecords(recRes.data);
       if (whRes.success) setWarehouseItems(whRes.data);
+      if (targetRes.success) setTargets(targetRes.data);
+      if (stockRes.success) setStockSummary(stockRes.data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -75,7 +104,7 @@ export default function ProductionPage() {
       const res = await productionApi.createRecord(formData);
       if (res.success) {
         toast.success('Laporan produksi berhasil disimpan');
-        setFormData({ ...formData, quantity: '', notes: '' });
+        setFormData({ ...formData, quantity: '', rejectQty: '', rejectReason: '', notes: '' });
         fetchData();
       }
     } catch { toast.error('Gagal menyimpan laporan'); }
@@ -102,6 +131,73 @@ export default function ProductionPage() {
     finally { setIsSubmitting(false); }
   };
 
+  const handleCreateTarget = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!targetForm.productId || !targetForm.targetQty) {
+      toast.error('Produk dan jumlah target wajib diisi');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await productionApi.createTarget({
+        ...targetForm,
+        targetMonth: `${targetForm.targetMonth}-01`
+      });
+      if (res.success) {
+        toast.success('Target produksi berhasil dibuat');
+        setTargetForm({ ...targetForm, productId: '', targetQty: '', notes: '' });
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Gagal membuat target produksi');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCreateProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!productForm.code || !productForm.name || !productForm.category) {
+      toast.error('Kode, nama, dan kategori produk wajib diisi');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await productionApi.createProduct(productForm);
+      if (res.success) {
+        toast.success('Produk berhasil dibuat');
+        setProductForm({ code: '', name: '', category: '', basePrice: '' });
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Gagal membuat produk');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSetInitialStock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!initialStockForm.productId || initialStockForm.quantity === '') {
+      toast.error('Produk dan stok awal wajib diisi');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await productionApi.setInitialStock(initialStockForm);
+      if (res.success) {
+        toast.success(res.message || 'Stok awal produk jadi berhasil disimpan');
+        setInitialStockForm({ ...initialStockForm, productId: '', quantity: '', notes: '' });
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Gagal menyimpan stok awal produk jadi');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Build monthly matrix: group records by product and by date
   const now = new Date();
   const daysInMonth = eachDayOfInterval({ start: startOfMonth(now), end: endOfMonth(now) });
@@ -109,22 +205,26 @@ export default function ProductionPage() {
   const monthRecords = records.filter(r => format(new Date(r.date), 'yyyy-MM') === currentMonth);
 
   // Group by product
-  const productMap: Record<string, { name: string; code: string; byDay: Record<string, number>; total: number }> = {};
+  const productMap: Record<string, { name: string; code: string; byDay: Record<string, number>; total: number; rejectTotal: number }> = {};
   monthRecords.forEach(r => {
     const key = r.product.id;
     const dayKey = format(new Date(r.date), 'dd');
     if (!productMap[key]) {
-      productMap[key] = { name: r.product.name, code: r.product.code, byDay: {}, total: 0 };
+      productMap[key] = { name: r.product.name, code: r.product.code, byDay: {}, total: 0, rejectTotal: 0 };
     }
-    productMap[key].byDay[dayKey] = (productMap[key].byDay[dayKey] || 0) + r.quantity;
-    productMap[key].total += r.quantity;
+    const acceptedQty = Math.max(0, (r.quantity || 0) - (r.rejectQty || 0));
+    productMap[key].byDay[dayKey] = (productMap[key].byDay[dayKey] || 0) + acceptedQty;
+    productMap[key].total += acceptedQty;
+    productMap[key].rejectTotal += r.rejectQty || 0;
   });
 
   // Stats
-  const totalThisMonth = monthRecords.reduce((s, r) => s + r.quantity, 0);
+  const totalThisMonth = monthRecords.reduce((s, r) => s + Math.max(0, (r.quantity || 0) - (r.rejectQty || 0)), 0);
+  const totalRejectThisMonth = monthRecords.reduce((s, r) => s + (r.rejectQty || 0), 0);
   const uniqueDays = new Set(monthRecords.map(r => format(new Date(r.date), 'yyyy-MM-dd'))).size;
 
   const isProduksiOrAbove = ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(userRole) || userDivision === 'PRODUKSI';
+  const canSetupProduct = ['OWNER', 'CEO', 'GM', 'ADMIN', 'MANAGER'].includes(userRole);
 
   if (loading) return (
     <div className="flex h-[60vh] items-center justify-center">
@@ -188,11 +288,22 @@ export default function ProductionPage() {
           </div>
           {products.length === 0 && <p className="text-rose-100 text-xs mt-2">*Hubungi Admin untuk tambah data produk</p>}
         </div>
+        <div className="bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl p-5 text-white shadow-lg shadow-rose-200 dark:shadow-rose-900/30 md:col-span-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-rose-100 text-sm font-medium">Reject Bulan Ini</p>
+              <p className="text-4xl font-bold mt-1">{totalRejectThisMonth.toLocaleString('id-ID')}</p>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Tab Switcher */}
       <div className="flex gap-2 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl w-fit">
-        {(['input', 'materials', 'matrix'] as const).map(tab => (
+        {(['input', 'materials', 'targets', 'matrix'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -205,9 +316,114 @@ export default function ProductionPage() {
             {tab === 'input' && '📝 Input Harian'}
             {tab === 'materials' && '📦 Pakai Bahan Baku'}
             {tab === 'matrix' && '📊 Matriks Bulanan'}
+            {tab === 'targets' && 'Target Bulanan'}
           </button>
         ))}
       </div>
+
+      {canSetupProduct && (
+        <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
+          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
+            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <Plus className="w-5 h-5 text-brand-primary" /> Setup Produk
+            </CardTitle>
+            <CardDescription>Tambahkan master produk agar bisa dipakai produksi, target, dan kasir</CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <form onSubmit={handleCreateProduct} className="grid gap-3 md:grid-cols-5">
+              <Input value={productForm.code} onChange={(e) => setProductForm({...productForm, code: e.target.value})} placeholder="Kode produk" className="rounded-xl" />
+              <Input value={productForm.name} onChange={(e) => setProductForm({...productForm, name: e.target.value})} placeholder="Nama produk" className="rounded-xl md:col-span-2" />
+              <Input value={productForm.category} onChange={(e) => setProductForm({...productForm, category: e.target.value})} placeholder="Kategori" className="rounded-xl" />
+              <Input type="number" min="0" value={productForm.basePrice} onChange={(e) => setProductForm({...productForm, basePrice: e.target.value})} placeholder="Harga dasar" className="rounded-xl" />
+              <button type="submit" disabled={isSubmitting} className="md:col-span-5 h-10 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold transition-colors disabled:opacity-50">
+                {isSubmitting ? 'Menyimpan...' : 'Tambah Produk'}
+              </button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
+        <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
+          <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <Package className="w-5 h-5 text-brand-primary" /> Stok Produk Jadi
+          </CardTitle>
+          <CardDescription>Stok aktual dari saldo awal, produksi masuk, penjualan kasir, dan reject cabang</CardDescription>
+        </CardHeader>
+        {canSetupProduct && (
+          <div className="border-b border-slate-100 dark:border-slate-800 bg-[#FAF3E0]/45 p-6 dark:bg-slate-900/30">
+            <div className="mb-4 flex items-center gap-2">
+              <PackagePlus className="h-5 w-5 text-brand-primary" />
+              <div>
+                <p className="font-semibold text-slate-800 dark:text-slate-100">Set Stok Awal Produk Jadi</p>
+                <p className="text-xs text-slate-500">Dipakai saat go-live agar saldo awal tidak tercatat sebagai produksi harian.</p>
+              </div>
+            </div>
+            <form onSubmit={handleSetInitialStock} className="grid gap-3 md:grid-cols-5">
+              <Select value={initialStockForm.productId} onValueChange={(val) => setInitialStockForm({...initialStockForm, productId: val || ''})}>
+                <SelectTrigger className="rounded-xl bg-white dark:bg-slate-900">
+                  <SelectValue placeholder="Pilih produk..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {products.map(p => <SelectItem key={p.id} value={p.id}>{p.code} - {p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                min="0"
+                value={initialStockForm.quantity}
+                onChange={(e) => setInitialStockForm({...initialStockForm, quantity: e.target.value})}
+                placeholder="Stok awal"
+                className="rounded-xl bg-white dark:bg-slate-900"
+              />
+              <Input
+                type="date"
+                value={initialStockForm.stockDate}
+                onChange={(e) => setInitialStockForm({...initialStockForm, stockDate: e.target.value})}
+                className="rounded-xl bg-white dark:bg-slate-900"
+              />
+              <Input
+                value={initialStockForm.notes}
+                onChange={(e) => setInitialStockForm({...initialStockForm, notes: e.target.value})}
+                placeholder="Catatan opsional"
+                className="rounded-xl bg-white dark:bg-slate-900"
+              />
+              <button type="submit" disabled={isSubmitting || products.length === 0} className="h-10 rounded-xl bg-brand-primary px-4 font-semibold text-white transition-colors hover:bg-brand-primary/90 disabled:opacity-50">
+                {isSubmitting ? 'Menyimpan...' : 'Simpan Stok Awal'}
+              </button>
+            </form>
+          </div>
+        )}
+        <CardContent className="p-0 overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+              <tr>
+                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Produk</th>
+                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 text-right">Masuk</th>
+                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 text-right">Keluar</th>
+                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 text-right">Saldo Awal/Koreksi</th>
+                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 text-right">Stok</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+              {stockSummary.length === 0 ? (
+                <tr><td colSpan={5} className="px-4 py-10 text-center text-slate-400">Belum ada pergerakan stok produk</td></tr>
+              ) : stockSummary.map((item) => (
+                <tr key={item.id} className="hover:bg-indigo-50/20 dark:hover:bg-slate-800/20">
+                  <td className="px-4 py-3">
+                    <p className="font-semibold text-slate-800 dark:text-slate-200">{item.name}</p>
+                    <p className="text-xs text-slate-400 font-mono">{item.code}</p>
+                  </td>
+                  <td className="px-4 py-3 text-right text-emerald-600 font-bold">{item.stockIn.toLocaleString('id-ID')}</td>
+                  <td className="px-4 py-3 text-right text-rose-600 font-bold">{item.stockOut.toLocaleString('id-ID')}</td>
+                  <td className={`px-4 py-3 text-right font-bold ${item.adjustments < 0 ? 'text-rose-600' : 'text-amber-600'}`}>{item.adjustments.toLocaleString('id-ID')}</td>
+                  <td className={`px-4 py-3 text-right font-bold ${item.currentStock <= 0 ? 'text-rose-600' : 'text-indigo-600'}`}>{item.currentStock.toLocaleString('id-ID')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
 
       {/* TAB: INPUT HARIAN */}
       {activeTab === 'input' && (
@@ -256,6 +472,27 @@ export default function ProductionPage() {
                     className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus-visible:ring-brand-primary"
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="font-medium text-slate-600 dark:text-slate-300">Qty Reject</Label>
+                    <Input
+                      type="number" min="0"
+                      placeholder="0"
+                      value={formData.rejectQty}
+                      onChange={(e) => setFormData({...formData, rejectQty: e.target.value})}
+                      className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus-visible:ring-brand-primary"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-medium text-slate-600 dark:text-slate-300">Alasan Reject</Label>
+                    <Input
+                      placeholder="Cacat, gosong, rusak..."
+                      value={formData.rejectReason}
+                      onChange={(e) => setFormData({...formData, rejectReason: e.target.value})}
+                      className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus-visible:ring-brand-primary"
+                    />
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <Label className="font-medium text-slate-600 dark:text-slate-300">Catatan <span className="text-slate-400 font-normal text-xs">(Opsional)</span></Label>
                   <Input
@@ -292,11 +529,13 @@ export default function ProductionPage() {
                       <th className="px-6 py-3 font-semibold text-slate-600 dark:text-slate-300">Kode</th>
                       <th className="px-6 py-3 font-semibold text-slate-600 dark:text-slate-300">Nama Produk</th>
                       <th className="px-6 py-3 font-semibold text-slate-600 dark:text-slate-300 text-right">Qty</th>
+                      <th className="px-6 py-3 font-semibold text-slate-600 dark:text-slate-300 text-right">Reject</th>
+                      <th className="px-6 py-3 font-semibold text-slate-600 dark:text-slate-300 text-right">Stok Masuk</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                     {records.length === 0 ? (
-                      <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-400">Belum ada catatan produksi</td></tr>
+                      <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-400">Belum ada catatan produksi</td></tr>
                     ) : (
                       records.map((record) => (
                         <tr key={record.id} className="hover:bg-indigo-50/30 dark:hover:bg-slate-800/30 transition-colors">
@@ -304,6 +543,8 @@ export default function ProductionPage() {
                           <td className="px-6 py-4 font-mono text-xs bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 rounded mx-2">{record.product.code}</td>
                           <td className="px-6 py-4 font-semibold text-slate-800 dark:text-slate-200">{record.product.name}</td>
                           <td className="px-6 py-4 text-right font-bold text-emerald-600 dark:text-emerald-400">+{record.quantity.toLocaleString('id-ID')}</td>
+                          <td className="px-6 py-4 text-right font-bold text-rose-600 dark:text-rose-400">{(record.rejectQty || 0).toLocaleString('id-ID')}</td>
+                          <td className="px-6 py-4 text-right font-bold text-indigo-600 dark:text-indigo-400">{Math.max(0, (record.quantity || 0) - (record.rejectQty || 0)).toLocaleString('id-ID')}</td>
                         </tr>
                       ))
                     )}
@@ -384,6 +625,80 @@ export default function ProductionPage() {
         </Card>
       )}
 
+      {activeTab === 'targets' && (
+        <div className="grid gap-6 lg:grid-cols-5">
+          <Card className="lg:col-span-2 glass-card border-0 shadow-md rounded-2xl overflow-hidden">
+            <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
+              <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <Target className="w-5 h-5 text-brand-primary" /> Buat Target Produksi
+              </CardTitle>
+              <CardDescription>Target bulanan per produk untuk monitoring CEO/Owner</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <form onSubmit={handleCreateTarget} className="space-y-5">
+                <div className="space-y-2">
+                  <Label className="font-medium text-slate-600 dark:text-slate-300">Bulan Target</Label>
+                  <Input type="month" value={targetForm.targetMonth} onChange={(e) => setTargetForm({...targetForm, targetMonth: e.target.value})} className="rounded-xl" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium text-slate-600 dark:text-slate-300">Produk</Label>
+                  <Select value={targetForm.productId} onValueChange={(val) => setTargetForm({...targetForm, productId: val || ''})}>
+                    <SelectTrigger className="rounded-xl"><SelectValue placeholder="Pilih produk..." /></SelectTrigger>
+                    <SelectContent>
+                      {products.map(p => <SelectItem key={p.id} value={p.id}>{p.code} - {p.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium text-slate-600 dark:text-slate-300">Jumlah Target</Label>
+                  <Input type="number" min="1" value={targetForm.targetQty} onChange={(e) => setTargetForm({...targetForm, targetQty: e.target.value})} placeholder="Contoh: 5000" className="rounded-xl" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium text-slate-600 dark:text-slate-300">Catatan</Label>
+                  <Input value={targetForm.notes} onChange={(e) => setTargetForm({...targetForm, notes: e.target.value})} placeholder="Opsional" className="rounded-xl" />
+                </div>
+                <button type="submit" disabled={isSubmitting || products.length === 0} className="w-full h-11 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold transition-colors shadow-lg shadow-brand-primary/20 disabled:opacity-50">
+                  {isSubmitting ? 'Menyimpan...' : 'Simpan Target'}
+                </button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card className="lg:col-span-3 glass-card border-0 shadow-md rounded-2xl overflow-hidden">
+            <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
+              <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">Progress Target Bulanan</CardTitle>
+              <CardDescription>Warning otomatis muncul jika realisasi di bawah 80%</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                {targets.length === 0 ? (
+                  <p className="text-center text-slate-400 py-12">Belum ada target produksi bulan ini</p>
+                ) : targets.map((target) => (
+                  <div key={target.id} className="p-5">
+                    <div className="flex items-center justify-between gap-4 mb-2">
+                      <div>
+                        <p className="font-semibold text-slate-800 dark:text-slate-100">{target.product?.name}</p>
+                        <p className="text-xs text-slate-500">{target.actualQty.toLocaleString('id-ID')} / {target.targetQty.toLocaleString('id-ID')} unit</p>
+                      </div>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${target.status === 'WARNING' ? 'bg-rose-100 text-rose-700' : target.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {target.status === 'WARNING' ? 'Warning' : target.status === 'COMPLETED' ? 'Tercapai' : 'On Track'}
+                      </span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                      <div className={`h-full rounded-full ${target.status === 'WARNING' ? 'bg-rose-500' : target.status === 'COMPLETED' ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${Math.min(100, target.progress || 0)}%` }} />
+                    </div>
+                    <div className="flex justify-between mt-1 text-xs text-slate-500">
+                      <span>Gap: {target.gap.toLocaleString('id-ID')}</span>
+                      <span>{Number(target.progress || 0).toFixed(1)}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* TAB: MATRIKS BULANAN */}
       {activeTab === 'matrix' && (
         <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
@@ -423,7 +738,7 @@ export default function ProductionPage() {
                       <tr key={prod.code} className="hover:bg-indigo-50/20 dark:hover:bg-slate-800/20 transition-colors">
                         <td className="px-4 py-3 sticky left-0 bg-white dark:bg-slate-900">
                           <p className="font-semibold text-slate-800 dark:text-slate-200 text-xs">{prod.name}</p>
-                          <p className="text-[10px] text-slate-400 font-mono">{prod.code}</p>
+                          <p className="text-[10px] text-slate-400 font-mono">{prod.code} · reject {prod.rejectTotal}</p>
                         </td>
                         {daysInMonth.map(day => {
                           const dayKey = format(day, 'dd');

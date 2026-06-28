@@ -18,6 +18,7 @@ export default function AttendancePage() {
   const [todayAttendance, setTodayAttendance] = useState<any>(null);
   const [time, setTime] = useState<Date>(new Date());
   const [overtimes, setOvertimes] = useState<any[]>([]);
+  const [allOvertimes, setAllOvertimes] = useState<any[]>([]);
   const [showOvertimeForm, setShowOvertimeForm] = useState(false);
   const [overtimeForm, setOvertimeForm] = useState({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '', endTime: '', reason: '', notes: '' });
   const [submittingOT, setSubmittingOT] = useState(false);
@@ -58,6 +59,9 @@ export default function AttendancePage() {
         api.get('/attendances/today/all')
           .then(r => { if (r.data.success) setAllAttendanceToday(r.data.data); })
           .catch(() => {});
+        api.get('/overtime/all')
+          .then(r => { if (r.data.success) setAllOvertimes(r.data.data); })
+          .catch(() => {});
       }
     }
     fetchAttendances();
@@ -83,6 +87,19 @@ export default function AttendancePage() {
       }
     } catch { toast.error('Gagal mengajukan lembur'); }
     finally { setSubmittingOT(false); }
+  };
+
+  const handleOvertimeApproval = async (id: string, status: 'APPROVED' | 'REJECTED') => {
+    try {
+      const res = await api.patch(`/overtime/${id}/status`, { status });
+      if (res.data.success) {
+        toast.success(`Lembur berhasil di-${status === 'APPROVED' ? 'setujui' : 'tolak'}`);
+        const r = await api.get('/overtime/all');
+        if (r.data.success) setAllOvertimes(r.data.data);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal memproses lembur');
+    }
   };
 
   const handleCheckIn = async () => {
@@ -447,6 +464,46 @@ export default function AttendancePage() {
           </CardContent>
         </Card>
       </div>
+
+      {currentUser && EXECUTIVE_ROLES.includes(currentUser.role?.name) && (
+        <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
+          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
+            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">Approval Lembur Tim</CardTitle>
+            <CardDescription>{allOvertimes.filter(ot => ot.status === 'PENDING').length} pengajuan menunggu persetujuan</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+              {allOvertimes.length === 0 ? (
+                <p className="text-center text-slate-400 py-10">Belum ada pengajuan lembur tim</p>
+              ) : allOvertimes.map((ot) => (
+                <div key={ot.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4">
+                  <div>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">{ot.user?.name} · {ot.user?.division?.name}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {format(new Date(ot.date), 'dd MMM yyyy', { locale: id })} · {ot.totalHours.toFixed(1)} jam · {ot.reason}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                      ot.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
+                      ot.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' :
+                      'bg-amber-100 text-amber-700'
+                    }`}>
+                      {ot.status === 'APPROVED' ? 'Disetujui' : ot.status === 'REJECTED' ? 'Ditolak' : 'Menunggu'}
+                    </span>
+                    {ot.status === 'PENDING' && (
+                      <>
+                        <Button size="sm" variant="outline" className="rounded-lg border-rose-300 text-rose-600" onClick={() => handleOvertimeApproval(ot.id, 'REJECTED')}>Tolak</Button>
+                        <Button size="sm" className="rounded-lg bg-emerald-600 text-white hover:bg-emerald-700" onClick={() => handleOvertimeApproval(ot.id, 'APPROVED')}>Setujui</Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

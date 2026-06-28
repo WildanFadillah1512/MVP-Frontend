@@ -21,6 +21,14 @@ export default function WarehousePage() {
   const [activeTab, setActiveTab] = useState<'stock' | 'movements'>('stock');
 
   const [formData, setFormData] = useState({ warehouseItemId: '', type: 'IN', quantity: '', notes: '' });
+  const [itemForm, setItemForm] = useState({
+    code: '',
+    name: '',
+    category: '',
+    minStock: '',
+    currentStock: '',
+    unit: ''
+  });
 
   const fetchData = async () => {
     try {
@@ -52,7 +60,29 @@ export default function WarehousePage() {
     finally { setIsSubmitting(false); }
   };
 
+  const handleCreateItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!itemForm.code || !itemForm.name || !itemForm.category || !itemForm.unit) {
+      toast.error('Kode, nama, kategori, dan unit barang wajib diisi');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await warehouseApi.createItem(itemForm);
+      if (res.success) {
+        toast.success('Master barang berhasil dibuat');
+        setItemForm({ code: '', name: '', category: '', minStock: '', currentStock: '', unit: '' });
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Gagal membuat master barang');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const isWarehouseOrAbove = ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(userRole) || userDivision === 'GUDANG';
+  const canSetupItem = ['OWNER', 'CEO', 'GM', 'ADMIN', 'MANAGER'].includes(userRole) || userDivision === 'GUDANG';
   const lowStockItems = items.filter(i => i.currentStock <= i.minStock);
   const todayMovements = movements.filter(m => new Date(m.date).toDateString() === new Date().toDateString());
 
@@ -125,6 +155,30 @@ export default function WarehousePage() {
           </button>
         ))}
       </div>
+
+      {canSetupItem && (
+        <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
+          <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6">
+            <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <Plus className="w-5 h-5 text-brand-primary" /> Setup Master Barang
+            </CardTitle>
+            <CardDescription>Tambahkan bahan baku, kemasan, atau item gudang baru</CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <form onSubmit={handleCreateItem} className="grid gap-3 md:grid-cols-6">
+              <Input value={itemForm.code} onChange={(e) => setItemForm({...itemForm, code: e.target.value})} placeholder="Kode" className="rounded-xl" />
+              <Input value={itemForm.name} onChange={(e) => setItemForm({...itemForm, name: e.target.value})} placeholder="Nama barang" className="rounded-xl md:col-span-2" />
+              <Input value={itemForm.category} onChange={(e) => setItemForm({...itemForm, category: e.target.value})} placeholder="Kategori" className="rounded-xl" />
+              <Input value={itemForm.unit} onChange={(e) => setItemForm({...itemForm, unit: e.target.value})} placeholder="Unit" className="rounded-xl" />
+              <Input type="number" min="0" value={itemForm.minStock} onChange={(e) => setItemForm({...itemForm, minStock: e.target.value})} placeholder="Min stok" className="rounded-xl" />
+              <Input type="number" min="0" value={itemForm.currentStock} onChange={(e) => setItemForm({...itemForm, currentStock: e.target.value})} placeholder="Stok awal" className="rounded-xl" />
+              <button type="submit" disabled={isSubmitting} className="md:col-span-5 h-10 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold transition-colors disabled:opacity-50">
+                {isSubmitting ? 'Menyimpan...' : 'Tambah Barang'}
+              </button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       {/* TAB: STOK */}
       {activeTab === 'stock' && (

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { api } from '@/lib/api/axios';
-import { Users, Plus, Edit, Trash2, UserCheck, UserX, Search, Filter } from "lucide-react";
+import { Users, Plus, UserCheck, UserX, Search, Filter, Building2 } from "lucide-react";
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -19,6 +19,9 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userRole, setUserRole] = useState('');
+  const [divisionName, setDivisionName] = useState('');
+  const [creatingDivision, setCreatingDivision] = useState(false);
 
   const [form, setForm] = useState({
     email: '', password: '', name: '', roleId: '', divisionId: '', supervisorId: '', totalQuota: '12'
@@ -39,7 +42,14 @@ export default function UsersPage() {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    const userStr = sessionStorage.getItem('user');
+    if (userStr) {
+      const current = JSON.parse(userStr);
+      setUserRole(current.role?.name || '');
+    }
+    fetchData();
+  }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +69,24 @@ export default function UsersPage() {
     }
   };
 
+  const handleCreateDivision = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!divisionName.trim()) return toast.error('Nama divisi wajib diisi');
+    setCreatingDivision(true);
+    try {
+      const res = await api.post('/users/divisions', { name: divisionName });
+      if (res.data.success) {
+        toast.success('Divisi berhasil dibuat');
+        setDivisionName('');
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal membuat divisi');
+    } finally {
+      setCreatingDivision(false);
+    }
+  };
+
   const handleToggleActive = async (userId: string, currentActive: boolean) => {
     try {
       if (currentActive) {
@@ -73,6 +101,8 @@ export default function UsersPage() {
       toast.error('Gagal mengubah status user');
     }
   };
+
+  const canCreateDivision = ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(userRole);
 
   if (loading) return (
     <div className="flex h-[60vh] items-center justify-center">
@@ -163,6 +193,32 @@ export default function UsersPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {canCreateDivision && (
+        <Card className="glass-card border-0 shadow-md rounded-2xl">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg text-slate-800 dark:text-slate-100">
+              <Building2 className="w-5 h-5 text-brand-primary" />
+              Setup Divisi
+            </CardTitle>
+            <CardDescription>Owner, CEO, GM, dan Admin dapat menambahkan divisi baru.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleCreateDivision} className="flex flex-col sm:flex-row gap-3">
+              <Input
+                value={divisionName}
+                onChange={(e) => setDivisionName(e.target.value)}
+                placeholder="Contoh: MARKETING"
+                className="rounded-xl"
+              />
+              <Button type="submit" disabled={creatingDivision} className="rounded-xl bg-brand-primary text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                {creatingDivision ? 'Menyimpan...' : 'Tambah Divisi'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="glass-card border-0 shadow-md rounded-2xl overflow-hidden">
         <CardHeader className="bg-white/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">

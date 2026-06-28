@@ -1,24 +1,30 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FileText, CheckCircle, AlertTriangle, TrendingUp, ArrowUpRight, BarChart3, Building2 } from "lucide-react";
+import { Users, FileText, CheckCircle, AlertTriangle, TrendingUp, ArrowUpRight, BarChart3, Building2, Download, Award } from "lucide-react";
 import { dashboardApi } from '@/features/dashboard/api/dashboard.api';
+import { exportApi } from '@/features/export/api/export.api';
 
 export default function CEODashboard() {
+  const pathname = usePathname();
   const [data, setData] = useState<any>(null);
   const [prodStats, setProdStats] = useState<any>(null);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [res, prodRes] = await Promise.all([
+        const [res, prodRes, leaderboardRes] = await Promise.all([
           dashboardApi.getCeoData(),
-          dashboardApi.getProductionStats()
+          dashboardApi.getProductionStats(),
+          dashboardApi.getEmployeeLeaderboard()
         ]);
         if (res.success) setData(res.data);
         if (prodRes.success) setProdStats(prodRes.data);
+        if (leaderboardRes.success) setLeaderboard(leaderboardRes.data);
       } catch (error) { console.error(error); }
       finally { setLoading(false); }
     };
@@ -31,16 +37,35 @@ export default function CEODashboard() {
     </div>
   );
   if (!data) return <div>Gagal memuat data.</div>;
+  const isOwnerDashboard = pathname.includes('/dashboard/owner');
+
+  const handleDownloadAll = async () => {
+    const response = await exportApi.exportAllStatistics();
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `SikaryaERP_Statistik_Lengkap_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="flex flex-col gap-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/60 border border-[#D7CBB5] backdrop-blur-sm p-6 rounded-2xl shadow-md">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#3E231B]">CEO Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-[#3E231B]">{isOwnerDashboard ? 'Owner Dashboard' : 'CEO Dashboard'}</h1>
           <p className="text-[#754437] mt-1">Ringkasan performa dan operasional perusahaan hari ini.</p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleDownloadAll}
+            className="px-4 py-2 bg-[#89523D] text-[#FAF3E0] rounded-lg font-medium text-sm flex items-center hover:bg-[#754437] transition-colors"
+          >
+            <Download className="w-4 h-4 mr-2" /> Download Statistik
+          </button>
           <div className="px-4 py-2 bg-[#28374A]/10 text-[#28374A] rounded-lg font-medium text-sm flex items-center">
             <TrendingUp className="w-4 h-4 mr-2" /> Live Analytics
           </div>
@@ -227,6 +252,46 @@ export default function CEODashboard() {
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {leaderboard.length > 0 && (
+        <Card className="bg-white/90 border border-[#D7CBB5] shadow-md rounded-2xl">
+          <CardHeader className="border-b border-[#D7CBB5] pb-4">
+            <CardTitle className="text-lg text-[#3E231B] flex items-center gap-2">
+              <Award className="w-5 h-5 text-[#89523D]" /> Statistik Performa Karyawan
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-[#FAF3E0] text-[#754437]">
+                <tr>
+                  <th className="px-4 py-3 text-left font-semibold">Karyawan</th>
+                  <th className="px-4 py-3 text-left font-semibold">Role/Divisi</th>
+                  <th className="px-4 py-3 text-right font-semibold">Absensi</th>
+                  <th className="px-4 py-3 text-right font-semibold">Laporan</th>
+                  <th className="px-4 py-3 text-right font-semibold">Target</th>
+                  <th className="px-4 py-3 text-right font-semibold">KPI</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#D7CBB5]">
+                {leaderboard.slice(0, 10).map((employee) => (
+                  <tr key={employee.id} className="hover:bg-[#FAF3E0]/60">
+                    <td className="px-4 py-3 font-semibold text-[#3E231B]">{employee.name}</td>
+                    <td className="px-4 py-3 text-[#754437]">{employee.role} / {employee.division}</td>
+                    <td className="px-4 py-3 text-right text-[#754437]">{employee.attendanceScore}%</td>
+                    <td className="px-4 py-3 text-right text-[#754437]">{employee.reportScore}%</td>
+                    <td className="px-4 py-3 text-right text-[#754437]">{employee.targetScore}%</td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={`font-bold ${employee.kpiScore >= 75 ? 'text-[#6B6751]' : 'text-[#89523D]'}`}>
+                        {employee.kpiScore} ({employee.grade})
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </CardContent>
         </Card>
       )}

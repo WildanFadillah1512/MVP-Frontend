@@ -8,6 +8,10 @@ export const exportApi = {
   exportProduction: async () => {
     const response = await api.get('/export/production', { responseType: 'blob' });
     return response;
+  },
+  exportAllStatistics: async () => {
+    const response = await api.get('/export/all-statistics', { responseType: 'blob' });
+    return response;
   }
 };
 

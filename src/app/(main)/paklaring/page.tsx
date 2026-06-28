@@ -159,11 +159,13 @@ export default function PaklaringPage() {
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="rounded-xl bg-brand-primary hover:bg-brand-primary/90 shadow-lg">
-              <Plus className="w-4 h-4 mr-2" /> Terbitkan Paklaring
-            </Button>
-          </DialogTrigger>
+          <DialogTrigger
+            render={
+              <Button className="rounded-xl bg-brand-primary hover:bg-brand-primary/90 shadow-lg">
+                <Plus className="w-4 h-4 mr-2" /> Terbitkan Paklaring
+              </Button>
+            }
+          />
           <DialogContent className="sm:max-w-[600px] rounded-2xl">
             <DialogHeader>
               <DialogTitle>Terbitkan Surat Paklaring Baru</DialogTitle>
@@ -174,7 +176,7 @@ export default function PaklaringPage() {
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="space-y-2">
                 <Label>Pilih Karyawan <span className="text-rose-500">*</span></Label>
-                <Select value={form.employeeId} onValueChange={v => setForm({...form, employeeId: v})}>
+                <Select value={form.employeeId} onValueChange={v => setForm({...form, employeeId: v || ''})}>
                   <SelectTrigger className="rounded-xl"><SelectValue placeholder="Cari karyawan..." /></SelectTrigger>
                   <SelectContent>
                     {users.map(u => (

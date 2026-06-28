@@ -20,5 +20,13 @@ export const reportApi = {
     const response = await api.get('/daily-reports/me');
     return response.data;
   },
+  getLockedReports: async () => {
+    const response = await api.get('/daily-reports/locked');
+    return response.data;
+  },
+  unlockReport: async (id: string) => {
+    const response = await api.patch(`/daily-reports/${id}/unlock`);
+    return response.data;
+  },
 };
 

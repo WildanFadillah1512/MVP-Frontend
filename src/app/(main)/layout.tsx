@@ -106,11 +106,12 @@ const getSidebarMenus = (role: string, division: string) => {
       ...Object.values(gmDivisions),
       ...erpMenus,
     ];
-  } else if (role === 'MANAGER') {
+  } else if (role === 'MANAGER' || role === 'LEADER') {
     const myDivisionMenu = divisionMenuMap[division.toUpperCase()];
     menus = [
       ...menus,
       ...managerialMenus,
+      ...(role === 'MANAGER' ? adminOnlyMenus : []),
       ...(myDivisionMenu ? [myDivisionMenu] : []),
     ];
   } else {
@@ -155,7 +156,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex h-full flex-col bg-sidebar border-r border-sidebar-border">
       <div className="p-6 flex items-center justify-center border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <img src="/logo.jpeg" alt="Logo" className="w-10 h-10 object-cover rounded shadow-sm" />
+          <img src="/logo.jpeg" alt="SikaryaERP" className="w-10 h-10 object-cover rounded shadow-sm" />
           <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-500 dark:from-white dark:to-slate-400">
             Sikarya<span className="font-light">ERP</span>
           </h2>
@@ -197,7 +198,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <div className="flex flex-col overflow-hidden">
             <span className="text-sm font-bold text-sidebar-foreground truncate">{user.name}</span>
-            <span className="text-xs font-medium text-muted-foreground truncate">{user.role.name} · {user.division.name}</span>
+            <span className="text-xs font-medium text-muted-foreground truncate">{user.role.name} - {user.division.name}</span>
           </div>
         </div>
       </div>
@@ -209,7 +210,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 w-full glass z-30 border-b border-slate-200/50 p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img src="/logo.jpeg" alt="Logo" className="w-8 h-8 object-cover rounded shadow-sm" />
+          <img src="/logo.jpeg" alt="SikaryaERP" className="w-8 h-8 object-cover rounded shadow-sm" />
           <h2 className="text-lg font-bold text-slate-800 dark:text-white">SikaryaERP</h2>
         </div>
         <Sheet>

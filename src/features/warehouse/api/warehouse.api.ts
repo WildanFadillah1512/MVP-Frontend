@@ -5,6 +5,10 @@ export const warehouseApi = {
     const response = await api.get('/warehouse/items');
     return response.data;
   },
+  createItem: async (data: any) => {
+    const response = await api.post('/warehouse/items', data);
+    return response.data;
+  },
   getMovements: async () => {
     const response = await api.get('/warehouse/movements');
     return response.data;

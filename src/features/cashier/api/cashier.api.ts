@@ -5,6 +5,10 @@ export const cashierApi = {
     const response = await api.get('/cashier/branches');
     return response.data;
   },
+  createBranch: async (data: any) => {
+    const response = await api.post('/cashier/branches', data);
+    return response.data;
+  },
   getReports: async () => {
     const response = await api.get('/cashier/reports');
     return response.data;
