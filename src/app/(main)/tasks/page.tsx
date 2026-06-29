@@ -156,7 +156,11 @@ export default function TasksPage() {
                 <div className="space-y-2">
                   <Label className="font-semibold text-foreground">Tugaskan Ke <span className="text-rose-500">*</span></Label>
                   <Select value={form.assignedTo} onValueChange={v => setForm({...form, assignedTo: v || ''})}>
-                    <SelectTrigger className="rounded-xl bg-card h-11"><SelectValue placeholder="Pilih karyawan..." /></SelectTrigger>
+                    <SelectTrigger className="rounded-xl bg-card h-11 overflow-hidden">
+                      <SelectValue placeholder="Pilih karyawan...">
+                        {form.assignedTo ? allUsers.find(u => u.id === form.assignedTo)?.name : "Pilih karyawan..."}
+                      </SelectValue>
+                    </SelectTrigger>
                     <SelectContent>
                       {allUsers.filter(u => u.id !== userId).map(u => (
                         <SelectItem key={u.id} value={u.id}>{u.name} ({u.role?.name} · {u.division?.name})</SelectItem>
@@ -168,7 +172,11 @@ export default function TasksPage() {
                   <div className="space-y-2">
                     <Label className="font-semibold text-foreground">Prioritas</Label>
                     <Select value={form.priority} onValueChange={v => setForm({...form, priority: v || 'MEDIUM'})}>
-                      <SelectTrigger className="rounded-xl bg-card h-11"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="rounded-xl bg-card h-11 overflow-hidden">
+                        <SelectValue>
+                          {{LOW: 'Rendah', MEDIUM: 'Sedang', HIGH: 'Tinggi', URGENT: 'Mendesak'}[form.priority] || 'Sedang'}
+                        </SelectValue>
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="LOW">Rendah</SelectItem>
                         <SelectItem value="MEDIUM">Sedang</SelectItem>
@@ -251,8 +259,10 @@ export default function TasksPage() {
                       {(task.assignedTo === userId || canAssign) && task.status !== 'COMPLETED' && task.status !== 'CANCELLED' && (
                         <div className="shrink-0 mt-2 sm:mt-0">
                           <Select value={task.status} onValueChange={v => updateStatus(task.id, v)}>
-                            <SelectTrigger className="w-full sm:w-40 h-10 text-xs font-bold rounded-xl border-border bg-card shadow-sm hover:border-primary/50 transition-colors">
-                              <SelectValue />
+                            <SelectTrigger className="w-full sm:w-40 h-10 text-xs font-bold rounded-xl border-border bg-card shadow-sm hover:border-primary/50 transition-colors overflow-hidden">
+                              <SelectValue>
+                                {{TODO: 'Belum Mulai', IN_PROGRESS: 'Mulai Kerjakan', REVIEW: 'Minta Review', COMPLETED: 'Tandai Selesai', CANCELLED: 'Batalkan'}[task.status] || 'Status'}
+                              </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="TODO">Belum Mulai</SelectItem>

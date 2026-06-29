@@ -224,8 +224,10 @@ export default function CashierPage() {
               <div className="space-y-2">
                 <Label className="font-medium text-foreground">Cabang <span className="text-rose-500">*</span></Label>
                 <Select value={formData.branchId} onValueChange={v => setFormData({...formData, branchId: v || ''})}>
-                  <SelectTrigger className="rounded-xl border-border bg-muted/30 ">
-                    <SelectValue placeholder="Pilih cabang..." />
+                  <SelectTrigger className="rounded-xl border-border bg-muted/30 overflow-hidden">
+                    <SelectValue placeholder="Pilih cabang...">
+                      {formData.branchId ? branches.find(b => b.id === formData.branchId)?.name : "Pilih cabang..."}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {branches.length === 0 && <SelectItem value="none" disabled>Tidak ada data cabang — hubungi Admin</SelectItem>}

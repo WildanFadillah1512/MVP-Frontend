@@ -260,8 +260,10 @@ export default function PerformancePage() {
             <div className="space-y-2">
               <Label className="font-semibold text-foreground text-sm">Assignee (Karyawan) <span className="text-rose-500">*</span></Label>
               <Select value={form.assigneeId} onValueChange={v => setForm({...form, assigneeId: v ?? ''})}>
-                <SelectTrigger className="rounded-xl border-border bg-muted/30 h-11">
-                  <SelectValue placeholder="Pilih karyawan..." />
+                <SelectTrigger className="rounded-xl border-border bg-muted/30 h-11 overflow-hidden">
+                  <SelectValue placeholder="Pilih karyawan...">
+                    {form.assigneeId ? teamMembers.find(m => m.id === form.assigneeId)?.name : "Pilih karyawan..."}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {teamMembers.map(m => (
@@ -316,8 +318,10 @@ export default function PerformancePage() {
             <div className="space-y-2">
               <Label className="font-semibold text-foreground text-sm">Periode</Label>
               <Select value={form.period} onValueChange={v => setForm({...form, period: v ?? 'MONTHLY'})}>
-                <SelectTrigger className="rounded-xl border-border bg-muted/30 h-11">
-                  <SelectValue />
+                <SelectTrigger className="rounded-xl border-border bg-muted/30 h-11 overflow-hidden">
+                  <SelectValue>
+                    {{DAILY: 'Harian', WEEKLY: 'Mingguan', MONTHLY: 'Bulanan'}[form.period] || 'Bulanan'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="DAILY">Harian</SelectItem>

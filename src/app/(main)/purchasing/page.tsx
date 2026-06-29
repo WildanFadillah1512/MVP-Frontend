@@ -229,7 +229,11 @@ export default function PurchasingPage() {
                 <div className="space-y-2">
                   <Label className="font-medium text-foreground">Prioritas</Label>
                   <Select value={needForm.priority} onValueChange={v => setNeedForm({...needForm, priority: v || 'MEDIUM'})}>
-                    <SelectTrigger className="rounded-xl border-border bg-muted/30 "><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="rounded-xl border-border bg-muted/30 overflow-hidden">
+                      <SelectValue>
+                        {{LOW: 'Rendah', MEDIUM: 'Sedang', HIGH: 'Tinggi'}[needForm.priority] || 'Sedang'}
+                      </SelectValue>
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="HIGH">?? Tinggi — Mendesak</SelectItem>
                       <SelectItem value="MEDIUM">?? Sedang</SelectItem>

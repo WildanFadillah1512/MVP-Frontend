@@ -247,8 +247,10 @@ export default function WarehousePage() {
                   <div className="space-y-2">
                     <Label className="font-medium text-foreground">Pilih Barang <span className="text-rose-500">*</span></Label>
                     <Select value={formData.warehouseItemId} onValueChange={v => setFormData({...formData, warehouseItemId: v || ''})}>
-                      <SelectTrigger className="rounded-xl border-border bg-muted/30 ">
-                        <SelectValue placeholder="Pilih barang..." />
+                      <SelectTrigger className="rounded-xl border-border bg-muted/30 overflow-hidden">
+                        <SelectValue placeholder="Pilih barang...">
+                          {formData.warehouseItemId ? items.find(i => i.id === formData.warehouseItemId)?.name : "Pilih barang..."}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {items.length === 0 && <SelectItem value="none" disabled>Tidak ada data barang</SelectItem>}

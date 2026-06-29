@@ -361,8 +361,10 @@ export default function ProductionPage() {
             </div>
             <form onSubmit={handleSetInitialStock} className="grid gap-3 md:grid-cols-5">
               <Select value={initialStockForm.productId} onValueChange={(val) => setInitialStockForm({...initialStockForm, productId: val || ''})}>
-                <SelectTrigger className="rounded-xl">
-                  <SelectValue placeholder="Pilih produk..." />
+                <SelectTrigger className="rounded-xl overflow-hidden">
+                  <SelectValue placeholder="Pilih produk...">
+                    {initialStockForm.productId ? products.find(p => p.id === initialStockForm.productId)?.name : "Pilih produk..."}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {products.map(p => <SelectItem key={p.id} value={p.id}>{p.code} - {p.name}</SelectItem>)}
@@ -450,8 +452,10 @@ export default function ProductionPage() {
                 <div className="space-y-2">
                   <Label className="font-medium text-foreground">Pilih Produk <span className="text-rose-500">*</span></Label>
                   <Select value={formData.productId} onValueChange={(val) => setFormData({...formData, productId: val || ''})}>
-                    <SelectTrigger className="rounded-xl border-border bg-muted/30 ">
-                      <SelectValue placeholder="Pilih produk..." />
+                    <SelectTrigger className="rounded-xl border-border bg-muted/30 overflow-hidden">
+                      <SelectValue placeholder="Pilih produk...">
+                        {formData.productId ? products.find(p => p.id === formData.productId)?.name : "Pilih produk..."}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {products.length === 0 && <SelectItem value="none" disabled>Tidak ada data produk — hubungi Admin</SelectItem>}
@@ -580,8 +584,10 @@ export default function ProductionPage() {
               <div className="space-y-2">
                 <Label className="font-medium text-foreground">Pilih Bahan Baku <span className="text-rose-500">*</span></Label>
                 <Select value={materialForm.warehouseItemId} onValueChange={(val) => setMaterialForm({...materialForm, warehouseItemId: val || ''})}>
-                  <SelectTrigger className="rounded-xl border-border bg-muted/30 ">
-                    <SelectValue placeholder="Pilih barang dari gudang..." />
+                  <SelectTrigger className="rounded-xl border-border bg-muted/30 overflow-hidden">
+                    <SelectValue placeholder="Pilih barang dari gudang...">
+                      {materialForm.warehouseItemId ? warehouseItems.find(w => w.id === materialForm.warehouseItemId)?.name : "Pilih barang dari gudang..."}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {warehouseItems.length === 0 && <SelectItem value="none" disabled>Tidak ada stok gudang</SelectItem>}
@@ -643,7 +649,11 @@ export default function ProductionPage() {
                 <div className="space-y-2">
                   <Label className="font-medium text-foreground">Produk</Label>
                   <Select value={targetForm.productId} onValueChange={(val) => setTargetForm({...targetForm, productId: val || ''})}>
-                    <SelectTrigger className="rounded-xl"><SelectValue placeholder="Pilih produk..." /></SelectTrigger>
+                    <SelectTrigger className="rounded-xl overflow-hidden">
+                      <SelectValue placeholder="Pilih produk...">
+                        {targetForm.productId ? products.find(p => p.id === targetForm.productId)?.name : "Pilih produk..."}
+                      </SelectValue>
+                    </SelectTrigger>
                     <SelectContent>
                       {products.map(p => <SelectItem key={p.id} value={p.id}>{p.code} - {p.name}</SelectItem>)}
                     </SelectContent>

@@ -177,7 +177,11 @@ export default function PaklaringPage() {
               <div className="space-y-2">
                 <Label>Pilih Karyawan <span className="text-rose-500">*</span></Label>
                 <Select value={form.employeeId} onValueChange={v => setForm({...form, employeeId: v || ''})}>
-                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Cari karyawan..." /></SelectTrigger>
+                <SelectTrigger className="rounded-xl overflow-hidden">
+                  <SelectValue placeholder="Cari karyawan...">
+                    {form.employeeId ? users.find(u => u.id === form.employeeId)?.name : "Cari karyawan..."}
+                  </SelectValue>
+                </SelectTrigger>
                   <SelectContent>
                     {users.map(u => (
                       <SelectItem key={u.id} value={u.id}>{u.name} ({u.role?.name})</SelectItem>

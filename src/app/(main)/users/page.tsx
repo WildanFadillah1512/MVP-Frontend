@@ -155,7 +155,11 @@ export default function UsersPage() {
                   <div className="space-y-2">
                     <Label className="text-foreground font-medium">Role Sistem</Label>
                     <Select required value={form.roleId} onValueChange={v => setForm({...form, roleId: v || ''})}>
-                      <SelectTrigger className="rounded-xl"><SelectValue placeholder="Pilih hak akses..." /></SelectTrigger>
+                      <SelectTrigger className="rounded-xl overflow-hidden">
+                        <SelectValue placeholder="Pilih hak akses...">
+                          {form.roleId ? options.roles.find((r: any) => r.id === form.roleId)?.name : "Pilih hak akses..."}
+                        </SelectValue>
+                      </SelectTrigger>
                       <SelectContent className="rounded-xl">
                         {options.roles.map((r: any) => <SelectItem key={r.id} value={r.id} className="rounded-lg">{r.name}</SelectItem>)}
                       </SelectContent>
@@ -164,7 +168,11 @@ export default function UsersPage() {
                   <div className="space-y-2">
                     <Label className="text-foreground font-medium">Penempatan Divisi</Label>
                     <Select required value={form.divisionId} onValueChange={v => setForm({...form, divisionId: v || ''})}>
-                      <SelectTrigger className="rounded-xl"><SelectValue placeholder="Pilih divisi..." /></SelectTrigger>
+                      <SelectTrigger className="rounded-xl overflow-hidden">
+                        <SelectValue placeholder="Pilih divisi...">
+                          {form.divisionId ? options.divisions.find((d: any) => d.id === form.divisionId)?.name : "Pilih divisi..."}
+                        </SelectValue>
+                      </SelectTrigger>
                       <SelectContent className="rounded-xl">
                         {options.divisions.map((d: any) => <SelectItem key={d.id} value={d.id} className="rounded-lg">{d.name}</SelectItem>)}
                       </SelectContent>
@@ -174,7 +182,12 @@ export default function UsersPage() {
                 <div className="space-y-2">
                   <Label className="text-foreground font-medium">Lapor Kepada (Atasan Langsung)</Label>
                   <Select value={form.supervisorId} onValueChange={v => setForm({...form, supervisorId: v || ''})}>
-                    <SelectTrigger className="rounded-xl"><SelectValue placeholder="Tidak wajib (Pilih atasan...)" /></SelectTrigger>
+                    <SelectTrigger className="rounded-xl overflow-hidden">
+                      <SelectValue placeholder="Tidak wajib (Pilih atasan...)">
+                        {form.supervisorId === 'none' ? 'Tidak ada atasan' : 
+                          form.supervisorId ? options.supervisors.find((s: any) => s.id === form.supervisorId)?.name : "Tidak wajib (Pilih atasan...)"}
+                      </SelectValue>
+                    </SelectTrigger>
                     <SelectContent className="rounded-xl">
                       <SelectItem value="none">Tidak ada atasan</SelectItem>
                       {options.supervisors.map((s: any) => <SelectItem key={s.id} value={s.id} className="rounded-lg">{s.name} <span className="text-muted-foreground">({s.role?.name || s.email})</span></SelectItem>)}
