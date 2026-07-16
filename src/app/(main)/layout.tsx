@@ -44,11 +44,11 @@ const getSidebarMenus = (role: string, division: string) => {
   const commonMenus = [
     { name: 'Dashboard', href: `/dashboard/${role.toLowerCase()}`, icon: LayoutDashboard },
     { name: 'Absensi', href: '/attendance', icon: Clock },
-    { name: 'Cuti', href: '/leave', icon: Calendar },
     { name: 'Laporan Harian', href: '/daily-reports', icon: FileText },
     { name: 'Upload Harian', href: '/daily-uploads', icon: UploadCloud },
     { name: 'Tugas', href: '/tasks', icon: CheckSquare },
     { name: 'Target & KPI', href: '/performance', icon: Target },
+    { name: 'Cuti', href: '/leave', icon: Calendar },
     { name: 'Chat Divisi', href: '/chat', icon: MessageSquare },
   ];
 
@@ -75,6 +75,14 @@ const getSidebarMenus = (role: string, division: string) => {
     GUDANG:    { name: 'Gudang',    href: '/warehouse', icon: Box },
   };
 
+  // === MENU CEO/OWNER KHUSUS ===
+  const ceoSpecialMenus = [
+    { name: 'Resep Produk', href: '/recipes', icon: FileText },
+    { name: 'Supplier', href: '/suppliers', icon: Users },
+    { name: 'Slip Gaji', href: '/payroll', icon: DollarSign },
+    { name: 'Purchase Requests', href: '/purchase-requests', icon: ShoppingCart },
+  ];
+
   // === MENU ERP TAHAP 2 (hanya CEO & ADMIN, tampil tapi terkunci) ===
   const erpMenus = [
     { name: 'Master Data ERP', href: '/erp/master',   icon: Box,       isLocked: true },
@@ -93,6 +101,7 @@ const getSidebarMenus = (role: string, division: string) => {
       ...managerialMenus,
       ...adminOnlyMenus,
       ...(role === 'CEO' || role === 'OWNER' ? topLevelMenus : []),
+      ...(role === 'CEO' || role === 'OWNER' ? ceoSpecialMenus : []),
       ...Object.values(divisionMenuMap),
       ...erpMenus,
     ];
