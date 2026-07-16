@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import api from '@/lib/api/axios';
 import { Plus, CheckCircle, DollarSign, Eye } from 'lucide-react';
 import { format } from 'date-fns';
@@ -41,7 +41,6 @@ export default function PayrollPage() {
   const [showDialog, setShowDialog] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null);
-  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     userId: '',
@@ -62,11 +61,7 @@ export default function PayrollPage() {
       const response = await api.get('/payroll');
       setPayrolls(response.data.data);
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal mengambil data payroll',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal mengambil data payroll');
     } finally {
       setLoading(false);
     }
@@ -91,44 +86,32 @@ export default function PayrollPage() {
         bonus: Number(formData.bonus),
         deductions: Number(formData.deductions)
       });
-      toast({ title: 'Sukses', description: 'Payroll berhasil digenerate' });
+      toast.success('Payroll berhasil digenerate');
       setShowDialog(false);
       resetForm();
       fetchPayrolls();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal generate payroll',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal generate payroll');
     }
   };
 
   const handleApprove = async (id: string) => {
     try {
       await api.patch(`/payroll/${id}/approve`);
-      toast({ title: 'Sukses', description: 'Payroll berhasil disetujui' });
+      toast.success('Payroll berhasil disetujui');
       fetchPayrolls();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal menyetujui payroll',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal menyetujui payroll');
     }
   };
 
   const handleMarkPaid = async (id: string) => {
     try {
       await api.patch(`/payroll/${id}/paid`);
-      toast({ title: 'Sukses', description: 'Payroll ditandai sudah dibayar' });
+      toast.success('Payroll ditandai sudah dibayar');
       fetchPayrolls();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal menandai payroll',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal menandai payroll');
     }
   };
 

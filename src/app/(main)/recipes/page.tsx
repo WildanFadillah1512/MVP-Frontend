@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import api from '@/lib/api/axios';
 import { Plus, Trash2, Calculator, Play } from 'lucide-react';
 
@@ -38,7 +38,6 @@ export default function RecipesPage() {
   const [showProduceDialog, setShowProduceDialog] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [calculation, setCalculation] = useState<any>(null);
-  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     productId: '',
@@ -68,11 +67,7 @@ export default function RecipesPage() {
       const response = await api.get('/recipes');
       setRecipes(response.data.data);
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal mengambil data resep',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal mengambil data resep');
     } finally {
       setLoading(false);
     }
@@ -124,16 +119,12 @@ export default function RecipesPage() {
           qtyNeeded: Number(ing.qtyNeeded)
         }))
       });
-      toast({ title: 'Sukses', description: 'Resep berhasil disimpan' });
+      toast.success('Resep berhasil disimpan');
       setShowDialog(false);
       resetForm();
       fetchRecipes();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal menyimpan resep',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal menyimpan resep');
     }
   };
 
@@ -148,11 +139,7 @@ export default function RecipesPage() {
       });
       setCalculation(response.data.data);
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal menghitung',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal menghitung');
     }
   };
 
@@ -163,18 +150,11 @@ export default function RecipesPage() {
         ...produceData,
         batchCount: Number(produceData.batchCount)
       });
-      toast({ 
-        title: 'Sukses', 
-        description: 'Produksi berhasil! Bahan otomatis berkurang, stok produk bertambah' 
-      });
+      toast.success('Produksi berhasil! Bahan otomatis berkurang, stok produk bertambah');
       setShowProduceDialog(false);
       resetProduceForm();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal produksi',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal produksi');
     }
   };
 
@@ -182,14 +162,10 @@ export default function RecipesPage() {
     if (!confirm('Hapus bahan dari resep?')) return;
     try {
       await api.delete(`/recipes/${recipeId}`);
-      toast({ title: 'Sukses', description: 'Bahan dihapus dari resep' });
+      toast.success('Bahan dihapus dari resep');
       fetchRecipes();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal menghapus',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal menghapus');
     }
   };
 

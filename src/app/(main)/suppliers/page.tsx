@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import api from '@/lib/api/axios';
 import { Plus, Edit, CheckCircle, Trash2 } from 'lucide-react';
 
@@ -30,7 +30,6 @@ export default function SuppliersPage() {
   const [showPriceDialog, setShowPriceDialog] = useState(false);
   const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
   const [warehouseItems, setWarehouseItems] = useState<any[]>([]);
-  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     code: '',
@@ -57,11 +56,7 @@ export default function SuppliersPage() {
       const response = await api.get('/suppliers');
       setSuppliers(response.data.data);
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal mengambil data supplier',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal mengambil data supplier');
     } finally {
       setLoading(false);
     }
@@ -81,34 +76,26 @@ export default function SuppliersPage() {
     try {
       if (editSupplier) {
         await api.put(`/suppliers/${editSupplier.id}`, formData);
-        toast({ title: 'Sukses', description: 'Supplier berhasil diupdate' });
+        toast.success('Supplier berhasil diupdate');
       } else {
         await api.post('/suppliers', formData);
-        toast({ title: 'Sukses', description: 'Supplier berhasil ditambahkan' });
+        toast.success('Supplier berhasil ditambahkan');
       }
       setShowDialog(false);
       resetForm();
       fetchSuppliers();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal menyimpan supplier',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal menyimpan supplier');
     }
   };
 
   const handleApprove = async (id: string) => {
     try {
       await api.patch(`/suppliers/${id}/approve`);
-      toast({ title: 'Sukses', description: 'Supplier berhasil disetujui' });
+      toast.success('Supplier berhasil disetujui');
       fetchSuppliers();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal menyetujui supplier',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal menyetujui supplier');
     }
   };
 
@@ -116,16 +103,12 @@ export default function SuppliersPage() {
     e.preventDefault();
     try {
       await api.post('/suppliers/prices', priceData);
-      toast({ title: 'Sukses', description: 'Harga supplier berhasil diset' });
+      toast.success('Harga supplier berhasil diset');
       setShowPriceDialog(false);
       setPriceData({ supplierId: '', warehouseItemId: '', unitPrice: '' });
       fetchSuppliers();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal mengset harga',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal mengset harga');
     }
   };
 

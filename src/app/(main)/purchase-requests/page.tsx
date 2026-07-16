@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import api from '@/lib/api/axios';
 import { Plus, Send, CheckCircle, XCircle, ShoppingCart } from 'lucide-react';
 
@@ -38,7 +38,6 @@ export default function PurchaseRequestsPage() {
   const [showPriceDialog, setShowPriceDialog] = useState(false);
   const [showPurchasedDialog, setShowPurchasedDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<PurchaseRequest | null>(null);
-  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     warehouseItemId: '',
@@ -70,11 +69,7 @@ export default function PurchaseRequestsPage() {
       const response = await api.get('/purchase-requests');
       setRequests(response.data.data);
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal mengambil data',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal mengambil data');
     } finally {
       setLoading(false);
     }
@@ -114,30 +109,22 @@ export default function PurchaseRequestsPage() {
         ...formData,
         requestedQty: Number(formData.requestedQty)
       });
-      toast({ title: 'Sukses', description: 'Purchase request berhasil dibuat' });
+      toast.success('Purchase request berhasil dibuat');
       setShowDialog(false);
       resetForm();
       fetchRequests();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal membuat request',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal membuat request');
     }
   };
 
   const handleSubmit = async (id: string) => {
     try {
       await api.patch(`/purchase-requests/${id}/submit`);
-      toast({ title: 'Sukses', description: 'Request disubmit ke Purchasing' });
+      toast.success('Request disubmit ke Purchasing');
       fetchRequests();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal submit request',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal submit request');
     }
   };
 
@@ -150,43 +137,31 @@ export default function PurchaseRequestsPage() {
         estimatedBudget: Number(priceData.estimatedBudget),
         actualPrice: Number(priceData.actualPrice)
       });
-      toast({ title: 'Sukses', description: 'Harga dan supplier berhasil diset' });
+      toast.success('Harga dan supplier berhasil diset');
       setShowPriceDialog(false);
       fetchRequests();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal set harga',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal set harga');
     }
   };
 
   const handleManagerApprove = async (id: string) => {
     try {
       await api.patch(`/purchase-requests/${id}/manager-approve`);
-      toast({ title: 'Sukses', description: 'Request disetujui oleh Manager' });
+      toast.success('Request disetujui oleh Manager');
       fetchRequests();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal approve',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal approve');
     }
   };
 
   const handleCeoApprove = async (id: string) => {
     try {
       await api.patch(`/purchase-requests/${id}/ceo-approve`);
-      toast({ title: 'Sukses', description: 'Request disetujui oleh CEO' });
+      toast.success('Request disetujui oleh CEO');
       fetchRequests();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal approve',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal approve');
     }
   };
 
@@ -199,15 +174,11 @@ export default function PurchaseRequestsPage() {
         actualPrice: Number(purchasedData.actualPrice),
         receiptUrl: purchasedData.receiptUrl
       });
-      toast({ title: 'Sukses', description: 'Pembelian selesai, stok gudang bertambah' });
+      toast.success('Pembelian selesai, stok gudang bertambah');
       setShowPurchasedDialog(false);
       fetchRequests();
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Gagal menandai purchased',
-        variant: 'destructive'
-      });
+      toast.error(error.response?.data?.message || 'Gagal menandai purchased');
     }
   };
 
