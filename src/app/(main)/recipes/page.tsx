@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import api from '@/lib/api/axios';
+import { api } from '@/lib/api/axios';
 import { Plus, Trash2, Calculator, Play } from 'lucide-react';
 
 interface Recipe {

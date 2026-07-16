@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import api from '@/lib/api/axios';
+import { api } from '@/lib/api/axios';
 import { Plus, CheckCircle, DollarSign, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 
