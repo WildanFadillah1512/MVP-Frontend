@@ -106,7 +106,9 @@ export default function LoginPage() {
                     <FormLabel className="text-foreground font-bold">Alamat Email</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="Password" 
+                        type="email"
+                        placeholder="nama@email.com"
+                        autoComplete="email"
                         {...field} 
                         className="h-14 rounded-xl bg-card border-border px-4 text-base shadow-sm focus:ring-primary/50 focus:border-primary transition-colors"
                       />
@@ -125,6 +127,7 @@ export default function LoginPage() {
                       <Input 
                         type="password" 
                         placeholder="Password"
+                        autoComplete="current-password"
                         {...field}
                         className="h-14 rounded-xl bg-card border-border px-4 text-base shadow-sm focus:ring-primary/50 focus:border-primary transition-colors"
                       />
