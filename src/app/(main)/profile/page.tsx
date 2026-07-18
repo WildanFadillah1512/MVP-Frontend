@@ -11,6 +11,7 @@ import { Upload, User, Phone, Image as ImageIcon, Loader2, Send } from 'lucide-r
 import { api } from '@/lib/api/axios';
 import { uploadApi } from '@/features/uploads/api/upload.api';
 import { useRouter } from 'next/navigation';
+import { getRenderableImageUrl } from '@/lib/media/drive';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -124,6 +125,8 @@ export default function ProfilePage() {
     </div>
   );
 
+  const previewPhotoUrl = getRenderableImageUrl(form.photoUrl);
+
   return (
     <div className="flex flex-col gap-8 max-w-3xl mx-auto">
       {/* Header */}
@@ -148,8 +151,8 @@ export default function ProfilePage() {
               {/* Photo Preview */}
               <div className="flex flex-col items-center gap-3">
                 <div className="w-32 h-32 rounded-2xl bg-muted border-2 border-dashed border-slate-300  overflow-hidden flex items-center justify-center shadow-inner">
-                  {form.photoUrl ? (
-                    <img src={form.photoUrl} alt="Preview" className="w-full h-full object-cover" />
+                  {previewPhotoUrl ? (
+                    <img src={previewPhotoUrl} alt="Preview" className="w-full h-full object-cover" />
                   ) : (
                     <User className="w-12 h-12 text-muted-foreground" />
                   )}

@@ -38,6 +38,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getRenderableImageUrl } from '@/lib/media/drive';
 
 const getSidebarMenus = (role: string, division: string) => {
   // === MENU YANG BISA DIAKSES SEMUA ROLE ===
@@ -184,6 +185,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!user) return null;
 
+  const profileImageUrl = getRenderableImageUrl(user.photoUrl);
+
   const SidebarContent = () => (
     <div className="flex h-full flex-col bg-sidebar border-r border-sidebar-border">
       <div className="p-6 flex items-center justify-center border-b border-sidebar-border">
@@ -222,8 +225,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="space-y-3 p-4 border-t border-sidebar-border">
         <div className="rounded-xl bg-sidebar-accent p-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground font-bold text-sm shadow-sm">
-            {user.photoUrl ? (
-              <img src={user.photoUrl} alt="Profile" className="w-10 h-10 rounded-full object-cover" />
+            {profileImageUrl ? (
+              <img src={profileImageUrl} alt="Profile" className="w-10 h-10 rounded-full object-cover" />
             ) : (
               user.name.substring(0, 2).toUpperCase()
             )}
@@ -294,8 +297,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <DropdownMenuTrigger className="rounded-full hover:bg-accent px-2 py-1.5 h-auto flex items-center gap-2 outline-none transition-colors">
                   <Avatar className="h-8 w-8 border border-border">
                     <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">
-                      {user.photoUrl ? (
-                        <img src={user.photoUrl} alt="Profile" className="w-full h-full object-cover" />
+                      {profileImageUrl ? (
+                        <img src={profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
                       ) : (
                         user.name.substring(0, 2).toUpperCase()
                       )}
