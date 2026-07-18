@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Clock, Calendar, TrendingUp, FileText, Upload, Target } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { CheckCircle, TrendingUp, FileText, Upload, Target } from "lucide-react";
 import { dashboardApi } from '@/features/dashboard/api/dashboard.api';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
@@ -35,10 +35,6 @@ export default function StaffDashboard() {
   if (!data) return <div>Gagal memuat data.</div>;
 
   const attendance = data.attendance;
-  const balance = data.leaveBalance;
-  const remainingLeave = balance ? balance.totalQuota - balance.usedQuota : 0;
-  const usedLeave = balance?.usedQuota || 0;
-
   return (
     <div className="flex flex-col gap-8 pb-10">
       {/* Welcome Header */}
@@ -75,7 +71,7 @@ export default function StaffDashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-5 sm:grid-cols-2">
         <Card className="border-border shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
@@ -86,32 +82,6 @@ export default function StaffDashboard() {
             </div>
             <p className="text-4xl font-black text-foreground">{data.activeTargets.length}</p>
             <p className="text-sm font-medium text-muted-foreground mt-1">Target Berjalan</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center text-accent-foreground">
-                <Calendar className="w-6 h-6" />
-              </div>
-              <span className="text-xs font-bold text-accent-foreground bg-accent/20 px-2.5 py-1 rounded-full">Sisa</span>
-            </div>
-            <p className="text-4xl font-black text-foreground">{remainingLeave}</p>
-            <p className="text-sm font-medium text-muted-foreground mt-1">Hari Cuti Tersisa</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
-                <Clock className="w-6 h-6" />
-              </div>
-              <span className="text-xs font-bold text-muted-foreground bg-muted px-2.5 py-1 rounded-full">Dipakai</span>
-            </div>
-            <p className="text-4xl font-black text-foreground">{usedLeave}</p>
-            <p className="text-sm font-medium text-muted-foreground mt-1">Hari Cuti Terpakai</p>
           </CardContent>
         </Card>
 
@@ -132,12 +102,11 @@ export default function StaffDashboard() {
       {/* Quick Actions */}
       <div>
         <h2 className="text-xl font-bold text-foreground mb-4 px-1">Aksi Cepat</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {[
             { label: 'Absensi', href: '/attendance', icon: CheckCircle },
             { label: 'Laporan', href: '/daily-reports', icon: FileText },
             { label: 'Upload', href: '/daily-uploads', icon: Upload },
-            { label: 'Cuti', href: '/leave', icon: Calendar },
             { label: 'Target KPI', href: '/performance', icon: Target },
             { label: 'Chat', href: '/chat', icon: TrendingUp },
           ].map(({ label, href, icon: Icon }) => (

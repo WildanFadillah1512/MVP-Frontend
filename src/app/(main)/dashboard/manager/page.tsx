@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, FileText, CheckCircle, Clock, Download, TrendingUp, ArrowUpRight } from "lucide-react";
+import { Users, FileText, CheckCircle, Download, TrendingUp, ArrowUpRight } from "lucide-react";
 import { dashboardApi } from '@/features/dashboard/api/dashboard.api';
 import { exportApi } from '@/features/export/api/export.api';
 import { toast } from 'sonner';
@@ -83,7 +83,7 @@ export default function ManagerDashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-3">
         <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group">
           <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform duration-500">
             <Users className="w-20 h-20" />
@@ -127,21 +127,6 @@ export default function ManagerDashboard() {
             <div className="text-4xl font-bold mb-2">0%</div>
             <div className="flex items-center text-xs text-muted-foreground bg-black/10 w-fit px-2 py-1 rounded-md ">
               Progress bulan ini
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform duration-500">
-            <Clock className="w-20 h-20" />
-          </div>
-          <CardHeader className="relative z-10 pb-2">
-            <CardTitle className="text-muted-foreground text-sm font-medium">Pengajuan Cuti</CardTitle>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-4xl font-bold mb-2">{data.leaves.pendingApproval}</div>
-            <div className="flex items-center text-xs text-muted-foreground bg-black/10 w-fit px-2 py-1 rounded-md ">
-              Menunggu persetujuan
             </div>
           </CardContent>
         </Card>

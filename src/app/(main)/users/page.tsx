@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { api } from '@/lib/api/axios';
-import { Users, Plus, UserCheck, UserX, Search, Filter, Building2 } from "lucide-react";
+import { Users, Plus, UserCheck, UserX, Search, Filter, Building2, Pencil, Trash2 } from "lucide-react";
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -18,23 +18,27 @@ export default function UsersPage() {
   const [options, setOptions] = useState<any>({ roles: [], divisions: [], supervisors: [] });
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userRole, setUserRole] = useState('');
   const [divisionName, setDivisionName] = useState('');
   const [creatingDivision, setCreatingDivision] = useState(false);
 
-  const [form, setForm] = useState({
-    email: '', password: '', name: '', roleId: '', divisionId: '', supervisorId: '', totalQuota: '12'
-  });
+  const emptyForm = { email: '', password: '', name: '', roleId: '', divisionId: '', branchId: 'none', supervisorId: '', totalQuota: '12' };
+  const [form, setForm] = useState(emptyForm);
+  const [resignations, setResignations] = useState<any[]>([]);
 
   const fetchData = async () => {
     try {
-      const [usersRes, optRes] = await Promise.all([
+      const [usersRes, optRes, resignationRes] = await Promise.all([
         api.get('/users'),
-        api.get('/users/options')
+        api.get('/users/options'),
+        api.get('/users/resignations')
       ]);
       if (usersRes.data.success) setUsers(usersRes.data.data);
       if (optRes.data.success) setOptions(optRes.data.data);
+      if (resignationRes.data.success) setResignations(resignationRes.data.data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -59,7 +63,7 @@ export default function UsersPage() {
       if (res.data.success) {
         toast.success('User berhasil dibuat');
         setShowCreate(false);
-        setForm({ email: '', password: '', name: '', roleId: '', divisionId: '', supervisorId: '', totalQuota: '12' });
+        setForm(emptyForm);
         fetchData();
       }
     } catch (error: any) {
@@ -88,6 +92,7 @@ export default function UsersPage() {
   };
 
   const handleToggleActive = async (userId: string, currentActive: boolean) => {
+    if (currentActive && !confirm('Hapus/nonaktifkan akun ini? Akun tidak bisa login setelah dihapus.')) return;
     try {
       if (currentActive) {
         await api.delete(`/users/${userId}`);
@@ -102,7 +107,50 @@ export default function UsersPage() {
     }
   };
 
+  const openEditDialog = (user: any) => {
+    setEditingUser(user);
+    setForm({
+      email: user.email || '',
+      password: '',
+      name: user.name || '',
+      roleId: user.roleId || user.role?.id || '',
+      divisionId: user.divisionId || user.division?.id || '',
+      branchId: user.branchId || user.branch?.id || 'none',
+      supervisorId: user.supervisorId || user.supervisor?.id || 'none',
+      totalQuota: String(user.leaveBalances?.totalQuota ?? 12)
+    });
+    setShowEdit(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setIsSubmitting(true);
+    try {
+      const res = await api.patch(`/users/${editingUser.id}`, {
+        name: form.name,
+        roleId: form.roleId,
+        divisionId: form.divisionId,
+        branchId: form.branchId,
+        supervisorId: form.supervisorId,
+        totalQuota: form.totalQuota
+      });
+      if (res.data.success) {
+        toast.success('User berhasil diperbarui');
+        setShowEdit(false);
+        setEditingUser(null);
+        setForm(emptyForm);
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal memperbarui user');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const canCreateDivision = ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(userRole);
+  const canEditDeleteUsers = ['OWNER', 'CEO', 'ADMIN'].includes(userRole);
 
   if (loading) return (
     <div className="flex h-[60vh] items-center justify-center">
@@ -180,6 +228,22 @@ export default function UsersPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
+                  <Label className="text-foreground font-medium">Cabang Karyawan</Label>
+                  <Select value={form.branchId} onValueChange={v => setForm({...form, branchId: v || 'none'})}>
+                    <SelectTrigger className="rounded-xl overflow-hidden">
+                      <SelectValue placeholder="Pilih cabang...">
+                        {form.branchId === 'none' ? 'Tidak ada cabang' : options.branches?.find((b: any) => b.id === form.branchId)?.name || 'Pilih cabang...'}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="none">Tidak ada cabang</SelectItem>
+                      {(options.branches || []).map((b: any) => (
+                        <SelectItem key={b.id} value={b.id} className="rounded-lg">{b.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label className="text-foreground font-medium">Lapor Kepada (Atasan Langsung)</Label>
                   <Select value={form.supervisorId} onValueChange={v => setForm({...form, supervisorId: v || ''})}>
                     <SelectTrigger className="rounded-xl overflow-hidden">
@@ -206,6 +270,89 @@ export default function UsersPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <Dialog open={showEdit} onOpenChange={setShowEdit}>
+        <DialogContent className="max-w-2xl rounded-2xl border-0 shadow-2xl">
+          <DialogHeader className="pb-4 border-b border-border">
+            <DialogTitle className="text-2xl font-bold">Edit User</DialogTitle>
+            <DialogDescription>
+              Ubah role, divisi, cabang, atasan, dan kuota cuti karyawan.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdate} className="space-y-6 mt-4">
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-foreground font-medium">Nama Lengkap</Label>
+                <Input required value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground font-medium">Email</Label>
+                <Input value={form.email} disabled className="rounded-xl bg-muted/50" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-foreground font-medium">Role Sistem</Label>
+                <Select required value={form.roleId} onValueChange={v => setForm({...form, roleId: v || ''})}>
+                  <SelectTrigger className="rounded-xl overflow-hidden">
+                    <SelectValue placeholder="Pilih hak akses..." />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {options.roles.map((r: any) => <SelectItem key={r.id} value={r.id} className="rounded-lg">{r.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground font-medium">Divisi</Label>
+                <Select required value={form.divisionId} onValueChange={v => setForm({...form, divisionId: v || ''})}>
+                  <SelectTrigger className="rounded-xl overflow-hidden">
+                    <SelectValue placeholder="Pilih divisi..." />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {options.divisions.map((d: any) => <SelectItem key={d.id} value={d.id} className="rounded-lg">{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-foreground font-medium">Cabang</Label>
+                <Select value={form.branchId} onValueChange={v => setForm({...form, branchId: v || 'none'})}>
+                  <SelectTrigger className="rounded-xl overflow-hidden">
+                    <SelectValue placeholder="Pilih cabang..." />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="none">Tidak ada cabang</SelectItem>
+                    {(options.branches || []).map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground font-medium">Kuota Cuti</Label>
+                <Input type="number" min="0" value={form.totalQuota} onChange={e => setForm({...form, totalQuota: e.target.value})} className="rounded-xl" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-foreground font-medium">Atasan Langsung</Label>
+              <Select value={form.supervisorId} onValueChange={v => setForm({...form, supervisorId: v || 'none'})}>
+                <SelectTrigger className="rounded-xl overflow-hidden">
+                  <SelectValue placeholder="Pilih atasan..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="none">Tidak ada atasan</SelectItem>
+                  {options.supervisors.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name} ({s.role?.name || s.email})</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="pt-4 flex gap-3 border-t border-border">
+              <Button type="button" variant="outline" onClick={() => setShowEdit(false)} className="flex-1 rounded-xl">Batal</Button>
+              <Button type="submit" disabled={isSubmitting} className="flex-1 rounded-xl">
+                {isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {canCreateDivision && (
         <Card className="border-border shadow-md rounded-2xl">
@@ -234,6 +381,63 @@ export default function UsersPage() {
       )}
 
       <Card className="border-border shadow-md rounded-2xl overflow-hidden">
+        <CardHeader className="bg-card/50 border-b border-border p-6">
+          <CardTitle className="text-xl text-foreground">Pengajuan Resign</CardTitle>
+          <CardDescription>Data resign otomatis menyimpan backup snapshot saat karyawan mengajukan.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-muted/30 border-b border-border">
+                <tr>
+                  <th className="px-6 py-3 font-semibold">Karyawan</th>
+                  <th className="px-6 py-3 font-semibold">Cabang</th>
+                  <th className="px-6 py-3 font-semibold">Tanggal Efektif</th>
+                  <th className="px-6 py-3 font-semibold">Alasan</th>
+                  <th className="px-6 py-3 font-semibold">Status</th>
+                  {canEditDeleteUsers && <th className="px-6 py-3 font-semibold text-right">Aksi</th>}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                {resignations.length === 0 ? (
+                  <tr><td colSpan={canEditDeleteUsers ? 6 : 5} className="px-6 py-10 text-center text-muted-foreground">Belum ada pengajuan resign</td></tr>
+                ) : resignations.map((request) => (
+                  <tr key={request.id} className="hover:bg-muted/50">
+                    <td className="px-6 py-4">
+                      <p className="font-semibold text-foreground">{request.user.name}</p>
+                      <p className="text-xs text-muted-foreground">{request.user.role.name} - {request.user.division.name}</p>
+                    </td>
+                    <td className="px-6 py-4">{request.user.branch?.name || '-'}</td>
+                    <td className="px-6 py-4">{new Date(request.effectiveDate).toLocaleDateString('id-ID')}</td>
+                    <td className="px-6 py-4 max-w-md truncate">{request.reason}</td>
+                    <td className="px-6 py-4">
+                      <Badge variant="outline">{request.status}</Badge>
+                    </td>
+                    {canEditDeleteUsers && (
+                      <td className="px-6 py-4 text-right">
+                        {request.user.isActive ? (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="rounded-lg"
+                            onClick={() => handleToggleActive(request.user.id, request.user.isActive)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1.5" /> Hapus Akun
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Akun nonaktif</span>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border shadow-md rounded-2xl overflow-hidden">
         <CardHeader className="bg-card/50 border-b border-border p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <CardTitle className="flex items-center gap-2 text-xl text-foreground">
@@ -257,6 +461,7 @@ export default function UsersPage() {
                 <tr>
                   <th className="px-6 py-4 font-semibold">Karyawan</th>
                   <th className="px-6 py-4 font-semibold">Peran & Divisi</th>
+                  <th className="px-6 py-4 font-semibold">Cabang</th>
                   <th className="px-6 py-4 font-semibold">Atasan Langsung</th>
                   <th className="px-6 py-4 font-semibold text-center">Status</th>
                   <th className="px-6 py-4 font-semibold text-right">Tindakan</th>
@@ -287,6 +492,9 @@ export default function UsersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
+                      <span className="text-sm font-medium text-foreground">{u.branch?.name || '-'}</span>
+                    </td>
+                    <td className="px-6 py-4">
                       {u.supervisor ? (
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-muted dark:bg-muted flex items-center justify-center text-[10px] font-bold text-foreground">
@@ -310,18 +518,30 @@ export default function UsersPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Button
-                        size="sm"
-                        variant={u.isActive ? "destructive" : "default"}
-                        className={u.isActive ? "rounded-lg shadow-sm" : "rounded-lg shadow-sm bg-emerald-600 hover:bg-emerald-700"}
-                        onClick={() => handleToggleActive(u.id, u.isActive)}
-                      >
-                        {u.isActive ? (
-                          <><UserX className="w-4 h-4 mr-1.5" /> Suspend</>
-                        ) : (
-                          <><UserCheck className="w-4 h-4 mr-1.5" /> Activate</>
+                      <div className="flex justify-end gap-2">
+                        {canEditDeleteUsers && (
+                          <Button size="sm" variant="outline" className="rounded-lg" onClick={() => openEditDialog(u)}>
+                            <Pencil className="w-4 h-4 mr-1.5" /> Edit
+                          </Button>
                         )}
-                      </Button>
+                        {canEditDeleteUsers && (
+                          <Button
+                            size="sm"
+                            variant={u.isActive ? "destructive" : "default"}
+                            className={u.isActive ? "rounded-lg shadow-sm" : "rounded-lg shadow-sm bg-emerald-600 hover:bg-emerald-700"}
+                            onClick={() => handleToggleActive(u.id, u.isActive)}
+                          >
+                            {u.isActive ? (
+                              <><Trash2 className="w-4 h-4 mr-1.5" /> Hapus</>
+                            ) : (
+                              <><UserCheck className="w-4 h-4 mr-1.5" /> Aktifkan</>
+                            )}
+                          </Button>
+                        )}
+                        {!canEditDeleteUsers && (
+                          <span className="text-xs text-muted-foreground">CEO only</span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

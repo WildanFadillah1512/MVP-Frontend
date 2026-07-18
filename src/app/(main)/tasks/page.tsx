@@ -26,6 +26,14 @@ const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
   URGENT: { label: 'Mendesak', color: 'text-rose-600' },
 };
 
+const STATUS_ACTION_LABELS: Record<string, string> = {
+  TODO: 'Belum Mulai',
+  IN_PROGRESS: 'Mulai Kerjakan',
+  REVIEW: 'Minta Review',
+  COMPLETED: 'Tandai Selesai',
+  CANCELLED: 'Batalkan',
+};
+
 export default function TasksPage() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
@@ -261,7 +269,7 @@ export default function TasksPage() {
                           <Select value={task.status} onValueChange={v => updateStatus(task.id, v)}>
                             <SelectTrigger className="w-full sm:w-40 h-10 text-xs font-bold rounded-xl border-border bg-card shadow-sm hover:border-primary/50 transition-colors overflow-hidden">
                               <SelectValue>
-                                {{TODO: 'Belum Mulai', IN_PROGRESS: 'Mulai Kerjakan', REVIEW: 'Minta Review', COMPLETED: 'Tandai Selesai', CANCELLED: 'Batalkan'}[task.status] || 'Status'}
+                                {STATUS_ACTION_LABELS[String(task.status)] || 'Status'}
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent>

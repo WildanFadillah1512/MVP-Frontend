@@ -7,14 +7,17 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from 'sonner';
-import { User, Phone, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Upload, User, Phone, Image as ImageIcon, Loader2, Send } from 'lucide-react';
 import { api } from '@/lib/api/axios';
+import { uploadApi } from '@/features/uploads/api/upload.api';
 import { useRouter } from 'next/navigation';
 
 export default function ProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isSubmittingResign, setIsSubmittingResign] = useState(false);
   
   const [form, setForm] = useState({
     photoUrl: '',
@@ -23,6 +26,10 @@ export default function ProfilePage() {
   });
 
   const [userContext, setUserContext] = useState<any>(null);
+  const [resignForm, setResignForm] = useState({
+    effectiveDate: '',
+    reason: ''
+  });
 
   useEffect(() => {
     const userStr = sessionStorage.getItem('user');
@@ -63,6 +70,54 @@ export default function ProfilePage() {
     }
   };
 
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Format foto harus JPG, PNG, atau WebP');
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Ukuran foto maksimal 2MB');
+      event.target.value = '';
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    try {
+      const res = await uploadApi.uploadProfilePhoto(file);
+      if (res.success) {
+        setForm((current) => ({ ...current, photoUrl: res.data.fileUrl }));
+        toast.success('Foto berhasil diupload. Simpan profil untuk menerapkan.');
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal upload foto');
+    } finally {
+      setIsUploadingPhoto(false);
+      event.target.value = '';
+    }
+  };
+
+  const handleResignation = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!confirm('Ajukan resign sekarang? Data akun akan dibackup otomatis dan atasan akan mendapat notifikasi.')) return;
+    setIsSubmittingResign(true);
+    try {
+      const res = await api.post('/users/resignation', resignForm);
+      if (res.data.success) {
+        toast.success(res.data.message || 'Pengajuan resign berhasil dikirim');
+        setResignForm({ effectiveDate: '', reason: '' });
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal mengajukan resign');
+    } finally {
+      setIsSubmittingResign(false);
+    }
+  };
+
   if (loading || !userContext) return (
     <div className="flex h-[60vh] items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -100,6 +155,22 @@ export default function ProfilePage() {
                   )}
                 </div>
                 <span className="text-xs text-muted-foreground font-medium bg-muted px-3 py-1 rounded-full">Foto Profil</span>
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted/50">
+                  {isUploadingPhoto ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
+                  {isUploadingPhoto ? 'Mengupload...' : 'Upload Foto'}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handlePhotoUpload}
+                    disabled={isUploadingPhoto}
+                  />
+                </label>
+                <span className="text-[11px] text-muted-foreground">JPG, PNG, WebP. Maksimal 2MB.</span>
               </div>
 
               {/* Form Fields */}
@@ -147,6 +218,47 @@ export default function ProfilePage() {
                   <><Loader2 className="w-4 h-4 animate-spin" /> Menyimpan...</>
                 ) : (
                   'Simpan Perubahan'
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border shadow-md rounded-2xl overflow-hidden">
+        <CardHeader className="bg-card/50 border-b border-border p-6">
+          <CardTitle className="text-xl font-bold text-foreground">Pengajuan Resign</CardTitle>
+          <CardDescription>
+            Pengajuan akan membuat backup otomatis dan mengirim notifikasi ke atasan.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-6">
+          <form onSubmit={handleResignation} className="space-y-4">
+            <div className="space-y-2">
+              <Label className="font-medium text-foreground">Tanggal Efektif Resign</Label>
+              <Input
+                type="date"
+                value={resignForm.effectiveDate}
+                onChange={(event) => setResignForm({ ...resignForm, effectiveDate: event.target.value })}
+                required
+                className="rounded-xl"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-medium text-foreground">Alasan</Label>
+              <Textarea
+                value={resignForm.reason}
+                onChange={(event) => setResignForm({ ...resignForm, reason: event.target.value })}
+                required
+                className="rounded-xl min-h-[100px] resize-none"
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button type="submit" variant="destructive" disabled={isSubmittingResign} className="rounded-xl min-w-[170px]">
+                {isSubmittingResign ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Mengirim...</>
+                ) : (
+                  <><Send className="w-4 h-4" /> Ajukan Resign</>
                 )}
               </Button>
             </div>

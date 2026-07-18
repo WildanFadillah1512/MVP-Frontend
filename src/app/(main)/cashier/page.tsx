@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cashierApi } from '@/features/cashier/api/cashier.api';
 import { productionApi } from '@/features/production/api/production.api';
-import { Calculator, Plus, TrendingUp, Wallet, Receipt, Minus, Package, X } from "lucide-react";
+import { uploadApi } from '@/features/uploads/api/upload.api';
+import { Calculator, Plus, TrendingUp, Wallet, Receipt, Minus, Package, X, Upload } from "lucide-react";
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -19,6 +20,7 @@ export default function CashierPage() {
   const [productsSold, setProductsSold] = useState<{productId: string; quantity: string; isReject: boolean}[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
 
   const [formData, setFormData] = useState({
     branchId: '',
@@ -27,6 +29,7 @@ export default function CashierPage() {
     totalTransfer: '',
     totalQris: '',
     totalExpense: '',
+    depositProofUrl: '',
     notes: ''
   });
 
@@ -85,12 +88,30 @@ export default function CashierPage() {
       const res = await cashierApi.createReport(payload);
       if (res.success) {
         toast.success('Laporan kasir & penjualan berhasil disimpan');
-        setFormData({ ...formData, totalCash: '', totalTransfer: '', totalQris: '', totalExpense: '', notes: '' });
+        setFormData({ ...formData, totalCash: '', totalTransfer: '', totalQris: '', totalExpense: '', depositProofUrl: '', notes: '' });
         setProductsSold([]);
         fetchData();
       }
     } catch { toast.error('Gagal menyimpan laporan kasir'); }
     finally { setIsSubmitting(false); }
+  };
+
+  const handleProofUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setIsUploadingProof(true);
+    try {
+      const res = await uploadApi.uploadGenericFile(file, 'CASHIER_DEPOSITS');
+      if (res.success) {
+        setFormData((current) => ({ ...current, depositProofUrl: res.data.fileUrl }));
+        toast.success('Bukti setoran berhasil diupload');
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal upload bukti setoran');
+    } finally {
+      setIsUploadingProof(false);
+      event.target.value = '';
+    }
   };
 
   const handleCreateBranch = async (e: React.FormEvent) => {
@@ -252,6 +273,24 @@ export default function CashierPage() {
                 ))}
               </div>
 
+              <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-4">
+                <Label className="font-medium text-foreground">Bukti Setoran</Label>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold hover:bg-muted/50">
+                    <Upload className="h-4 w-4" />
+                    {isUploadingProof ? 'Mengupload...' : 'Upload Bukti'}
+                    <input type="file" className="hidden" onChange={handleProofUpload} disabled={isUploadingProof} />
+                  </label>
+                  {formData.depositProofUrl ? (
+                    <a href={formData.depositProofUrl} target="_blank" rel="noreferrer" className="text-sm font-medium text-primary underline-offset-2 hover:underline">
+                      Bukti sudah terupload
+                    </a>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Kasir akan diingatkan tiap 2 hari jika belum upload laporan/bukti.</span>
+                  )}
+                </div>
+              </div>
+
               <div className="space-y-3 p-4 rounded-xl bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30">
                 <p className="text-sm font-semibold text-rose-700 dark:text-rose-300 flex items-center gap-2">
                   <Minus className="w-4 h-4" /> Pengeluaran
@@ -346,12 +385,13 @@ export default function CashierPage() {
                   <th className="px-4 py-3 font-semibold text-foreground text-right">Tunai</th>
                   <th className="px-4 py-3 font-semibold text-foreground text-right">Non-Tunai</th>
                   <th className="px-4 py-3 font-semibold text-foreground text-right">Keluar</th>
+                  <th className="px-4 py-3 font-semibold text-foreground">Bukti</th>
                   <th className="px-4 py-3 font-semibold text-foreground text-right">Netto</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                 {reports.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">Belum ada laporan kasir</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">Belum ada laporan kasir</td></tr>
                 ) : reports.map(r => (
                   <tr key={r.id} className="hover:bg-muted/50 transition-colors">
                     <td className="px-4 py-4 text-muted-foreground whitespace-nowrap text-xs">{format(new Date(r.date), 'dd MMM yyyy', { locale: localeId })}</td>
@@ -359,6 +399,13 @@ export default function CashierPage() {
                     <td className="px-4 py-4 text-right font-mono text-xs text-muted-foreground">Rp {r.totalCash.toLocaleString('id-ID')}</td>
                     <td className="px-4 py-4 text-right font-mono text-xs text-muted-foreground">Rp {(r.totalTransfer + r.totalQris).toLocaleString('id-ID')}</td>
                     <td className="px-4 py-4 text-right font-mono text-xs text-rose-500">Rp {r.totalExpense.toLocaleString('id-ID')}</td>
+                    <td className="px-4 py-4">
+                      {r.depositProofUrl ? (
+                        <a href={r.depositProofUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-primary underline-offset-2 hover:underline">Lihat</a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Belum ada</span>
+                      )}
+                    </td>
                     <td className="px-4 py-4 text-right font-bold text-emerald-600 dark:text-emerald-400 font-mono">Rp {r.netTotal.toLocaleString('id-ID')}</td>
                   </tr>
                 ))}
@@ -366,7 +413,7 @@ export default function CashierPage() {
               {reports.length > 0 && (
                 <tfoot className="bg-muted dark:bg-background">
                   <tr>
-                    <td colSpan={5} className="px-4 py-3 text-right font-bold text-foreground/80 text-sm">Total Omzet</td>
+                    <td colSpan={6} className="px-4 py-3 text-right font-bold text-foreground/80 text-sm">Total Omzet</td>
                     <td className="px-4 py-3 text-right font-bold text-emerald-400 font-mono">Rp {totalOmzet.toLocaleString('id-ID')}</td>
                   </tr>
                 </tfoot>

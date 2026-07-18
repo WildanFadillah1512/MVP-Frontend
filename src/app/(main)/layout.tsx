@@ -50,6 +50,8 @@ const getSidebarMenus = (role: string, division: string) => {
     { name: 'Target & KPI', href: '/performance', icon: Target },
     { name: 'Cuti', href: '/leave', icon: Calendar },
     { name: 'Chat Divisi', href: '/chat', icon: MessageSquare },
+    { name: 'Etos Kerja', href: '/core-values', icon: CheckSquare },
+    { name: 'Supplier', href: '/suppliers', icon: Users },
   ];
 
   // === MENU ADMIN-ONLY (OWNER, CEO, GM & ADMIN saja) ===
@@ -60,6 +62,7 @@ const getSidebarMenus = (role: string, division: string) => {
   // === MENU MANAJERIAL KE ATAS ===
   const managerialMenus = [
     { name: 'Tracking Lokasi', href: '/tracking', icon: MapPin },
+    { name: 'SP1 Karyawan', href: '/warnings', icon: FileText },
   ];
 
   // === MENU CEO & OWNER SAJA ===
@@ -74,13 +77,12 @@ const getSidebarMenus = (role: string, division: string) => {
     KASIR:     { name: 'Kasir',     href: '/cashier',   icon: Calculator },
     GUDANG:    { name: 'Gudang',    href: '/warehouse', icon: Box },
   };
+  const materialRequestMenu = { name: 'Request Bahan', href: '/material-requests', icon: Box };
 
   // === MENU CEO/OWNER KHUSUS ===
   const ceoSpecialMenus = [
     { name: 'Resep Produk', href: '/recipes', icon: FileText },
-    { name: 'Supplier', href: '/suppliers', icon: Users },
     { name: 'Slip Gaji', href: '/payroll', icon: DollarSign },
-    { name: 'Purchase Requests', href: '/purchase-requests', icon: ShoppingCart },
   ];
 
   // === MENU ERP TAHAP 2 (hanya CEO & ADMIN, tampil tapi terkunci) ===
@@ -94,14 +96,26 @@ const getSidebarMenus = (role: string, division: string) => {
 
   // === BUILD MENU BERDASARKAN ROLE ===
   let menus = [...commonMenus];
+  const purchaseRequestMenu = { name: 'Purchase Requests', href: '/purchase-requests', icon: ShoppingCart };
+  const shouldShowPurchaseRequests =
+    ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(role) ||
+    ['GUDANG', 'PURCHASING'].includes(division.toUpperCase());
+  const shouldShowMaterialRequests =
+    ['OWNER', 'CEO', 'ADMIN', 'GM'].includes(role) ||
+    division.toUpperCase() === 'GUDANG' ||
+    (division.toUpperCase() === 'PRODUKSI' && ['LEADER', 'MANAGER'].includes(role));
 
-  if (role === 'CEO' || role === 'ADMIN' || role === 'OWNER') {
+  if (role === 'OWNER') {
+    menus = commonMenus.filter((menu) => ['/dashboard/owner', '/daily-reports'].includes(menu.href));
+  } else if (role === 'CEO' || role === 'ADMIN') {
     menus = [
       ...menus,
       ...managerialMenus,
       ...adminOnlyMenus,
-      ...(role === 'CEO' || role === 'OWNER' ? topLevelMenus : []),
-      ...(role === 'CEO' || role === 'OWNER' ? ceoSpecialMenus : []),
+      ...topLevelMenus,
+      ...ceoSpecialMenus,
+      purchaseRequestMenu,
+      materialRequestMenu,
       ...Object.values(divisionMenuMap),
       ...erpMenus,
     ];
@@ -112,6 +126,7 @@ const getSidebarMenus = (role: string, division: string) => {
       ...menus,
       ...managerialMenus,
       ...adminOnlyMenus,
+      purchaseRequestMenu,
       ...Object.values(gmDivisions),
       ...erpMenus,
     ];
@@ -122,6 +137,8 @@ const getSidebarMenus = (role: string, division: string) => {
       ...managerialMenus,
       ...(role === 'MANAGER' ? adminOnlyMenus : []),
       ...(myDivisionMenu ? [myDivisionMenu] : []),
+      ...(shouldShowMaterialRequests ? [materialRequestMenu] : []),
+      ...(shouldShowPurchaseRequests ? [purchaseRequestMenu] : []),
     ];
   } else {
     // LEADER, STAFF: hanya lihat divisi mereka sendiri
@@ -129,9 +146,15 @@ const getSidebarMenus = (role: string, division: string) => {
     if (myDivisionMenu) {
       menus = [...menus, myDivisionMenu];
     }
+    if (shouldShowPurchaseRequests) {
+      menus = [...menus, purchaseRequestMenu];
+    }
+    if (shouldShowMaterialRequests) {
+      menus = [...menus, materialRequestMenu];
+    }
   }
 
-  return menus;
+  return menus.filter((menu, index, allMenus) => allMenus.findIndex((item) => item.href === menu.href) === index);
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -196,7 +219,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
       </div>
       
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="space-y-3 p-4 border-t border-sidebar-border">
         <div className="rounded-xl bg-sidebar-accent p-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground font-bold text-sm shadow-sm">
             {user.photoUrl ? (
@@ -210,6 +233,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="text-xs font-medium text-muted-foreground truncate">{user.role.name} - {user.division.name}</span>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 px-4 py-2.5 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/10"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </button>
       </div>
     </div>
   );

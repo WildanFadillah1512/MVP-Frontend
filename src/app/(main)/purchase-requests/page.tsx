@@ -19,6 +19,7 @@ interface PurchaseRequest {
   status: string;
   priority: string;
   item: {
+    id: string;
     name: string;
     code: string;
     unit: string;
@@ -33,6 +34,7 @@ export default function PurchaseRequestsPage() {
   const [warehouseItems, setWarehouseItems] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [supplierPrices, setSupplierPrices] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [showPriceDialog, setShowPriceDialog] = useState(false);
@@ -59,12 +61,23 @@ export default function PurchaseRequestsPage() {
   });
 
   useEffect(() => {
+    const userStr = sessionStorage.getItem('user');
+    if (userStr) setCurrentUser(JSON.parse(userStr));
     fetchRequests();
     fetchWarehouseItems();
     fetchSuppliers();
   }, []);
 
-  const fetchRequests = async () => {
+  const userRole = currentUser?.role?.name || '';
+  const userDivision = currentUser?.division?.name || '';
+  const isTopLevel = ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(userRole);
+  const canCreateRequest = isTopLevel || userDivision === 'GUDANG';
+  const canSetPrice = userRole === 'STAFF' && userDivision === 'PURCHASING';
+  const canManagerApprove = userRole === 'MANAGER' && userDivision === 'PURCHASING';
+  const canCeoApprove = ['CEO', 'OWNER'].includes(userRole);
+  const canMarkPurchased = isTopLevel || userDivision === 'PURCHASING';
+
+  async function fetchRequests() {
     try {
       const response = await api.get('/purchase-requests');
       setRequests(response.data.data);
@@ -73,34 +86,34 @@ export default function PurchaseRequestsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const fetchWarehouseItems = async () => {
+  async function fetchWarehouseItems() {
     try {
       const response = await api.get('/warehouse/items');
       setWarehouseItems(response.data.data);
     } catch (error) {
       console.error('Failed to fetch warehouse items:', error);
     }
-  };
+  }
 
-  const fetchSuppliers = async () => {
+  async function fetchSuppliers() {
     try {
       const response = await api.get('/suppliers');
       setSuppliers(response.data.data.filter((s: any) => s.approvedAt));
     } catch (error) {
       console.error('Failed to fetch suppliers:', error);
     }
-  };
+  }
 
-  const fetchSupplierPrices = async (warehouseItemId: string) => {
+  async function fetchSupplierPrices(warehouseItemId: string) {
     try {
       const response = await api.get(`/purchase-requests/suppliers/${warehouseItemId}`);
       setSupplierPrices(response.data.data);
     } catch (error) {
       console.error('Failed to fetch supplier prices:', error);
     }
-  };
+  }
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -229,9 +242,11 @@ export default function PurchaseRequestsPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Purchase Requests</h1>
-        <Button onClick={() => setShowDialog(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Buat Request
-        </Button>
+        {canCreateRequest && (
+          <Button onClick={() => setShowDialog(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Buat Request
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-4">
@@ -249,27 +264,27 @@ export default function PurchaseRequestsPage() {
                   </span>
                 </div>
                 <div className="space-x-2">
-                  {request.status === 'DRAFT' && (
+                  {request.status === 'DRAFT' && canCreateRequest && (
                     <Button size="sm" onClick={() => handleSubmit(request.id)}>
                       <Send className="h-4 w-4 mr-1" /> Submit
                     </Button>
                   )}
-                  {request.status === 'SUBMITTED_BY_WAREHOUSE' && (
+                  {request.status === 'SUBMITTED_BY_WAREHOUSE' && canSetPrice && (
                     <Button size="sm" onClick={() => openPriceDialog(request)}>
                       Set Harga & Supplier
                     </Button>
                   )}
-                  {request.status === 'PENDING_MANAGER' && (
+                  {request.status === 'PENDING_MANAGER' && canManagerApprove && (
                     <Button size="sm" onClick={() => handleManagerApprove(request.id)}>
                       <CheckCircle className="h-4 w-4 mr-1" /> Approve (Manager)
                     </Button>
                   )}
-                  {request.status === 'PENDING_CEO' && (
+                  {request.status === 'PENDING_CEO' && canCeoApprove && (
                     <Button size="sm" onClick={() => handleCeoApprove(request.id)}>
                       <CheckCircle className="h-4 w-4 mr-1" /> Approve (CEO)
                     </Button>
                   )}
-                  {request.status === 'APPROVED' && (
+                  {request.status === 'APPROVED' && canMarkPurchased && (
                     <Button size="sm" onClick={() => openPurchasedDialog(request)}>
                       <ShoppingCart className="h-4 w-4 mr-1" /> Mark Purchased
                     </Button>

@@ -4,9 +4,9 @@ import { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { chatApi } from '@/features/chat/api/chat.api';
-import { Send, Users, MessageSquare } from "lucide-react";
+import { uploadApi } from '@/features/uploads/api/upload.api';
+import { FileText, Paperclip, Send, Users, MessageSquare, X } from "lucide-react";
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -15,9 +15,12 @@ export default function ChatPage() {
   const [activeGroup, setActiveGroup] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const [messageInput, setMessageInput] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [userId, setUserId] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchGroups = async () => {
     try {
@@ -91,13 +94,39 @@ export default function ChatPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!messageInput.trim() || !activeGroup) return;
+    if ((!messageInput.trim() && !selectedFile) || !activeGroup || sending) return;
 
     const tempContent = messageInput;
+    const tempFile = selectedFile;
     setMessageInput(''); // Optimistic clear
+    setSelectedFile(null);
+    setSending(true);
 
     try {
-      const res = await chatApi.sendMessage(activeGroup.id, tempContent);
+      let attachment;
+
+      if (tempFile) {
+        if (tempFile.size > 10 * 1024 * 1024) {
+          toast.error('Ukuran lampiran maksimal 10MB');
+          setMessageInput(tempContent);
+          setSelectedFile(tempFile);
+          return;
+        }
+
+        const uploadRes = await uploadApi.uploadChatFile(tempFile);
+        if (!uploadRes.success) {
+          throw new Error(uploadRes.message || 'Upload lampiran gagal');
+        }
+
+        attachment = {
+          fileUrl: uploadRes.data.fileUrl,
+          fileName: uploadRes.data.fileName,
+          fileType: uploadRes.data.fileType,
+          fileSize: uploadRes.data.fileSize
+        };
+      }
+
+      const res = await chatApi.sendMessage(activeGroup.id, tempContent, attachment);
       if (res.success) {
         // Just append optimistic message, polling will sync the rest
         setMessages([...messages, res.data]);
@@ -105,6 +134,12 @@ export default function ChatPage() {
     } catch (error) {
       toast.error('Gagal mengirim pesan');
       setMessageInput(tempContent); // Restore if failed
+      setSelectedFile(tempFile);
+    } finally {
+      setSending(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -186,6 +221,21 @@ export default function ChatPage() {
                               : 'bg-card border border-border text-foreground rounded-tl-sm'
                           }`}>
                             <p className="text-sm leading-relaxed">{msg.content}</p>
+                            {msg.fileUrl && (
+                              <a
+                                href={msg.fileUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className={`mt-2 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold underline-offset-2 hover:underline ${
+                                  isMe
+                                    ? 'border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground'
+                                    : 'border-border bg-muted/50 text-foreground'
+                                }`}
+                              >
+                                <FileText className="w-4 h-4" />
+                                <span className="truncate">{msg.fileName || 'Lampiran'}</span>
+                              </a>
+                            )}
                             <span className={`text-[10px] block mt-1 ${isMe ? 'text-right text-primary-foreground/60' : 'text-muted-foreground'}`}>
                               {format(new Date(msg.createdAt), 'HH:mm')}
                             </span>
@@ -199,14 +249,60 @@ export default function ChatPage() {
               </CardContent>
 
               <div className="p-4 border-t border-border bg-card shrink-0">
+                {selectedFile && (
+                  <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/40 px-3 py-2 text-sm">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <FileText className="w-4 h-4 text-muted-foreground" />
+                      <span className="truncate font-medium text-foreground">{selectedFile.name}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedFile(null);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                      className="rounded-full p-1 text-muted-foreground hover:bg-background hover:text-foreground"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
                 <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null;
+                      if (file && file.size > 10 * 1024 * 1024) {
+                        toast.error('Ukuran lampiran maksimal 10MB');
+                        event.target.value = '';
+                        return;
+                      }
+                      setSelectedFile(file);
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    className="rounded-full shrink-0"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={sending}
+                  >
+                    <Paperclip className="w-4 h-4" />
+                  </Button>
                   <Input
                     placeholder="Tulis pesan..."
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     className="flex-1 rounded-full bg-muted/50 border-border"
+                    disabled={sending}
                   />
-                  <Button type="submit" size="icon" className="rounded-full bg-primary hover:bg-primary/90 shrink-0" disabled={!messageInput.trim()}>
+                  <Button type="submit" size="icon" className="rounded-full bg-primary hover:bg-primary/90 shrink-0" disabled={sending || (!messageInput.trim() && !selectedFile)}>
                     <Send className="w-4 h-4" />
                   </Button>
                 </form>

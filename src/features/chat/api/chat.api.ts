@@ -9,8 +9,13 @@ export const chatApi = {
     const response = await api.get(`/chat/groups/${groupId}/messages`);
     return response.data;
   },
-  sendMessage: async (groupId: string, content: string) => {
-    const response = await api.post(`/chat/groups/${groupId}/messages`, { content });
+  sendMessage: async (groupId: string, content: string, attachment?: {
+    fileUrl: string;
+    fileName?: string;
+    fileType?: string;
+    fileSize?: number;
+  }) => {
+    const response = await api.post(`/chat/groups/${groupId}/messages`, { content, ...attachment });
     return response.data;
   }
 };

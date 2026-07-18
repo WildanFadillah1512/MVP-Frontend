@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { warehouseApi } from '@/features/warehouse/api/warehouse.api';
-import { Box, Plus, Minus, ArrowLeftRight, AlertTriangle, Package2, Activity } from "lucide-react";
+import { Box, Plus, Minus, ArrowLeftRight, AlertTriangle, Package2, Activity, Trash2 } from "lucide-react";
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -81,8 +81,25 @@ export default function WarehousePage() {
     }
   };
 
+  const handleDeleteItem = async (itemId: string, itemName: string) => {
+    if (!confirm(`Hapus ${itemName} dari daftar barang aktif? Riwayat stok tetap tersimpan.`)) return;
+    setIsSubmitting(true);
+    try {
+      const res = await warehouseApi.deleteItem(itemId);
+      if (res.success) {
+        toast.success('Barang gudang berhasil dihapus');
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Gagal menghapus barang gudang');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const isWarehouseOrAbove = ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(userRole) || userDivision === 'GUDANG';
   const canSetupItem = ['OWNER', 'CEO', 'GM', 'ADMIN', 'MANAGER'].includes(userRole) || userDivision === 'GUDANG';
+  const canDeleteItem = userRole === 'CEO' || userDivision === 'PURCHASING';
   const lowStockItems = items.filter(i => i.currentStock <= i.minStock);
   const todayMovements = movements.filter(m => new Date(m.date).toDateString() === new Date().toDateString());
 
@@ -196,11 +213,12 @@ export default function WarehousePage() {
                   <th className="px-6 py-3 font-semibold text-foreground text-right">Stok Aktual</th>
                   <th className="px-6 py-3 font-semibold text-foreground text-right">Batas Min.</th>
                   <th className="px-6 py-3 font-semibold text-foreground">Status</th>
+                  {canDeleteItem && <th className="px-6 py-3 font-semibold text-foreground text-right">Aksi</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                 {items.length === 0 ? (
-                  <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">Master barang masih kosong — hubungi Admin</td></tr>
+                  <tr><td colSpan={canDeleteItem ? 6 : 5} className="px-6 py-12 text-center text-muted-foreground">Master barang masih kosong — hubungi Admin</td></tr>
                 ) : items.map(i => (
                   <tr key={i.id} className={`transition-colors ${i.currentStock <= i.minStock ? 'bg-rose-50/30 dark:bg-rose-900/10 hover:bg-rose-50/50' : 'hover:bg-muted/50'}`}>
                     <td className="px-6 py-4">
@@ -224,6 +242,19 @@ export default function WarehousePage() {
                         </span>
                       )}
                     </td>
+                    {canDeleteItem && (
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteItem(i.id, i.name)}
+                          disabled={isSubmitting}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-200 text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-50"
+                          title="Hapus barang"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

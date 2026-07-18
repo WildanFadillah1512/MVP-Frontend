@@ -156,7 +156,19 @@ export default function PayrollPage() {
 
       <div className="grid gap-4">
         {payrolls.map((payroll) => (
-          <Card key={payroll.id}>
+          <Card
+            key={payroll.id}
+            role="button"
+            tabIndex={0}
+            onClick={() => showDetail(payroll)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                showDetail(payroll);
+              }
+            }}
+            className="cursor-pointer transition-colors hover:bg-muted/40"
+          >
             <CardHeader>
               <CardTitle className="flex justify-between items-center">
                 <div>
@@ -169,16 +181,16 @@ export default function PayrollPage() {
                   </span>
                 </div>
                 <div className="space-x-2">
-                  <Button size="sm" variant="outline" onClick={() => showDetail(payroll)}>
+                  <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); showDetail(payroll); }}>
                     <Eye className="h-4 w-4 mr-1" /> Detail
                   </Button>
                   {payroll.status === 'PENDING' && (
-                    <Button size="sm" onClick={() => handleApprove(payroll.id)}>
+                    <Button size="sm" onClick={(event) => { event.stopPropagation(); handleApprove(payroll.id); }}>
                       <CheckCircle className="h-4 w-4 mr-1" /> Approve
                     </Button>
                   )}
                   {payroll.status === 'APPROVED' && (
-                    <Button size="sm" onClick={() => handleMarkPaid(payroll.id)}>
+                    <Button size="sm" onClick={(event) => { event.stopPropagation(); handleMarkPaid(payroll.id); }}>
                       <DollarSign className="h-4 w-4 mr-1" /> Tandai Dibayar
                     </Button>
                   )}

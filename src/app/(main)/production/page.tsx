@@ -48,8 +48,7 @@ export default function ProductionPage() {
   const [productForm, setProductForm] = useState({
     code: '',
     name: '',
-    category: '',
-    basePrice: ''
+    category: ''
   });
 
   const [initialStockForm, setInitialStockForm] = useState({
@@ -166,7 +165,7 @@ export default function ProductionPage() {
       const res = await productionApi.createProduct(productForm);
       if (res.success) {
         toast.success('Produk berhasil dibuat');
-        setProductForm({ code: '', name: '', category: '', basePrice: '' });
+        setProductForm({ code: '', name: '', category: '' });
         fetchData();
       }
     } catch (error: any) {
@@ -330,12 +329,11 @@ export default function ProductionPage() {
             <CardDescription>Tambahkan master produk agar bisa dipakai produksi, target, dan kasir</CardDescription>
           </CardHeader>
           <CardContent className="p-6">
-            <form onSubmit={handleCreateProduct} className="grid gap-3 md:grid-cols-5">
+            <form onSubmit={handleCreateProduct} className="grid gap-3 md:grid-cols-4">
               <Input value={productForm.code} onChange={(e) => setProductForm({...productForm, code: e.target.value})} placeholder="Kode produk" className="rounded-xl" />
               <Input value={productForm.name} onChange={(e) => setProductForm({...productForm, name: e.target.value})} placeholder="Nama produk" className="rounded-xl md:col-span-2" />
               <Input value={productForm.category} onChange={(e) => setProductForm({...productForm, category: e.target.value})} placeholder="Kategori" className="rounded-xl" />
-              <Input type="number" min="0" value={productForm.basePrice} onChange={(e) => setProductForm({...productForm, basePrice: e.target.value})} placeholder="Harga dasar" className="rounded-xl" />
-              <button type="submit" disabled={isSubmitting} className="md:col-span-5 h-10 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold transition-colors disabled:opacity-50">
+              <button type="submit" disabled={isSubmitting} className="md:col-span-4 h-10 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold transition-colors disabled:opacity-50">
                 {isSubmitting ? 'Menyimpan...' : 'Tambah Produk'}
               </button>
             </form>

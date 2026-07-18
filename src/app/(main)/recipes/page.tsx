@@ -15,6 +15,7 @@ interface Recipe {
     id: string;
     name: string;
     code: string;
+    recipeOutputQty: number;
   };
   ingredients: Array<{
     id: string;
@@ -25,7 +26,11 @@ interface Recipe {
       currentStock: number;
     };
     qtyNeeded: number;
+    unitPrice: number;
+    totalPrice: number;
   }>;
+  totalRecipeCost: number;
+  costPerOutput: number;
 }
 
 export default function RecipesPage() {
@@ -36,12 +41,12 @@ export default function RecipesPage() {
   const [showDialog, setShowDialog] = useState(false);
   const [showCalcDialog, setShowCalcDialog] = useState(false);
   const [showProduceDialog, setShowProduceDialog] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [calculation, setCalculation] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     productId: '',
-    ingredients: [{ warehouseItemId: '', qtyNeeded: '' }]
+    outputQtyPerBatch: '1',
+    ingredients: [{ warehouseItemId: '', qtyNeeded: '', unitPrice: '' }]
   });
 
   const [calcData, setCalcData] = useState({
@@ -94,7 +99,7 @@ export default function RecipesPage() {
   const handleAddIngredient = () => {
     setFormData({
       ...formData,
-      ingredients: [...formData.ingredients, { warehouseItemId: '', qtyNeeded: '' }]
+      ingredients: [...formData.ingredients, { warehouseItemId: '', qtyNeeded: '', unitPrice: '' }]
     });
   };
 
@@ -114,15 +119,18 @@ export default function RecipesPage() {
     try {
       await api.post('/recipes/bulk', {
         productId: formData.productId,
+        outputQtyPerBatch: Number(formData.outputQtyPerBatch),
         ingredients: formData.ingredients.map(ing => ({
           warehouseItemId: ing.warehouseItemId,
-          qtyNeeded: Number(ing.qtyNeeded)
+          qtyNeeded: Number(ing.qtyNeeded),
+          unitPrice: Number(ing.unitPrice || 0)
         }))
       });
       toast.success('Resep berhasil disimpan');
       setShowDialog(false);
       resetForm();
       fetchRecipes();
+      fetchProducts();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Gagal menyimpan resep');
     }
@@ -172,7 +180,8 @@ export default function RecipesPage() {
   const resetForm = () => {
     setFormData({
       productId: '',
-      ingredients: [{ warehouseItemId: '', qtyNeeded: '' }]
+      outputQtyPerBatch: '1',
+      ingredients: [{ warehouseItemId: '', qtyNeeded: '', unitPrice: '' }]
     });
   };
 
@@ -215,6 +224,19 @@ export default function RecipesPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              <p className="text-sm font-semibold mb-2">
+                1 batch/adonan menghasilkan {recipe.product.recipeOutputQty || 1} produk
+              </p>
+              <div className="mb-3 grid gap-2 text-sm sm:grid-cols-2">
+                <div className="rounded border bg-gray-50 p-2">
+                  <span className="text-gray-600">Estimasi biaya batch: </span>
+                  <span className="font-semibold">Rp {Number(recipe.totalRecipeCost || 0).toLocaleString('id-ID')}</span>
+                </div>
+                <div className="rounded border bg-gray-50 p-2">
+                  <span className="text-gray-600">Estimasi harga per produk: </span>
+                  <span className="font-semibold">Rp {Number(recipe.costPerOutput || 0).toLocaleString('id-ID')}</span>
+                </div>
+              </div>
               <p className="text-sm font-semibold mb-2">Bahan per 1 batch:</p>
               <div className="space-y-2">
                 {recipe.ingredients.map((ing) => (
@@ -223,6 +245,9 @@ export default function RecipesPage() {
                       <span className="font-medium">{ing.ingredient.name}</span>
                       <span className="text-sm text-gray-600 ml-2">
                         {ing.qtyNeeded} {ing.ingredient.unit}
+                      </span>
+                      <span className="text-sm text-gray-600 ml-2">
+                        x Rp {Number(ing.unitPrice || 0).toLocaleString('id-ID')} / {ing.ingredient.unit}
                       </span>
                       <span className="text-sm text-gray-500 ml-2">
                         (Stok: {ing.ingredient.currentStock} {ing.ingredient.unit})
@@ -255,7 +280,14 @@ export default function RecipesPage() {
               <select
                 className="w-full border rounded p-2"
                 value={formData.productId}
-                onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
+                onChange={(e) => {
+                  const selected = products.find((product) => product.id === e.target.value);
+                  setFormData({
+                    ...formData,
+                    productId: e.target.value,
+                    outputQtyPerBatch: String(selected?.recipeOutputQty || 1)
+                  });
+                }}
                 required
               >
                 <option value="">Pilih Produk</option>
@@ -267,6 +299,19 @@ export default function RecipesPage() {
               </select>
             </div>
 
+            <div>
+              <Label>Hasil per 1 batch/adonan</Label>
+              <Input
+                type="number"
+                min="1"
+                step="1"
+                value={formData.outputQtyPerBatch}
+                onChange={(e) => setFormData({ ...formData, outputQtyPerBatch: e.target.value })}
+                placeholder="Contoh: 24"
+                required
+              />
+            </div>
+
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <Label>Bahan-bahan</Label>
@@ -275,10 +320,12 @@ export default function RecipesPage() {
                 </Button>
               </div>
 
-              {formData.ingredients.map((ing, index) => (
-                <div key={index} className="flex gap-2">
+              {formData.ingredients.map((ing, index) => {
+                const selectedItem = warehouseItems.find((item) => item.id === ing.warehouseItemId);
+                return (
+                <div key={index} className="grid gap-2 md:grid-cols-[1fr_140px_180px_44px]">
                   <select
-                    className="flex-1 border rounded p-2"
+                    className="border rounded p-2"
                     value={ing.warehouseItemId}
                     onChange={(e) => handleIngredientChange(index, 'warehouseItemId', e.target.value)}
                     required
@@ -293,11 +340,19 @@ export default function RecipesPage() {
                   <Input
                     type="number"
                     step="0.01"
-                    placeholder="Jumlah"
-                    className="w-32"
+                    min="0.01"
+                    placeholder={selectedItem?.unit ? `Qty (${selectedItem.unit})` : 'Qty/gramasi'}
                     value={ing.qtyNeeded}
                     onChange={(e) => handleIngredientChange(index, 'qtyNeeded', e.target.value)}
                     required
+                  />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder={selectedItem?.unit ? `Harga / ${selectedItem.unit}` : 'Harga per unit'}
+                    value={ing.unitPrice}
+                    onChange={(e) => handleIngredientChange(index, 'unitPrice', e.target.value)}
                   />
                   {formData.ingredients.length > 1 && (
                     <Button
@@ -310,7 +365,8 @@ export default function RecipesPage() {
                     </Button>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="flex justify-end space-x-2">
@@ -360,7 +416,10 @@ export default function RecipesPage() {
             {calculation && (
               <div className="mt-4 p-4 bg-gray-50 rounded">
                 <p className="font-semibold mb-2">
-                  {calculation.product.name} - {calculation.batchCount} batch
+                  {calculation.product.name} - {calculation.batchCount} batch menghasilkan {calculation.outputQty} produk
+                </p>
+                <p className="text-sm mb-2">
+                  Estimasi biaya: Rp {Number(calculation.totalCost || 0).toLocaleString('id-ID')} · Rp {Number(calculation.costPerOutput || 0).toLocaleString('id-ID')} / produk
                 </p>
                 <p className={`text-sm mb-2 ${calculation.canProduce ? 'text-green-600' : 'text-red-600'}`}>
                   {calculation.message}
@@ -369,7 +428,7 @@ export default function RecipesPage() {
                   {calculation.materialsNeeded.map((m: any, i: number) => (
                     <div key={i} className={`text-sm ${m.sufficient ? '' : 'text-red-600 font-semibold'}`}>
                       {m.ingredient.name}: {m.qtyNeeded} {m.ingredient.unit} 
-                      (Stok: {m.currentStock}) 
+                      (Stok: {m.currentStock}) · Rp {Number(m.totalPrice || 0).toLocaleString('id-ID')}
                       {!m.sufficient && ` - Kurang ${m.shortage}`}
                     </div>
                   ))}

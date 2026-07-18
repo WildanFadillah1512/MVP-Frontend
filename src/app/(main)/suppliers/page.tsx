@@ -30,6 +30,7 @@ export default function SuppliersPage() {
   const [showPriceDialog, setShowPriceDialog] = useState(false);
   const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
   const [warehouseItems, setWarehouseItems] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     code: '',
@@ -47,9 +48,15 @@ export default function SuppliersPage() {
   });
 
   useEffect(() => {
+    const userStr = sessionStorage.getItem('user');
+    if (userStr) setCurrentUser(JSON.parse(userStr));
     fetchSuppliers();
     fetchWarehouseItems();
   }, []);
+
+  const userRole = currentUser?.role?.name || '';
+  const canManageSupplier = ['MANAGER', 'CEO', 'OWNER', 'GM'].includes(userRole);
+  const canSetSupplierPrice = ['CEO', 'OWNER'].includes(userRole);
 
   const fetchSuppliers = async () => {
     try {
@@ -146,12 +153,16 @@ export default function SuppliersPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Supplier Management</h1>
         <div className="space-x-2">
-          <Button onClick={() => setShowDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Tambah Supplier
-          </Button>
-          <Button variant="outline" onClick={() => setShowPriceDialog(true)}>
-            Set Harga
-          </Button>
+          {canManageSupplier && (
+            <Button onClick={() => setShowDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Tambah Supplier
+            </Button>
+          )}
+          {canSetSupplierPrice && (
+            <Button variant="outline" onClick={() => setShowPriceDialog(true)}>
+              Set Harga
+            </Button>
+          )}
         </div>
       </div>
 
@@ -170,14 +181,16 @@ export default function SuppliersPage() {
                   )}
                 </div>
                 <div className="space-x-2">
-                  {!supplier.approvedAt && (
+                  {!supplier.approvedAt && canManageSupplier && (
                     <Button size="sm" onClick={() => handleApprove(supplier.id)}>
                       <CheckCircle className="h-4 w-4 mr-1" /> Approve
                     </Button>
                   )}
-                  <Button size="sm" variant="outline" onClick={() => openEditDialog(supplier)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                  {canManageSupplier && (
+                    <Button size="sm" variant="outline" onClick={() => openEditDialog(supplier)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </CardTitle>
             </CardHeader>
