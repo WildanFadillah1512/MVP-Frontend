@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { ShieldCheck } from "lucide-react";
+import { KeyRound, ShieldCheck } from "lucide-react";
 import { loginSchema, LoginInput, authApi } from "@/features/auth/api/auth.api";
 
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,9 @@ import { toast } from "sonner";
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [otpToken, setOtpToken] = useState("");
+  const [otpEmail, setOtpEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -31,6 +34,14 @@ export default function LoginPage() {
     try {
       const response = await authApi.login(data);
       if (response.success) {
+        if (response.data?.requiresOtp) {
+          setOtpToken(response.data.otpToken);
+          setOtpEmail(response.data.email);
+          setOtpCode("");
+          toast.success("Kode OTP dikirim ke email");
+          return;
+        }
+
         sessionStorage.clear();
         sessionStorage.setItem("token", response.data.token);
         sessionStorage.setItem("user", JSON.stringify(response.data.user));
@@ -41,6 +52,29 @@ export default function LoginPage() {
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Terjadi kesalahan saat login");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOtpSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!otpToken) return;
+
+    setIsLoading(true);
+    try {
+      const response = await authApi.verifyOtp({ otpToken, code: otpCode });
+      if (response.success) {
+        sessionStorage.clear();
+        sessionStorage.setItem("token", response.data.token);
+        sessionStorage.setItem("user", JSON.stringify(response.data.user));
+        toast.success("OTP berhasil diverifikasi");
+
+        const role = response.data.user.role.name;
+        router.push(`/dashboard/${role.toLowerCase()}`);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Kode OTP tidak valid");
     } finally {
       setIsLoading(false);
     }
@@ -93,10 +127,52 @@ export default function LoginPage() {
 
           <div className="mb-10 text-center lg:text-left">
             <h2 className="text-3xl font-extrabold text-foreground tracking-tight mb-2">Selamat Datang</h2>
-            <p className="text-muted-foreground font-medium">Masukkan email dan kata sandi Anda untuk mengakses sistem.</p>
+            <p className="text-muted-foreground font-medium">
+              {otpToken ? `Masukkan kode OTP yang dikirim ke ${otpEmail}.` : 'Masukkan email dan kata sandi Anda untuk mengakses sistem.'}
+            </p>
           </div>
 
-          <Form {...form}>
+          {otpToken ? (
+            <form onSubmit={handleOtpSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-foreground font-bold flex items-center gap-2">
+                  <KeyRound className="h-4 w-4" />
+                  Kode OTP
+                </label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  placeholder="6 digit OTP"
+                  value={otpCode}
+                  onChange={(event) => setOtpCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="h-14 rounded-xl bg-card border-border px-4 text-base tracking-[0.35em] text-center shadow-sm focus:ring-primary/50 focus:border-primary transition-colors"
+                  autoComplete="one-time-code"
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full h-14 rounded-xl bg-primary text-primary-foreground text-lg font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 hover:-translate-y-0.5 hover:shadow-xl transition-all"
+                disabled={isLoading || otpCode.length !== 6}
+              >
+                {isLoading ? "Memverifikasi..." : "Verifikasi OTP"}
+              </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  setOtpToken("");
+                  setOtpEmail("");
+                  setOtpCode("");
+                }}
+                className="w-full text-sm font-semibold text-muted-foreground hover:text-foreground"
+              >
+                Kembali ke login
+              </button>
+            </form>
+          ) : (
+            <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
@@ -145,7 +221,8 @@ export default function LoginPage() {
                 {isLoading ? "Otentikasi..." : "Masuk ke Sistem"}
               </Button>
             </form>
-          </Form>
+            </Form>
+          )}
         </div>
       </div>
     </div>
