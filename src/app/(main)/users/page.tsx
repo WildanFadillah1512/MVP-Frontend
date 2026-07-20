@@ -24,6 +24,9 @@ export default function UsersPage() {
   const [userRole, setUserRole] = useState('');
   const [divisionName, setDivisionName] = useState('');
   const [creatingDivision, setCreatingDivision] = useState(false);
+  const [branchForm, setBranchForm] = useState({ id: '', code: '', name: '', address: '' });
+  const [editingBranchId, setEditingBranchId] = useState('');
+  const [savingBranch, setSavingBranch] = useState(false);
 
   const emptyForm = { email: '', password: '', name: '', roleId: '', divisionId: '', branchId: 'none', supervisorId: '', totalQuota: '12' };
   const [form, setForm] = useState(emptyForm);
@@ -91,6 +94,65 @@ export default function UsersPage() {
     }
   };
 
+  const resetBranchForm = () => {
+    setBranchForm({ id: '', code: '', name: '', address: '' });
+    setEditingBranchId('');
+  };
+
+  const handleSaveBranch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!branchForm.code.trim() || !branchForm.name.trim()) {
+      return toast.error('Kode dan nama cabang wajib diisi');
+    }
+
+    setSavingBranch(true);
+    try {
+      const payload = {
+        code: branchForm.code,
+        name: branchForm.name,
+        address: branchForm.address
+      };
+      const res = editingBranchId
+        ? await api.patch(`/users/branches/${editingBranchId}`, payload)
+        : await api.post('/users/branches', payload);
+
+      if (res.data.success) {
+        toast.success(editingBranchId ? 'Cabang berhasil diperbarui' : 'Cabang berhasil dibuat');
+        resetBranchForm();
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal menyimpan cabang');
+    } finally {
+      setSavingBranch(false);
+    }
+  };
+
+  const startEditBranch = (branch: any) => {
+    setEditingBranchId(branch.id);
+    setBranchForm({
+      id: branch.id,
+      code: branch.code || '',
+      name: branch.name || '',
+      address: branch.address || ''
+    });
+  };
+
+  const handleDeleteBranch = async (branch: any) => {
+    if (!confirm(`Hapus cabang ${branch.name}? Cabang tidak bisa dihapus jika masih dipakai karyawan atau laporan kasir.`)) return;
+
+    try {
+      const res = await api.delete(`/users/branches/${branch.id}`);
+      if (res.data.success) {
+        toast.success('Cabang berhasil dihapus');
+        if (editingBranchId === branch.id) resetBranchForm();
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal menghapus cabang');
+    }
+  };
+
   const handleToggleActive = async (userId: string, currentActive: boolean) => {
     if (currentActive && !confirm('Hapus/nonaktifkan akun ini? Akun tidak bisa login setelah dihapus.')) return;
     try {
@@ -150,6 +212,7 @@ export default function UsersPage() {
   };
 
   const canCreateDivision = ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(userRole);
+  const canManageBranches = ['OWNER', 'CEO', 'ADMIN'].includes(userRole);
   const canEditDeleteUsers = ['OWNER', 'CEO', 'ADMIN'].includes(userRole);
 
   if (loading) return (
@@ -379,6 +442,99 @@ export default function UsersPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card className="border-border shadow-md rounded-2xl">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg text-foreground">
+            <Building2 className="w-5 h-5 text-primary" />
+            Manajemen Cabang
+          </CardTitle>
+          <CardDescription>Kelola cabang yang digunakan untuk penempatan karyawan dan laporan toko.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {canManageBranches && (
+            <form onSubmit={handleSaveBranch} className="grid grid-cols-1 md:grid-cols-[120px_1fr_1fr_auto] gap-3">
+              <Input
+                value={branchForm.code}
+                onChange={(event) => setBranchForm({ ...branchForm, code: event.target.value })}
+                placeholder="Kode"
+                className="rounded-xl"
+              />
+              <Input
+                value={branchForm.name}
+                onChange={(event) => setBranchForm({ ...branchForm, name: event.target.value })}
+                placeholder="Nama cabang"
+                className="rounded-xl"
+              />
+              <Input
+                value={branchForm.address}
+                onChange={(event) => setBranchForm({ ...branchForm, address: event.target.value })}
+                placeholder="Alamat cabang"
+                className="rounded-xl"
+              />
+              <div className="flex gap-2">
+                <Button type="submit" size="sm" disabled={savingBranch} className="h-9 rounded-xl px-4">
+                  {savingBranch ? 'Menyimpan...' : editingBranchId ? 'Update' : 'Tambah'}
+                </Button>
+                {editingBranchId && (
+                  <Button type="button" size="sm" variant="outline" onClick={resetBranchForm} className="h-9 rounded-xl px-4">
+                    Batal
+                  </Button>
+                )}
+              </div>
+            </form>
+          )}
+
+          <div className="overflow-x-auto rounded-xl border border-border">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-muted/30 border-b border-border">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Kode</th>
+                  <th className="px-4 py-3 font-semibold">Nama Cabang</th>
+                  <th className="px-4 py-3 font-semibold">Alamat</th>
+                  <th className="px-4 py-3 font-semibold text-center">Karyawan</th>
+                  {canManageBranches && <th className="px-4 py-3 font-semibold text-right">Aksi</th>}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                {(options.branches || []).length === 0 ? (
+                  <tr>
+                    <td colSpan={canManageBranches ? 5 : 4} className="px-4 py-8 text-center text-muted-foreground">
+                      Belum ada cabang
+                    </td>
+                  </tr>
+                ) : (
+                  (options.branches || []).map((branch: any) => {
+                    const employeeCount = users.filter((user) => user.branch?.id === branch.id || user.branchId === branch.id).length;
+                    return (
+                      <tr key={branch.id} className="hover:bg-muted/50">
+                        <td className="px-4 py-3 font-semibold text-foreground">{branch.code}</td>
+                        <td className="px-4 py-3">{branch.name}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{branch.address || '-'}</td>
+                        <td className="px-4 py-3 text-center">{employeeCount}</td>
+                        {canManageBranches && (
+                          <td className="px-4 py-3">
+                            <div className="flex justify-end gap-2">
+                              <Button type="button" size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => startEditBranch(branch)}>
+                                <Pencil className="w-4 h-4" />
+                                Edit
+                              </Button>
+                              <Button type="button" size="sm" variant="destructive" className="h-8 rounded-lg" onClick={() => handleDeleteBranch(branch)}>
+                                <Trash2 className="w-4 h-4" />
+                                Hapus
+                              </Button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="border-border shadow-md rounded-2xl overflow-hidden">
         <CardHeader className="bg-card/50 border-b border-border p-6">
