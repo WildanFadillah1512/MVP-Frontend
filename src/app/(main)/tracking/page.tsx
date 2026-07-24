@@ -41,7 +41,7 @@ const getMapsUrl = (location: LocationLog) => {
 
 export default function TrackingPage() {
   const [logs, setLogs] = useState<LocationLog[]>([]);
-  const [latestLocations, setLatestLocations] = useState<LocationLog[]>([]);
+  const [groupedLocations, setGroupedLocations] = useState<Map<string, { user: LocationUser, checkIn?: LocationLog, checkOut?: LocationLog }>>(new Map());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [userRole, setUserRole] = useState("");
@@ -52,17 +52,25 @@ export default function TrackingPage() {
       const res = await attendanceApi.getLocations();
       if (res.success) {
         const payload = res.data;
-        if (Array.isArray(payload)) {
-          setLogs(payload);
-          const latest = new Map<string, LocationLog>();
-          payload.forEach((item) => {
-            if (!latest.has(item.userId)) latest.set(item.userId, item);
-          });
-          setLatestLocations(Array.from(latest.values()));
-        } else {
-          setLogs(payload.logs || []);
-          setLatestLocations(payload.latest || []);
-        }
+        const logsArray = Array.isArray(payload) ? payload : (payload.logs || []);
+        setLogs(logsArray);
+        
+        const grouped = new Map<string, { user: LocationUser, checkIn?: LocationLog, checkOut?: LocationLog }>();
+        // logsArray usually ordered by newest first, so iterating from end (oldest) or just setting it.
+        // Or better, just iterate and pick latest checkIn and checkOut.
+        logsArray.forEach((item: LocationLog) => {
+          if (!grouped.has(item.userId)) {
+            grouped.set(item.userId, { user: item.user });
+          }
+          const userGroup = grouped.get(item.userId)!;
+          if (item.activity === "CHECK_IN" && !userGroup.checkIn) {
+            userGroup.checkIn = item;
+          }
+          if (item.activity === "CHECK_OUT" && !userGroup.checkOut) {
+            userGroup.checkOut = item;
+          }
+        });
+        setGroupedLocations(grouped);
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Gagal mengambil data tracking lokasi");
@@ -84,15 +92,15 @@ export default function TrackingPage() {
   const isManagerial = managerialRoles.includes(userRole);
 
   const activitySummary = useMemo(() => {
-    return latestLocations.reduce(
-      (summary, location) => {
-        if (location.activity === "CHECK_IN") summary.checkedIn += 1;
-        if (location.activity === "CHECK_OUT") summary.checkedOut += 1;
+    return Array.from(groupedLocations.values()).reduce(
+      (summary, group) => {
+        if (group.checkIn) summary.checkedIn += 1;
+        if (group.checkOut) summary.checkedOut += 1;
         return summary;
       },
       { checkedIn: 0, checkedOut: 0 }
     );
-  }, [latestLocations]);
+  }, [groupedLocations]);
 
   if (loading) {
     return (
@@ -148,7 +156,7 @@ export default function TrackingPage() {
         <Card className="border-border shadow-sm rounded-2xl hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
             <CardDescription className="font-medium">Karyawan terpantau</CardDescription>
-            <CardTitle className="text-4xl font-black text-foreground">{latestLocations.length}</CardTitle>
+            <CardTitle className="text-4xl font-black text-foreground">{groupedLocations.size}</CardTitle>
           </CardHeader>
         </Card>
         <Card className="border-border shadow-sm rounded-2xl hover:shadow-md transition-shadow bg-emerald-50/50 dark:bg-emerald-900/10">
@@ -171,7 +179,7 @@ export default function TrackingPage() {
           <CardDescription>Posisi terkini berdasarkan aktivitas absensi terakhir.</CardDescription>
         </CardHeader>
         <CardContent className="p-6 bg-muted/10">
-          {latestLocations.length === 0 ? (
+          {groupedLocations.size === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
               <MapPin className="h-12 w-12 opacity-20 mb-3" />
               <p className="font-semibold text-foreground">Belum ada titik lokasi</p>
@@ -179,41 +187,66 @@ export default function TrackingPage() {
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {latestLocations.map((location) => (
-                <div key={location.id} className="rounded-xl border border-border bg-card p-5 shadow-sm hover:shadow-md transition-all group">
+              {Array.from(groupedLocations.entries()).map(([userId, group]) => (
+                <div key={userId} className="rounded-xl border border-border bg-card p-5 shadow-sm hover:shadow-md transition-all group flex flex-col gap-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate font-bold text-foreground text-lg">{location.user.name}</p>
+                      <p className="truncate font-bold text-foreground text-lg">{group.user.name}</p>
                       <p className="truncate text-xs text-muted-foreground font-medium mt-0.5">
-                        {location.user.division.name} - {location.user.role.name}
+                        {group.user.division.name} - {group.user.role.name}
                       </p>
                     </div>
-                    <span
-                      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${
-                        location.activity === "CHECK_IN"
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-800"
-                          : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:border-amber-800"
-                      }`}
-                    >
-                      {getActivityLabel(location.activity)}
-                    </span>
                   </div>
-                  <div className="mt-5 flex items-center gap-2 text-sm font-medium text-muted-foreground bg-muted/50 p-2.5 rounded-lg">
-                    <Clock className="h-4 w-4" />
-                    {formatDistanceToNow(new Date(location.createdAt), { addSuffix: true, locale: localeId })}
-                  </div>
-                  <div className="mt-3 font-mono text-xs text-muted-foreground/60 truncate">
-                    📍 {location.latitude}, {location.longitude}
-                  </div>
-                  <a
-                    href={getMapsUrl(location)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary text-sm font-bold text-primary transition-all hover:bg-primary hover:text-primary-foreground"
-                  >
-                    <Navigation className="h-4 w-4" />
-                    Buka di Google Maps
-                  </a>
+                  
+                  {group.checkIn && (
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 dark:bg-emerald-900/10 dark:border-emerald-800/50 p-3">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400 px-2 py-1 rounded">Check-in</span>
+                        <div className="flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
+                          <Clock className="h-3 w-3" />
+                          {format(new Date(group.checkIn.createdAt), "HH:mm")}
+                        </div>
+                      </div>
+                      <div className="font-mono text-[10px] text-emerald-800/70 dark:text-emerald-300/70 truncate mb-2">
+                        📍 {group.checkIn.latitude}, {group.checkIn.longitude}
+                      </div>
+                      <a
+                        href={getMapsUrl(group.checkIn)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 text-xs font-bold text-white transition-all hover:bg-emerald-700"
+                      >
+                        <Navigation className="h-3 w-3" /> Maps
+                      </a>
+                    </div>
+                  )}
+
+                  {group.checkOut ? (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50/50 dark:bg-amber-900/10 dark:border-amber-800/50 p-3">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400 px-2 py-1 rounded">Check-out</span>
+                        <div className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400">
+                          <Clock className="h-3 w-3" />
+                          {format(new Date(group.checkOut.createdAt), "HH:mm")}
+                        </div>
+                      </div>
+                      <div className="font-mono text-[10px] text-amber-800/70 dark:text-amber-300/70 truncate mb-2">
+                        📍 {group.checkOut.latitude}, {group.checkOut.longitude}
+                      </div>
+                      <a
+                        href={getMapsUrl(group.checkOut)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-amber-600 text-xs font-bold text-white transition-all hover:bg-amber-700"
+                      >
+                        <Navigation className="h-3 w-3" /> Maps
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-3 text-center flex items-center justify-center h-[100px]">
+                      <span className="text-xs text-muted-foreground/70 font-medium italic">Belum Check-out</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

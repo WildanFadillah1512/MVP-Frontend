@@ -97,8 +97,8 @@ export default function WarehousePage() {
     }
   };
 
-  const isWarehouseOrAbove = ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(userRole) || userDivision === 'GUDANG';
-  const canSetupItem = ['OWNER', 'CEO', 'GM', 'ADMIN', 'MANAGER'].includes(userRole) || userDivision === 'GUDANG';
+  const isWarehouseOrAbove = ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(userRole) || ['GUDANG', 'PURCHASING'].includes(userDivision);
+  const canSetupItem = ['OWNER', 'CEO', 'GM', 'ADMIN', 'MANAGER'].includes(userRole) || ['GUDANG', 'PURCHASING'].includes(userDivision);
   const canDeleteItem = userRole === 'CEO' || userDivision === 'PURCHASING';
   const lowStockItems = items.filter(i => i.currentStock <= i.minStock);
   const todayMovements = movements.filter(m => new Date(m.date).toDateString() === new Date().toDateString());

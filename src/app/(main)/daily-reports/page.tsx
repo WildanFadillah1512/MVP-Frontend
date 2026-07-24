@@ -21,6 +21,8 @@ export default function DailyReportsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [todayReport, setTodayReport] = useState<any>(null);
   const [userRole, setUserRole] = useState('');
+  const [tasksList, setTasksList] = useState<any[]>([]);
+  const [selectedTaskId, setSelectedTaskId] = useState<string>('');
 
   const form = useForm<ReportInput>({
     resolver: zodResolver(reportSchema),
@@ -50,6 +52,19 @@ export default function DailyReportsPage() {
         const lockedRes = await reportApi.getLockedReports().catch(() => ({ success: false, data: [] }));
         if (lockedRes.success) setLockedReports(lockedRes.data || []);
       }
+
+      // Fetch tasks for dropdown
+      try {
+        const { api } = await import('@/lib/api/axios');
+        const tasksRes = await api.get('/tasks');
+        if (tasksRes.data.success) {
+          // Only show pending or in progress tasks
+          const activeTasks = tasksRes.data.data.filter((t: any) => t.status !== 'COMPLETED');
+          setTasksList(activeTasks);
+        }
+      } catch (e) {
+        console.error("Gagal mengambil daftar tugas", e);
+      }
     } catch (error) { console.error('Error fetching reports:', error); }
   };
 
@@ -66,10 +81,20 @@ export default function DailyReportsPage() {
   const onSubmit = async (data: ReportInput) => {
     setIsLoading(true);
     try {
-      const response = await reportApi.create(data);
+      const payload = { ...data };
+      if (selectedTaskId) {
+        payload.tasks = [{
+          taskType: 'TASK',
+          taskId: selectedTaskId,
+          notes: 'Dikerjakan via Laporan Harian'
+        }];
+      }
+
+      const response = await reportApi.create(payload);
       if (response.success) {
         toast.success(todayReport ? 'Laporan berhasil diperbarui' : 'Laporan berhasil dikirim');
         fetchReports();
+        setSelectedTaskId('');
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Gagal menyimpan laporan');
@@ -159,6 +184,21 @@ export default function DailyReportsPage() {
                       <FormMessage />
                     </FormItem>
                   )} />
+
+                  <div className="space-y-2">
+                    <FormLabel className="font-bold text-foreground">Tugas yang Dikerjakan (Opsional)</FormLabel>
+                    <select 
+                      className="flex h-11 w-full rounded-xl border border-input bg-muted/20 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={selectedTaskId}
+                      onChange={(e) => setSelectedTaskId(e.target.value)}
+                    >
+                      <option value="">-- Pilih Tugas --</option>
+                      {tasksList.map(task => (
+                        <option key={task.id} value={task.id}>{task.title}</option>
+                      ))}
+                    </select>
+                    <p className="text-[0.8rem] text-muted-foreground">Tugas yang dipilih akan otomatis diupdate statusnya.</p>
+                  </div>
 
                   <FormField control={form.control} name="output" render={({ field }) => (
                     <FormItem>

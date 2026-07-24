@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -63,6 +63,16 @@ export default function LeavePage() {
     }
   };
 
+  const handleCancel = async (leaveId: string) => {
+    if (!confirm('Apakah Anda yakin ingin membatalkan pengajuan cuti ini?')) return;
+    try {
+      const res = await leaveApi.cancelLeave(leaveId);
+      if (res.success) { toast.success('Cuti berhasil dibatalkan'); fetchData(); }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal membatalkan cuti');
+    }
+  };
+
   const canApprove = ['CEO', 'ADMIN', 'MANAGER', 'LEADER'].includes(userRole);
   const balance = data.balance;
   const usedQuota = balance?.usedQuota || 0;
@@ -80,6 +90,11 @@ export default function LeavePage() {
       case 'REJECTED': return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-800/50">
           <XCircle className="w-3 h-3" /> Ditolak
+        </span>
+      );
+      case 'CANCELLED': return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+          <XCircle className="w-3 h-3" /> Dibatalkan
         </span>
       );
       default: return (
@@ -254,8 +269,19 @@ export default function LeavePage() {
                           </div>
                           <p className="text-foreground/80 leading-relaxed max-w-2xl">{req.reason}</p>
                         </div>
-                        <div className="shrink-0">
+                        <div className="shrink-0 flex flex-col items-end gap-2">
                           {getStatusBadge(req.status)}
+                          {(req.status === 'PENDING' || req.status === 'APPROVED') && (
+                            <Button 
+                              type="button"
+                              variant="destructive" 
+                              size="sm" 
+                              className="h-8 text-xs font-bold rounded-lg px-3"
+                              onClick={() => handleCancel(req.id)}
+                            >
+                              Batalkan
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))

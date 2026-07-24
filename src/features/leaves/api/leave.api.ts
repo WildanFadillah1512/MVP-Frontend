@@ -28,6 +28,11 @@ export const leaveApi = {
   approveLeave: async (id: string, status: 'APPROVED' | 'REJECTED') => {
     const response = await api.patch(`/leaves/${id}/approve`, { status });
     return response.data;
+  },
+
+  cancelLeave: async (id: string) => {
+    const response = await api.patch(`/leaves/${id}/cancel`);
+    return response.data;
   }
 };
 

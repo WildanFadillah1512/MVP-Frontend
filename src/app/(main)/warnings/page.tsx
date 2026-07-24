@@ -21,6 +21,7 @@ export default function WarningsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     employeeId: "",
+    type: "SP1",
     reason: "",
     durationDays: "",
     notes: ""
@@ -62,8 +63,8 @@ export default function WarningsPage() {
         durationDays: form.durationDays ? Number(form.durationDays) : undefined
       });
       if (res.data.success) {
-        toast.success("SP1 berhasil diterbitkan");
-        setForm({ employeeId: "", reason: "", durationDays: "", notes: "" });
+        toast.success(`${form.type} berhasil diterbitkan`);
+        setForm({ employeeId: "", type: "SP1", reason: "", durationDays: "", notes: "" });
         fetchData();
       }
     } catch (error: any) {
@@ -98,17 +99,17 @@ export default function WarningsPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">SP1 Karyawan</h1>
-        <p className="mt-1 text-muted-foreground">Manager ke atas dapat menerbitkan SP1. Status otomatis kadaluarsa sesuai durasi.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Surat Peringatan (SP)</h1>
+        <p className="mt-1 text-muted-foreground">Manager ke atas dapat menerbitkan Surat Peringatan. Status otomatis kadaluarsa sesuai durasi.</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
         <Card className="lg:col-span-2 rounded-2xl border-border shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-500" /> Terbitkan SP1
+              <AlertTriangle className="h-5 w-5 text-amber-500" /> Terbitkan SP
             </CardTitle>
-            <CardDescription>Default berlaku {defaultDurationDays} hari jika durasi dikosongkan.</CardDescription>
+            <CardDescription>Pilih kategori SP dan isi detailnya. Default berlaku {defaultDurationDays} hari jika durasi dikosongkan.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -128,6 +129,19 @@ export default function WarningsPage() {
                 </Select>
               </div>
               <div className="space-y-2">
+                <Label>Kategori SP</Label>
+                <Select value={form.type} onValueChange={(value) => setForm({ ...form, type: value })}>
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder="Pilih SP..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SP1">SP 1</SelectItem>
+                    <SelectItem value="SP2">SP 2</SelectItem>
+                    <SelectItem value="SP3">SP 3</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label>Durasi Berlaku (hari)</Label>
                 <Input
                   type="number"
@@ -139,7 +153,7 @@ export default function WarningsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Alasan SP1</Label>
+                <Label>Alasan Peringatan</Label>
                 <Textarea
                   value={form.reason}
                   onChange={(event) => setForm({ ...form, reason: event.target.value })}
@@ -152,7 +166,7 @@ export default function WarningsPage() {
                 <Input value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} className="rounded-xl" />
               </div>
               <Button type="submit" disabled={isSubmitting || !form.employeeId} className="w-full rounded-xl">
-                Terbitkan SP1
+                Terbitkan Surat Peringatan
               </Button>
             </form>
           </CardContent>

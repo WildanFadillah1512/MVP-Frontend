@@ -138,14 +138,18 @@ const getSidebarMenus = (role: string, division: string) => {
       ...managerialMenus,
       ...(role === 'MANAGER' ? adminOnlyMenus : []),
       ...(myDivisionMenu ? [myDivisionMenu] : []),
+      ...(division.toUpperCase() === 'PURCHASING' ? [divisionMenuMap['GUDANG']] : []),
       ...(shouldShowMaterialRequests ? [materialRequestMenu] : []),
       ...(shouldShowPurchaseRequests ? [purchaseRequestMenu] : []),
     ];
   } else {
-    // LEADER, STAFF: hanya lihat divisi mereka sendiri
+    // STAFF: hanya lihat divisi mereka sendiri
     const myDivisionMenu = divisionMenuMap[division.toUpperCase()];
     if (myDivisionMenu) {
       menus = [...menus, myDivisionMenu];
+    }
+    if (division.toUpperCase() === 'PURCHASING') {
+      menus = [...menus, divisionMenuMap['GUDANG']];
     }
     if (shouldShowPurchaseRequests) {
       menus = [...menus, purchaseRequestMenu];

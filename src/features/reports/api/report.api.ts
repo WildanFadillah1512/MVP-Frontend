@@ -6,6 +6,7 @@ export const reportSchema = z.object({
   output: z.string().min(5, 'Output minimal 5 karakter'),
   obstacles: z.string().optional(),
   notes: z.string().optional(),
+  tasks: z.array(z.any()).optional(),
 });
 
 export type ReportInput = z.infer<typeof reportSchema>;
