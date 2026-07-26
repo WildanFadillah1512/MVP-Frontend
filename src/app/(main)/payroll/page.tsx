@@ -41,6 +41,7 @@ export default function PayrollPage() {
   const [showDialog, setShowDialog] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null);
+  const [userRole, setUserRole] = useState('');
 
   const [formData, setFormData] = useState({
     userId: '',
@@ -52,9 +53,19 @@ export default function PayrollPage() {
   });
 
   useEffect(() => {
+    const userStr = sessionStorage.getItem('user');
+    if (userStr) {
+      const current = JSON.parse(userStr);
+      setUserRole(current.role?.name || '');
+    }
     fetchPayrolls();
-    fetchUsers();
   }, []);
+
+  useEffect(() => {
+    if (['OWNER', 'CEO', 'ADMIN', 'MANAGER'].includes(userRole)) {
+      fetchUsers();
+    }
+  }, [userRole]);
 
   const fetchPayrolls = async () => {
     try {
@@ -131,6 +142,10 @@ export default function PayrollPage() {
     setShowDetailDialog(true);
   };
 
+  const canManagePayroll = ['OWNER', 'CEO', 'ADMIN', 'MANAGER'].includes(userRole);
+  const canApprovePayroll = ['OWNER', 'CEO'].includes(userRole);
+  const canMarkPaid = ['OWNER', 'CEO', 'ADMIN'].includes(userRole);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'DRAFT': return 'bg-gray-100 text-gray-800';
@@ -149,9 +164,11 @@ export default function PayrollPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Slip Gaji / Payroll</h1>
-        <Button onClick={() => setShowDialog(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Generate Payroll
-        </Button>
+        {canManagePayroll && (
+          <Button onClick={() => setShowDialog(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Generate Payroll
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-4">
@@ -184,12 +201,12 @@ export default function PayrollPage() {
                   <Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); showDetail(payroll); }}>
                     <Eye className="h-4 w-4 mr-1" /> Detail
                   </Button>
-                  {payroll.status === 'PENDING' && (
+                  {canApprovePayroll && payroll.status === 'PENDING' && (
                     <Button size="sm" onClick={(event) => { event.stopPropagation(); handleApprove(payroll.id); }}>
                       <CheckCircle className="h-4 w-4 mr-1" /> Approve
                     </Button>
                   )}
-                  {payroll.status === 'APPROVED' && (
+                  {canMarkPaid && payroll.status === 'APPROVED' && (
                     <Button size="sm" onClick={(event) => { event.stopPropagation(); handleMarkPaid(payroll.id); }}>
                       <DollarSign className="h-4 w-4 mr-1" /> Tandai Dibayar
                     </Button>

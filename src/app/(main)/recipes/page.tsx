@@ -244,10 +244,10 @@ export default function RecipesPage() {
                     <div>
                       <span className="font-medium">{ing.ingredient.name}</span>
                       <span className="text-sm text-gray-600 ml-2">
-                        {ing.qtyNeeded} {ing.ingredient.unit}
+                        {ing.qtyNeeded} gram
                       </span>
                       <span className="text-sm text-gray-600 ml-2">
-                        x Rp {Number(ing.unitPrice || 0).toLocaleString('id-ID')} / {ing.ingredient.unit}
+                        x Rp {Number(ing.unitPrice || 0).toLocaleString('id-ID')} / gram
                       </span>
                       <span className="text-sm text-gray-500 ml-2">
                         (Stok: {ing.ingredient.currentStock} {ing.ingredient.unit})
@@ -321,7 +321,8 @@ export default function RecipesPage() {
               </div>
 
               {formData.ingredients.map((ing, index) => {
-                const selectedItem = warehouseItems.find((item) => item.id === ing.warehouseItemId);
+                  const selectedItem = warehouseItems.find((item) => item.id === ing.warehouseItemId);
+                  const autoUnitPrice = Number(selectedItem?.pricePerGram || 0);
                 return (
                 <div key={index} className="grid gap-2 md:grid-cols-[1fr_140px_180px_44px]">
                   <select
@@ -341,7 +342,7 @@ export default function RecipesPage() {
                     type="number"
                     step="0.01"
                     min="0.01"
-                    placeholder={selectedItem?.unit ? `Qty (${selectedItem.unit})` : 'Qty/gramasi'}
+                    placeholder="Qty gram"
                     value={ing.qtyNeeded}
                     onChange={(e) => handleIngredientChange(index, 'qtyNeeded', e.target.value)}
                     required
@@ -350,7 +351,7 @@ export default function RecipesPage() {
                     type="number"
                     step="0.01"
                     min="0"
-                    placeholder={selectedItem?.unit ? `Harga / ${selectedItem.unit}` : 'Harga per unit'}
+                    placeholder={autoUnitPrice > 0 ? `Auto Rp ${autoUnitPrice.toLocaleString('id-ID', { maximumFractionDigits: 2 })}/gram` : 'Harga per gram'}
                     value={ing.unitPrice}
                     onChange={(e) => handleIngredientChange(index, 'unitPrice', e.target.value)}
                   />

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, FileText, CheckCircle, AlertTriangle, TrendingUp, ArrowUpRight, BarChart3, Building2, Download, Award } from "lucide-react";
 import { dashboardApi } from '@/features/dashboard/api/dashboard.api';
@@ -76,6 +77,7 @@ export default function CEODashboard() {
 
       {/* KPI Cards */}
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        <Link href="/users" className="outline-none">
         <Card className="border-border shadow-sm rounded-2xl hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
@@ -91,7 +93,9 @@ export default function CEODashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
 
+        <Link href="/daily-reports" className="outline-none">
         <Card className="border-border shadow-sm rounded-2xl hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
@@ -106,7 +110,9 @@ export default function CEODashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
 
+        <Link href="/cashier" className="outline-none">
         <Card className="border-border shadow-sm rounded-2xl hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
@@ -121,7 +127,9 @@ export default function CEODashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
 
+        <Link href="/warehouse" className="outline-none">
         <Card className="border-border shadow-sm rounded-2xl hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
@@ -136,6 +144,7 @@ export default function CEODashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
       </div>
 
       {/* Division + Pending Reports */}
@@ -277,7 +286,11 @@ export default function CEODashboard() {
               <tbody className="divide-y divide-border/50">
                 {leaderboard.slice(0, 10).map((employee) => (
                   <tr key={employee.id} className="hover:bg-muted/50 transition-colors">
-                    <td className="px-6 py-4 font-bold text-foreground">{employee.name}</td>
+                    <td className="px-6 py-4 font-bold text-foreground">
+                      <Link href={`/performance?userId=${employee.id}`} className="hover:text-primary hover:underline">
+                        {employee.name}
+                      </Link>
+                    </td>
                     <td className="px-6 py-4 font-medium text-muted-foreground">{employee.role} / {employee.division}</td>
                     <td className="px-6 py-4 text-right font-mono text-muted-foreground">{employee.attendanceScore}%</td>
                     <td className="px-6 py-4 text-right font-mono text-muted-foreground">{employee.reportScore}%</td>

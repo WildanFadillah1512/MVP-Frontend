@@ -21,6 +21,7 @@ export default function ProductionPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<'input' | 'matrix' | 'materials' | 'targets'>('input');
+  const [productionDrafts, setProductionDrafts] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     productId: '',
@@ -108,6 +109,39 @@ export default function ProductionPage() {
       }
     } catch { toast.error('Gagal menyimpan laporan'); }
     finally { setIsSubmitting(false); }
+  };
+
+  const addProductionDraft = () => {
+    if (!formData.productId || !formData.quantity) {
+      toast.error('Produk dan Jumlah wajib diisi');
+      return;
+    }
+    setProductionDrafts([...productionDrafts, { ...formData, id: `${Date.now()}-${Math.random()}` }]);
+    setFormData({ ...formData, productId: '', quantity: '', rejectQty: '', rejectReason: '', notes: '' });
+  };
+
+  const removeProductionDraft = (id: string) => {
+    setProductionDrafts(productionDrafts.filter((draft) => draft.id !== id));
+  };
+
+  const handleSubmitDrafts = async () => {
+    if (productionDrafts.length === 0) {
+      toast.error('Belum ada draft produksi');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await productionApi.createRecordsBulk(productionDrafts.map(({ id, ...draft }) => draft));
+      if (res.success) {
+        toast.success(res.message || 'Semua laporan produksi berhasil disimpan');
+        setProductionDrafts([]);
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Gagal menyimpan draft produksi');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleUseMaterial = async (e: React.FormEvent) => {
@@ -425,6 +459,52 @@ export default function ProductionPage() {
         </CardContent>
       </Card>
 
+      <Card className="border-border shadow-md rounded-2xl overflow-hidden">
+        <CardHeader className="bg-card/50 border-b border-border p-6">
+          <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+            <Box className="w-5 h-5 text-primary" /> Stok Bahan Gudang Realtime
+          </CardTitle>
+          <CardDescription>Saldo bahan baku yang akan otomatis berkurang ketika produksi memakai resep.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0 overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-muted/30 border-b border-border">
+              <tr>
+                <th className="px-4 py-3 font-semibold text-foreground">Bahan</th>
+                <th className="px-4 py-3 font-semibold text-foreground text-right">Stok</th>
+                <th className="px-4 py-3 font-semibold text-foreground text-right">Harga/Gram</th>
+                <th className="px-4 py-3 font-semibold text-foreground">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+              {warehouseItems.length === 0 ? (
+                <tr><td colSpan={4} className="px-4 py-10 text-center text-muted-foreground">Belum ada data gudang</td></tr>
+              ) : warehouseItems.slice(0, 12).map((item) => (
+                <tr key={item.id} className="hover:bg-muted/50">
+                  <td className="px-4 py-3">
+                    <p className="font-semibold text-foreground">{item.name}</p>
+                    <p className="text-xs text-muted-foreground font-mono">{item.code}</p>
+                  </td>
+                  <td className={`px-4 py-3 text-right font-bold ${item.currentStock <= item.minStock ? 'text-rose-600' : 'text-foreground'}`}>
+                    {item.currentStock.toLocaleString('id-ID')} {item.unit}
+                  </td>
+                  <td className="px-4 py-3 text-right font-bold">
+                    Rp {Number(item.pricePerGram || 0).toLocaleString('id-ID', { maximumFractionDigits: 2 })}
+                  </td>
+                  <td className="px-4 py-3">
+                    {item.currentStock <= item.minStock ? (
+                      <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-700">Restock</span>
+                    ) : (
+                      <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">Aman</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+
       {/* TAB: INPUT HARIAN */}
       {activeTab === 'input' && (
         <div className="grid gap-6 lg:grid-cols-5">
@@ -504,13 +584,44 @@ export default function ProductionPage() {
                     className="rounded-xl border-border bg-muted/30  focus-visible:ring-primary"
                   />
                 </div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting || products.length === 0}
-                  className="w-full h-11 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? 'Menyimpan...' : 'Simpan Laporan Produksi'}
-                </button>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={addProductionDraft}
+                    disabled={isSubmitting || products.length === 0}
+                    className="h-11 rounded-xl border border-primary/30 bg-primary/5 text-primary font-semibold transition-colors hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Tambah ke Draft
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || products.length === 0}
+                    className="h-11 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? 'Menyimpan...' : 'Simpan Langsung'}
+                  </button>
+                </div>
+                {productionDrafts.length > 0 && (
+                  <div className="rounded-2xl border border-border bg-muted/20 p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="font-bold text-foreground">Draft Produksi ({productionDrafts.length})</p>
+                      <button type="button" onClick={handleSubmitDrafts} disabled={isSubmitting} className="rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50">
+                        Simpan Semua
+                      </button>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {productionDrafts.map((draft) => {
+                        const product = products.find((item) => item.id === draft.productId);
+                        return (
+                          <div key={draft.id} className="flex items-center justify-between rounded-xl bg-card px-3 py-2 text-sm">
+                            <span className="font-semibold text-foreground">{product?.name || 'Produk'} · {draft.quantity} qty</span>
+                            <button type="button" onClick={() => removeProductionDraft(draft.id)} className="text-xs font-bold text-rose-600">Hapus</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </form>
             </CardContent>
           </Card>

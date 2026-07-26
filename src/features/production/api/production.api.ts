@@ -27,6 +27,10 @@ export const productionApi = {
     const response = await api.post('/production/records', data);
     return response.data;
   },
+  createRecordsBulk: async (records: any[]) => {
+    const response = await api.post('/production/records/bulk', { records });
+    return response.data;
+  },
   getTargets: async (params?: any) => {
     const response = await api.get('/production/targets', { params });
     return response.data;

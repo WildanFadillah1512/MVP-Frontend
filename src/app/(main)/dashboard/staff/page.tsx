@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle, TrendingUp, FileText, Upload, Target } from "lucide-react";
+import { CheckCircle, TrendingUp, FileText, Upload, Target, ClipboardList, CalendarClock } from "lucide-react";
 import { dashboardApi } from '@/features/dashboard/api/dashboard.api';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
@@ -72,6 +72,7 @@ export default function StaffDashboard() {
 
       {/* KPI Cards */}
       <div className="grid gap-5 sm:grid-cols-2">
+        <Link href="/performance" className="outline-none">
         <Card className="border-border shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
@@ -84,7 +85,9 @@ export default function StaffDashboard() {
             <p className="text-sm font-medium text-muted-foreground mt-1">Target Berjalan</p>
           </CardContent>
         </Card>
+        </Link>
 
+        <Link href="/performance" className="outline-none">
         <Card className="border-border shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
@@ -93,8 +96,80 @@ export default function StaffDashboard() {
               </div>
               <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 rounded-full">KPI</span>
             </div>
-            <p className="text-4xl font-black text-foreground">N/A</p>
+            <p className="text-4xl font-black text-foreground">{data.kpi?.score ?? 0}</p>
             <p className="text-sm font-medium text-muted-foreground mt-1">Skor Performa</p>
+          </CardContent>
+        </Card>
+        </Link>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="border-border shadow-sm rounded-2xl overflow-hidden">
+          <CardContent className="p-6">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-foreground">Tugas Aktif</h2>
+                <p className="text-sm text-muted-foreground">Pekerjaan yang diset oleh atasan/CEO</p>
+              </div>
+              <ClipboardList className="w-6 h-6 text-primary" />
+            </div>
+            <div className="flex flex-col gap-3">
+              {(data.activeTasks || []).length === 0 ? (
+                <p className="rounded-xl border border-dashed border-border p-5 text-center text-sm text-muted-foreground">Belum ada tugas aktif.</p>
+              ) : (
+                data.activeTasks.map((task: any) => (
+                  <Link key={task.id} href="/tasks" className="rounded-xl border border-border p-4 transition-colors hover:border-primary/40 hover:bg-muted/40">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-bold text-foreground">{task.title}</p>
+                        {task.description && <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{task.description}</p>}
+                      </div>
+                      <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+                        {task.scheduleType === 'DAILY' ? 'Harian' : task.scheduleType === 'MONTHLY' ? 'Bulanan' : 'Sekali'}
+                      </span>
+                    </div>
+                    {task.dueDate && (
+                      <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                        <CalendarClock className="w-3.5 h-3.5" /> Deadline {format(new Date(task.dueDate), 'dd MMM yyyy', { locale: localeId })}
+                      </p>
+                    )}
+                  </Link>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border shadow-sm rounded-2xl overflow-hidden">
+          <CardContent className="p-6">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-foreground">Target Kerja</h2>
+                <p className="text-sm text-muted-foreground">Item pekerjaan yang ditetapkan untuk Anda</p>
+              </div>
+              <Target className="w-6 h-6 text-primary" />
+            </div>
+            <div className="flex flex-col gap-3">
+              {(data.activeTargets || []).length === 0 ? (
+                <p className="rounded-xl border border-dashed border-border p-5 text-center text-sm text-muted-foreground">Belum ada target aktif.</p>
+              ) : (
+                data.activeTargets.slice(0, 5).map((item: any) => {
+                  const percent = Math.min(100, Math.round((item.currentValue / Math.max(1, item.target.targetValue)) * 100));
+                  return (
+                    <Link key={item.id} href="/performance" className="rounded-xl border border-border p-4 transition-colors hover:border-primary/40 hover:bg-muted/40">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-bold text-foreground">{item.target.title}</p>
+                        <span className="text-sm font-black text-primary">{percent}%</span>
+                      </div>
+                      <div className="mt-3 h-2 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
+                      </div>
+                      <p className="mt-2 text-xs text-muted-foreground">{item.currentValue} / {item.target.targetValue} {item.target.unit}</p>
+                    </Link>
+                  );
+                })
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

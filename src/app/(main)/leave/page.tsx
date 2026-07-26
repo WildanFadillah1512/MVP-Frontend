@@ -63,6 +63,18 @@ export default function LeavePage() {
     }
   };
 
+  const handleCancellationApproval = async (cancellationId: string, status: 'APPROVED' | 'REJECTED') => {
+    try {
+      const res = await leaveApi.approveCancellation(cancellationId, status);
+      if (res.success) {
+        toast.success(`Pembatalan cuti berhasil di-${status === 'APPROVED' ? 'setujui' : 'tolak'}`);
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal memproses pembatalan cuti');
+    }
+  };
+
   const handleCancel = async (leaveId: string) => {
     if (!confirm('Apakah Anda yakin ingin membatalkan pengajuan cuti ini?')) return;
     try {
@@ -271,7 +283,12 @@ export default function LeavePage() {
                         </div>
                         <div className="shrink-0 flex flex-col items-end gap-2">
                           {getStatusBadge(req.status)}
-                          {(req.status === 'PENDING' || req.status === 'APPROVED') && (
+                          {req.cancellationRequests?.some((item: any) => item.status === 'PENDING') && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                              <Hourglass className="w-3 h-3" /> Pembatalan menunggu approval
+                            </span>
+                          )}
+                          {(req.status === 'PENDING' || req.status === 'APPROVED') && !req.cancellationRequests?.some((item: any) => item.status === 'PENDING') && (
                             <Button 
                               type="button"
                               variant="destructive" 
@@ -356,6 +373,14 @@ export default function LeavePage() {
                         <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Alasan Pengajuan</p>
                         <p className="text-sm text-foreground/80 leading-relaxed line-clamp-3">{req.reason}</p>
                       </div>
+                      {req.cancellationRequests?.length > 0 && (
+                        <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                          <p className="text-xs font-bold uppercase tracking-widest text-amber-700">Pembatalan Cuti</p>
+                          <p className="mt-1 text-sm text-amber-900">
+                            {req.cancellationRequests[0].reason || 'Karyawan meminta pembatalan cuti.'}
+                          </p>
+                        </div>
+                      )}
                     </div>
                     {req.status === 'PENDING' && (
                       <div className="p-5 bg-card border-t border-border/50 flex gap-3">
@@ -364,6 +389,16 @@ export default function LeavePage() {
                         </Button>
                         <Button className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md" onClick={() => handleApproval(req.id, 'APPROVED')}>
                           Setujui
+                        </Button>
+                      </div>
+                    )}
+                    {req.cancellationRequests?.length > 0 && req.cancellationRequests[0].status === 'PENDING' && (
+                      <div className="p-5 bg-card border-t border-border/50 flex gap-3">
+                        <Button variant="outline" className="flex-1 h-12 rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 font-bold shadow-sm" onClick={() => handleCancellationApproval(req.cancellationRequests[0].id, 'REJECTED')}>
+                          Tolak Pembatalan
+                        </Button>
+                        <Button className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md" onClick={() => handleCancellationApproval(req.cancellationRequests[0].id, 'APPROVED')}>
+                          Setujui Pembatalan
                         </Button>
                       </div>
                     )}

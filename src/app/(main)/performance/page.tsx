@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { targetApi } from '@/features/targets/api/target.api';
+import { dashboardApi } from '@/features/dashboard/api/dashboard.api';
 import { api } from '@/lib/api/axios';
 import { Target, TrendingUp, CheckCircle, Clock, Plus, Users } from "lucide-react";
 import { toast } from 'sonner';
@@ -20,6 +21,7 @@ export default function PerformancePage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [employeeStats, setEmployeeStats] = useState<any>(null);
 
   const [form, setForm] = useState({
     assigneeId: '',
@@ -61,6 +63,16 @@ export default function PerformancePage() {
       const parsed = JSON.parse(userStr);
       setUserRole(parsed.role.name);
       fetchData(parsed.role.name);
+
+      const params = new URLSearchParams(window.location.search);
+      const userId = params.get('userId');
+      if (userId) {
+        dashboardApi.getEmployeeStatistics(userId)
+          .then((res) => {
+            if (res.success) setEmployeeStats(res.data);
+          })
+          .catch(() => toast.error('Gagal mengambil statistik karyawan'));
+      }
     }
   }, []);
 
@@ -136,6 +148,48 @@ export default function PerformancePage() {
       </div>
 
       {/* Stats */}
+      {employeeStats && (
+        <Card className="border-border shadow-sm rounded-2xl overflow-hidden">
+          <CardHeader className="border-b border-border p-6">
+            <CardTitle className="text-xl font-bold text-foreground">Statistik {employeeStats.employee.name}</CardTitle>
+            <CardDescription>{employeeStats.employee.role} / {employeeStats.employee.division} · Periode {employeeStats.period}</CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid gap-4 md:grid-cols-5">
+              {[
+                { label: 'KPI', value: `${employeeStats.scores.kpiScore} (${employeeStats.scores.grade})` },
+                { label: 'Absensi', value: `${employeeStats.summary.attendanceDays} hari` },
+                { label: 'Laporan', value: `${employeeStats.summary.reportDays} hari` },
+                { label: 'Upload', value: `${employeeStats.summary.uploadCount} file` },
+                { label: 'Lembur', value: `${employeeStats.summary.overtimeHours} jam` },
+              ].map((item) => (
+                <div key={item.label} className="rounded-xl border border-border bg-muted/20 p-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{item.label}</p>
+                  <p className="mt-2 text-2xl font-black text-foreground">{item.value}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              {[
+                { label: 'Skor Absensi', value: employeeStats.scores.attendanceScore },
+                { label: 'Skor Laporan', value: employeeStats.scores.reportScore },
+                { label: 'Skor Target', value: employeeStats.scores.targetScore },
+              ].map((score) => (
+                <div key={score.label}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="font-medium text-muted-foreground">{score.label}</span>
+                    <span className="font-bold text-foreground">{score.value}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, score.value)}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-4 md:grid-cols-3">
         <div className="bg-card border border-border rounded-2xl p-6 shadow-sm flex items-center gap-5">
           <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">

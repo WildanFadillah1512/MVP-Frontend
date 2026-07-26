@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, FileText, CheckCircle, AlertCircle, ArrowUpRight, Target } from "lucide-react";
 import { dashboardApi } from '@/features/dashboard/api/dashboard.api';
+import Link from 'next/link';
 
 export default function LeaderDashboard() {
   const [data, setData] = useState<any>(null);
@@ -44,7 +45,8 @@ export default function LeaderDashboard() {
 
       {/* KPI Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group">
+        <Link href="/users" className="outline-none">
+        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group cursor-pointer transition-transform hover:-translate-y-1">
           <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform duration-500">
             <Users className="w-20 h-20" />
           </div>
@@ -60,8 +62,10 @@ export default function LeaderDashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
 
-        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group">
+        <Link href="/daily-reports" className="outline-none">
+        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group cursor-pointer transition-transform hover:-translate-y-1">
           <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform duration-500">
             <FileText className="w-20 h-20" />
           </div>
@@ -75,8 +79,10 @@ export default function LeaderDashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
 
-        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group">
+        <Link href="/performance" className="outline-none">
+        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group cursor-pointer transition-transform hover:-translate-y-1">
           <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform duration-500">
             <CheckCircle className="w-20 h-20" />
           </div>
@@ -90,8 +96,10 @@ export default function LeaderDashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
 
-        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group">
+        <Link href="/daily-uploads" className="outline-none">
+        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group cursor-pointer transition-transform hover:-translate-y-1">
           <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform duration-500">
             <AlertCircle className="w-20 h-20" />
           </div>
@@ -105,6 +113,7 @@ export default function LeaderDashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
       </div>
 
       {/* Pending Reports */}

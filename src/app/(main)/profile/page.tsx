@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from 'sonner';
-import { Upload, User, Phone, Image as ImageIcon, Loader2, Send } from 'lucide-react';
+import { Upload, User, Phone, Image as ImageIcon, Loader2, Send, FileText, Download } from 'lucide-react';
 import { api } from '@/lib/api/axios';
 import { uploadApi } from '@/features/uploads/api/upload.api';
 import { useRouter } from 'next/navigation';
@@ -19,6 +19,8 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isSubmittingResign, setIsSubmittingResign] = useState(false);
+  const [documents, setDocuments] = useState<any>({ warnings: [], paklarings: [], payrolls: [] });
+  const [photoVersion, setPhotoVersion] = useState(Date.now());
   
   const [form, setForm] = useState({
     photoUrl: '',
@@ -45,6 +47,11 @@ export default function ProfilePage() {
     } else {
       router.push('/login');
     }
+    api.get('/users/me/documents')
+      .then((res) => {
+        if (res.data.success) setDocuments(res.data.data);
+      })
+      .catch(() => {});
     setLoading(false);
   }, [router]);
 
@@ -91,8 +98,16 @@ export default function ProfilePage() {
     try {
       const res = await uploadApi.uploadProfilePhoto(file);
       if (res.success) {
-        setForm((current) => ({ ...current, photoUrl: res.data.fileUrl }));
-        toast.success('Foto berhasil diupload. Simpan profil untuk menerapkan.');
+        const nextForm = { ...form, photoUrl: res.data.fileUrl };
+        const saveRes = await api.patch('/users/profile', nextForm);
+        if (saveRes.data.success) {
+          const updatedUser = { ...userContext, ...saveRes.data.data };
+          sessionStorage.setItem('user', JSON.stringify(updatedUser));
+          setUserContext(updatedUser);
+          setForm(nextForm);
+          setPhotoVersion(Date.now());
+          toast.success('Foto profil berhasil diperbarui');
+        }
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Gagal upload foto');
@@ -126,6 +141,9 @@ export default function ProfilePage() {
   );
 
   const previewPhotoUrl = getRenderableImageUrl(form.photoUrl);
+  const previewPhotoWithVersion = previewPhotoUrl
+    ? `${previewPhotoUrl}${previewPhotoUrl.includes('?') ? '&' : '?'}v=${photoVersion}`
+    : '';
 
   return (
     <div className="flex flex-col gap-8 max-w-3xl mx-auto">
@@ -151,8 +169,8 @@ export default function ProfilePage() {
               {/* Photo Preview */}
               <div className="flex flex-col items-center gap-3">
                 <div className="w-32 h-32 rounded-2xl bg-muted border-2 border-dashed border-slate-300  overflow-hidden flex items-center justify-center shadow-inner">
-                  {previewPhotoUrl ? (
-                    <img src={previewPhotoUrl} alt="Preview" className="w-full h-full object-cover" />
+                  {previewPhotoWithVersion ? (
+                    <img src={previewPhotoWithVersion} alt="Preview" className="w-full h-full object-cover" />
                   ) : (
                     <User className="w-12 h-12 text-muted-foreground" />
                   )}
@@ -188,7 +206,7 @@ export default function ProfilePage() {
                     placeholder="https://contoh.com/foto.jpg" 
                     className="rounded-xl"
                   />
-                  <p className="text-[11px] text-muted-foreground">Masukkan tautan/URL gambar yang valid.</p>
+                  <p className="text-[11px] text-muted-foreground">Upload foto akan langsung tersimpan ke akun.</p>
                 </div>
 
                 <div className="space-y-2">
@@ -225,6 +243,77 @@ export default function ProfilePage() {
               </Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border shadow-md rounded-2xl overflow-hidden">
+        <CardHeader className="bg-card/50 border-b border-border p-6">
+          <CardTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
+            <FileText className="w-5 h-5 text-primary" />
+            Dokumen Saya
+          </CardTitle>
+          <CardDescription>SP, paklaring, dan slip gaji yang diterbitkan untuk akun Anda.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="grid gap-3">
+            {[...(documents.warnings || []).map((doc: any) => ({
+              id: doc.id,
+              type: doc.type || 'SP',
+              title: doc.reason,
+              subtitle: `Diterbitkan oleh ${doc.issuedBy?.name || 'CEO'} - berlaku sampai ${new Date(doc.expiresAt).toLocaleDateString('id-ID')}`,
+              href: ''
+            })), ...(documents.paklarings || []).map((doc: any) => ({
+              id: doc.id,
+              type: 'Paklaring',
+              title: doc.letterNumber,
+              subtitle: `${doc.position} - ${doc.department}`,
+              href: doc.pdfUrl || ''
+            })), ...(documents.payrolls || []).map((doc: any) => ({
+              id: doc.id,
+              type: 'Slip Gaji',
+              title: new Date(doc.period).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }),
+              subtitle: `Status ${doc.status} - Rp ${Number(doc.totalSalary || 0).toLocaleString('id-ID')}`,
+              href: ''
+            }))].length === 0 ? (
+              <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+                Belum ada dokumen untuk akun ini.
+              </p>
+            ) : (
+              [...(documents.warnings || []).map((doc: any) => ({
+                id: doc.id,
+                type: doc.type || 'SP',
+                title: doc.reason,
+                subtitle: `Diterbitkan oleh ${doc.issuedBy?.name || 'CEO'} - berlaku sampai ${new Date(doc.expiresAt).toLocaleDateString('id-ID')}`,
+                href: ''
+              })), ...(documents.paklarings || []).map((doc: any) => ({
+                id: doc.id,
+                type: 'Paklaring',
+                title: doc.letterNumber,
+                subtitle: `${doc.position} - ${doc.department}`,
+                href: doc.pdfUrl || ''
+              })), ...(documents.payrolls || []).map((doc: any) => ({
+                id: doc.id,
+                type: 'Slip Gaji',
+                title: new Date(doc.period).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }),
+                subtitle: `Status ${doc.status} - Rp ${Number(doc.totalSalary || 0).toLocaleString('id-ID')}`,
+                href: ''
+              }))].map((doc: any) => (
+                <div key={`${doc.type}-${doc.id}`} className="flex items-center justify-between gap-3 rounded-xl border border-border p-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-primary">{doc.type}</p>
+                    <p className="font-semibold text-foreground">{doc.title}</p>
+                    <p className="text-xs text-muted-foreground">{doc.subtitle}</p>
+                  </div>
+                  {doc.href && (
+                    <a href={doc.href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-muted/50">
+                      <Download className="h-4 w-4" />
+                      Download
+                    </a>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </CardContent>
       </Card>
 

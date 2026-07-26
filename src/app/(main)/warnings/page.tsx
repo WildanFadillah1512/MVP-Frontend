@@ -21,7 +21,7 @@ export default function WarningsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     employeeId: "",
-    type: "SP1",
+    type: "SP",
     reason: "",
     durationDays: "",
     notes: ""
@@ -39,7 +39,7 @@ export default function WarningsPage() {
         setDefaultDurationDays(warningsRes.data.data.defaultDurationDays);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal mengambil data SP1");
+      toast.error(error.response?.data?.message || "Gagal mengambil data SP");
     } finally {
       setLoading(false);
     }
@@ -64,11 +64,11 @@ export default function WarningsPage() {
       });
       if (res.data.success) {
         toast.success(`${form.type} berhasil diterbitkan`);
-        setForm({ employeeId: "", type: "SP1", reason: "", durationDays: "", notes: "" });
+        setForm({ employeeId: "", type: "SP", reason: "", durationDays: "", notes: "" });
         fetchData();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal menerbitkan SP1");
+      toast.error(error.response?.data?.message || "Gagal menerbitkan SP");
     } finally {
       setIsSubmitting(false);
     }
@@ -78,9 +78,9 @@ export default function WarningsPage() {
     setIsSubmitting(true);
     try {
       const res = await api.patch("/users/warnings/settings", { durationDays: defaultDurationDays });
-      if (res.data.success) toast.success("Durasi default SP1 diperbarui");
+      if (res.data.success) toast.success("Durasi default SP diperbarui");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal memperbarui setting SP1");
+      toast.error(error.response?.data?.message || "Gagal memperbarui setting SP");
     } finally {
       setIsSubmitting(false);
     }
@@ -109,7 +109,7 @@ export default function WarningsPage() {
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" /> Terbitkan SP
             </CardTitle>
-            <CardDescription>Pilih kategori SP dan isi detailnya. Default berlaku {defaultDurationDays} hari jika durasi dikosongkan.</CardDescription>
+                <CardDescription>Isi detail Surat Peringatan. Default berlaku {defaultDurationDays} hari jika durasi dikosongkan.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -135,9 +135,7 @@ export default function WarningsPage() {
                     <SelectValue placeholder="Pilih SP..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="SP1">SP 1</SelectItem>
-                    <SelectItem value="SP2">SP 2</SelectItem>
-                    <SelectItem value="SP3">SP 3</SelectItem>
+                    <SelectItem value="SP">SP</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -175,16 +173,16 @@ export default function WarningsPage() {
         <Card className="lg:col-span-3 rounded-2xl border-border shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" /> Riwayat SP1
+              <Clock className="h-5 w-5 text-primary" /> Riwayat SP
             </CardTitle>
-            <CardDescription>SP1 aktif dan yang sudah kadaluarsa.</CardDescription>
+            <CardDescription>SP aktif dan yang sudah kadaluarsa.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {canUpdateSettings && (
               <div className="flex flex-col gap-3 rounded-xl border bg-muted/30 p-4 sm:flex-row sm:items-end">
                 <div className="flex-1 space-y-2">
                   <Label className="flex items-center gap-2">
-                    <Settings className="h-4 w-4" /> Durasi Default SP1
+                    <Settings className="h-4 w-4" /> Durasi Default SP
                   </Label>
                   <Input
                     type="number"
@@ -202,7 +200,7 @@ export default function WarningsPage() {
 
             <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
               {warnings.length === 0 ? (
-                <p className="py-10 text-center text-muted-foreground">Belum ada SP1</p>
+                <p className="py-10 text-center text-muted-foreground">Belum ada SP</p>
               ) : warnings.map((warning) => (
                 <div key={warning.id} className="py-4">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

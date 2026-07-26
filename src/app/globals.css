@@ -101,6 +101,36 @@
   --sidebar-ring: #89523D;
 }
 
+:root[data-event-theme="fitri"] {
+  --primary: #25735A;
+  --ring: #C6A15B;
+  --chart-1: #25735A;
+  --chart-2: #C6A15B;
+  --sidebar: #0F3D2D;
+  --sidebar-primary: #2B8A67;
+  --sidebar-accent: #18543F;
+}
+
+:root[data-event-theme="year-end"] {
+  --primary: #6A3FA0;
+  --ring: #D3A53C;
+  --chart-1: #6A3FA0;
+  --chart-2: #D3A53C;
+  --sidebar: #241B35;
+  --sidebar-primary: #6A3FA0;
+  --sidebar-accent: #33264A;
+}
+
+:root[data-event-theme="independence"] {
+  --primary: #C62828;
+  --ring: #C62828;
+  --chart-1: #C62828;
+  --chart-2: #FFFFFF;
+  --sidebar: #7F1D1D;
+  --sidebar-primary: #C62828;
+  --sidebar-accent: #991B1B;
+}
+
 .dark {
   /* Warm Dark Mode Backgrounds - No Navy Blue! */
   --background: #1C1917; /* Stone 900 - Warm Dark Brown/Gray */

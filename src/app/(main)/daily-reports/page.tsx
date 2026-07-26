@@ -22,7 +22,9 @@ export default function DailyReportsPage() {
   const [todayReport, setTodayReport] = useState<any>(null);
   const [userRole, setUserRole] = useState('');
   const [tasksList, setTasksList] = useState<any[]>([]);
-  const [selectedTaskId, setSelectedTaskId] = useState<string>('');
+  const [targetsList, setTargetsList] = useState<any[]>([]);
+  const [selectedWorkItem, setSelectedWorkItem] = useState<string>('');
+  const [workQuantity, setWorkQuantity] = useState<string>('');
 
   const form = useForm<ReportInput>({
     resolver: zodResolver(reportSchema),
@@ -56,11 +58,17 @@ export default function DailyReportsPage() {
       // Fetch tasks for dropdown
       try {
         const { api } = await import('@/lib/api/axios');
-        const tasksRes = await api.get('/tasks');
+        const [tasksRes, targetsRes] = await Promise.all([
+          api.get('/tasks'),
+          api.get('/targets/me')
+        ]);
         if (tasksRes.data.success) {
           // Only show pending or in progress tasks
           const activeTasks = tasksRes.data.data.filter((t: any) => t.status !== 'COMPLETED');
           setTasksList(activeTasks);
+        }
+        if (targetsRes.data.success) {
+          setTargetsList((targetsRes.data.data || []).filter((item: any) => !item.isCompleted));
         }
       } catch (e) {
         console.error("Gagal mengambil daftar tugas", e);
@@ -82,10 +90,13 @@ export default function DailyReportsPage() {
     setIsLoading(true);
     try {
       const payload = { ...data };
-      if (selectedTaskId) {
+      if (selectedWorkItem) {
+        const [type, id] = selectedWorkItem.split(':');
         payload.tasks = [{
-          taskType: 'TASK',
-          taskId: selectedTaskId,
+          taskType: type,
+          taskId: type === 'TASK' ? id : undefined,
+          targetAssignmentId: type === 'TARGET' ? id : undefined,
+          quantity: type === 'TARGET' && workQuantity ? Number(workQuantity) : undefined,
           notes: 'Dikerjakan via Laporan Harian'
         }];
       }
@@ -94,7 +105,8 @@ export default function DailyReportsPage() {
       if (response.success) {
         toast.success(todayReport ? 'Laporan berhasil diperbarui' : 'Laporan berhasil dikirim');
         fetchReports();
-        setSelectedTaskId('');
+        setSelectedWorkItem('');
+        setWorkQuantity('');
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Gagal menyimpan laporan');
@@ -186,19 +198,39 @@ export default function DailyReportsPage() {
                   )} />
 
                   <div className="space-y-2">
-                    <FormLabel className="font-bold text-foreground">Tugas yang Dikerjakan (Opsional)</FormLabel>
+                    <FormLabel className="font-bold text-foreground">Pekerjaan yang Dikerjakan (Opsional)</FormLabel>
                     <select 
                       className="flex h-11 w-full rounded-xl border border-input bg-muted/20 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={selectedTaskId}
-                      onChange={(e) => setSelectedTaskId(e.target.value)}
+                      value={selectedWorkItem}
+                      onChange={(e) => setSelectedWorkItem(e.target.value)}
                     >
-                      <option value="">-- Pilih Tugas --</option>
+                      <option value="">-- Pilih Pekerjaan --</option>
+                      {tasksList.length > 0 && <option disabled>-- Tugas --</option>}
                       {tasksList.map(task => (
-                        <option key={task.id} value={task.id}>{task.title}</option>
+                        <option key={task.id} value={`TASK:${task.id}`}>{task.title}</option>
+                      ))}
+                      {targetsList.length > 0 && <option disabled>-- Target --</option>}
+                      {targetsList.map(item => (
+                        <option key={item.id} value={`TARGET:${item.id}`}>{item.target.title} ({item.currentValue}/{item.target.targetValue} {item.target.unit})</option>
                       ))}
                     </select>
-                    <p className="text-[0.8rem] text-muted-foreground">Tugas yang dipilih akan otomatis diupdate statusnya.</p>
+                    <p className="text-[0.8rem] text-muted-foreground">Tugas akan otomatis mulai dikerjakan, target akan menambah progres sesuai angka yang diisi.</p>
                   </div>
+
+                  {selectedWorkItem.startsWith('TARGET:') && (
+                    <div className="space-y-2">
+                      <FormLabel className="font-bold text-foreground">Progress Target Hari Ini</FormLabel>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={workQuantity}
+                        onChange={(event) => setWorkQuantity(event.target.value)}
+                        placeholder="Masukkan angka progress"
+                        className="h-11 rounded-xl bg-muted/20 border-border focus-visible:ring-primary"
+                      />
+                    </div>
+                  )}
 
                   <FormField control={form.control} name="output" render={({ field }) => (
                     <FormItem>

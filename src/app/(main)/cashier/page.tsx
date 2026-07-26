@@ -382,6 +382,7 @@ export default function CashierPage() {
                 <tr>
                   <th className="px-4 py-3 font-semibold text-foreground">Tanggal</th>
                   <th className="px-4 py-3 font-semibold text-foreground">Cabang</th>
+                  <th className="px-4 py-3 font-semibold text-foreground">Penginput</th>
                   <th className="px-4 py-3 font-semibold text-foreground text-right">Tunai</th>
                   <th className="px-4 py-3 font-semibold text-foreground text-right">Non-Tunai</th>
                   <th className="px-4 py-3 font-semibold text-foreground text-right">Keluar</th>
@@ -391,11 +392,12 @@ export default function CashierPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                 {reports.length === 0 ? (
-                  <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">Belum ada laporan kasir</td></tr>
+                  <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">Belum ada laporan kasir</td></tr>
                 ) : reports.map(r => (
                   <tr key={r.id} className="hover:bg-muted/50 transition-colors">
                     <td className="px-4 py-4 text-muted-foreground whitespace-nowrap text-xs">{format(new Date(r.date), 'dd MMM yyyy', { locale: localeId })}</td>
                     <td className="px-4 py-4 font-semibold text-foreground">{r.branch.name}</td>
+                    <td className="px-4 py-4 text-xs text-muted-foreground">{r.createdBy?.name || '-'}</td>
                     <td className="px-4 py-4 text-right font-mono text-xs text-muted-foreground">Rp {r.totalCash.toLocaleString('id-ID')}</td>
                     <td className="px-4 py-4 text-right font-mono text-xs text-muted-foreground">Rp {(r.totalTransfer + r.totalQris).toLocaleString('id-ID')}</td>
                     <td className="px-4 py-4 text-right font-mono text-xs text-rose-500">Rp {r.totalExpense.toLocaleString('id-ID')}</td>
@@ -413,7 +415,7 @@ export default function CashierPage() {
               {reports.length > 0 && (
                 <tfoot className="bg-muted dark:bg-background">
                   <tr>
-                    <td colSpan={6} className="px-4 py-3 text-right font-bold text-foreground/80 text-sm">Total Omzet</td>
+                    <td colSpan={7} className="px-4 py-3 text-right font-bold text-foreground/80 text-sm">Total Omzet</td>
                     <td className="px-4 py-3 text-right font-bold text-emerald-400 font-mono">Rp {totalOmzet.toLocaleString('id-ID')}</td>
                   </tr>
                 </tfoot>

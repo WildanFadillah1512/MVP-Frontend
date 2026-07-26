@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { api } from '@/lib/api/axios';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,6 +51,7 @@ const getSidebarMenus = (role: string, division: string) => {
     { name: 'Tugas', href: '/tasks', icon: CheckSquare },
     { name: 'Target & KPI', href: '/performance', icon: Target },
     { name: 'Cuti', href: '/leave', icon: Calendar },
+    { name: 'Slip Gaji', href: '/payroll', icon: DollarSign },
     { name: 'Chat Divisi', href: '/chat', icon: MessageSquare },
     { name: 'Etos Kerja', href: '/core-values', icon: CheckSquare },
     { name: 'Supplier', href: '/suppliers', icon: Users },
@@ -63,7 +65,7 @@ const getSidebarMenus = (role: string, division: string) => {
   // === MENU MANAJERIAL KE ATAS ===
   const managerialMenus = [
     { name: 'Tracking Lokasi', href: '/tracking', icon: MapPin },
-    { name: 'SP1 Karyawan', href: '/warnings', icon: FileText },
+    { name: 'SP Karyawan', href: '/warnings', icon: FileText },
   ];
 
   // === MENU CEO & OWNER SAJA ===
@@ -83,7 +85,6 @@ const getSidebarMenus = (role: string, division: string) => {
   // === MENU CEO/OWNER KHUSUS ===
   const ceoSpecialMenus = [
     { name: 'Resep Produk', href: '/recipes', icon: FileText },
-    { name: 'Slip Gaji', href: '/payroll', icon: DollarSign },
   ];
 
   // === MENU ERP TAHAP 2 (hanya CEO & ADMIN, tampil tapi terkunci) ===
@@ -167,6 +168,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
   const [menus, setMenus] = useState<any[]>([]);
+  const [popupAnnouncement, setPopupAnnouncement] = useState<any>(null);
 
   useEffect(() => {
     const token = sessionStorage.getItem('token');
@@ -182,9 +184,53 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setMenus(getSidebarMenus(userData.role.name, userData.division.name));
   }, [router]);
 
+  useEffect(() => {
+    const fetchPopupAnnouncement = async () => {
+      const token = sessionStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const res = await api.get('/announcements/active-popup');
+        const announcement = res.data?.data;
+        if (!announcement) return;
+
+        const dismissedKey = `announcement-dismissed-${announcement.id}`;
+        if (localStorage.getItem(dismissedKey)) return;
+        setPopupAnnouncement(announcement);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchPopupAnnouncement();
+  }, []);
+
+  useEffect(() => {
+    const fetchEventTheme = async () => {
+      try {
+        const res = await api.get('/settings/event-theme');
+        const theme = res.data?.data;
+        const nextTheme = theme?.enabled ? theme.theme : 'default';
+        document.documentElement.setAttribute('data-event-theme', nextTheme || 'default');
+        document.documentElement.setAttribute('data-event-name', theme?.enabled ? theme.name || '' : '');
+      } catch (error) {
+        document.documentElement.setAttribute('data-event-theme', 'default');
+      }
+    };
+
+    fetchEventTheme();
+  }, []);
+
   const handleLogout = () => {
     sessionStorage.clear(); // Bersihkan SEMUA data sesi, bukan hanya token dan user
     router.push('/login');
+  };
+
+  const closePopupAnnouncement = () => {
+    if (popupAnnouncement?.id) {
+      localStorage.setItem(`announcement-dismissed-${popupAnnouncement.id}`, '1');
+    }
+    setPopupAnnouncement(null);
   };
 
   if (!user) return null;
@@ -335,6 +381,46 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </main>
       </div>
+      {popupAnnouncement && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">Pengumuman</p>
+                <h2 className="mt-1 text-xl font-bold text-foreground">{popupAnnouncement.title}</h2>
+              </div>
+              <button
+                type="button"
+                onClick={closePopupAnnouncement}
+                className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label="Tutup pengumuman"
+              >
+                x
+              </button>
+            </div>
+            <p className="whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{popupAnnouncement.message}</p>
+            {popupAnnouncement.fileUrl && (
+              <a
+                href={popupAnnouncement.fileUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-flex rounded-xl border border-border px-3 py-2 text-sm font-semibold text-primary hover:bg-muted/50"
+              >
+                Download Lampiran
+              </a>
+            )}
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={closePopupAnnouncement}
+                className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
+              >
+                Mengerti
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

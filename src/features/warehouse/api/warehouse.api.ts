@@ -9,6 +9,10 @@ export const warehouseApi = {
     const response = await api.post('/warehouse/items', data);
     return response.data;
   },
+  updateItem: async (id: string, data: any) => {
+    const response = await api.put(`/warehouse/items/${id}`, data);
+    return response.data;
+  },
   deleteItem: async (id: string) => {
     const response = await api.delete(`/warehouse/items/${id}`);
     return response.data;

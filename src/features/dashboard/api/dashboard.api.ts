@@ -40,6 +40,10 @@ export const dashboardApi = {
   getEmployeeLeaderboard: async () => {
     const response = await api.get('/dashboard/employee-leaderboard');
     return response.data;
+  },
+  getEmployeeStatistics: async (id: string) => {
+    const response = await api.get(`/dashboard/employees/${id}/statistics`);
+    return response.data;
   }
 };
 

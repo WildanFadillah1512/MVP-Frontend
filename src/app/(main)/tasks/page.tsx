@@ -44,7 +44,7 @@ export default function TasksPage() {
   const [activeFilter, setActiveFilter] = useState<string>('all');
 
   const [form, setForm] = useState({
-    title: '', description: '', assignedTo: '', priority: 'MEDIUM', dueDate: ''
+    title: '', description: '', assignedTo: '', priority: 'MEDIUM', scheduleType: 'ONE_TIME', scheduleDate: '', dueDate: ''
   });
 
   const canAssign = ['OWNER', 'CEO', 'ADMIN', 'GM', 'MANAGER'].includes(userRole);
@@ -82,7 +82,7 @@ export default function TasksPage() {
       const res = await api.post('/tasks', form);
       if (res.data.success) {
         toast.success('Tugas berhasil dibuat');
-        setForm({ title: '', description: '', assignedTo: '', priority: 'MEDIUM', dueDate: '' });
+        setForm({ title: '', description: '', assignedTo: '', priority: 'MEDIUM', scheduleType: 'ONE_TIME', scheduleDate: '', dueDate: '' });
         fetchData();
       }
     } catch { toast.error('Gagal membuat tugas'); }
@@ -198,6 +198,34 @@ export default function TasksPage() {
                     <Input type="date" value={form.dueDate} onChange={e => setForm({...form, dueDate: e.target.value})} className="rounded-xl bg-card h-11" />
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="font-semibold text-foreground">Setup Tugas</Label>
+                    <Select value={form.scheduleType} onValueChange={v => setForm({...form, scheduleType: v || 'ONE_TIME', scheduleDate: v === 'ONE_TIME' ? '' : form.scheduleDate})}>
+                      <SelectTrigger className="rounded-xl bg-card h-11 overflow-hidden">
+                        <SelectValue>
+                          {{ONE_TIME: 'Sekali', DAILY: 'Harian', MONTHLY: 'Bulanan'}[form.scheduleType] || 'Sekali'}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ONE_TIME">Sekali</SelectItem>
+                        <SelectItem value="DAILY">Harian</SelectItem>
+                        <SelectItem value="MONTHLY">Bulanan</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-semibold text-foreground">{form.scheduleType === 'MONTHLY' ? 'Bulan Tugas' : 'Tanggal Tugas'}</Label>
+                    <Input
+                      type={form.scheduleType === 'MONTHLY' ? 'month' : 'date'}
+                      value={form.scheduleDate}
+                      onChange={e => setForm({...form, scheduleDate: e.target.value})}
+                      disabled={form.scheduleType === 'ONE_TIME'}
+                      required={form.scheduleType !== 'ONE_TIME'}
+                      className="rounded-xl bg-card h-11"
+                    />
+                  </div>
+                </div>
                 <button type="submit" disabled={isSubmitting}
                   className="w-full h-12 mt-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold transition-colors shadow-md disabled:opacity-50">
                   {isSubmitting ? 'Menyimpan...' : 'Buat Tugas'}
@@ -260,6 +288,13 @@ export default function TasksPage() {
                             <Calendar className="w-3.5 h-3.5" /> {format(new Date(task.dueDate), 'dd MMM yyyy', { locale: localeId })}
                           </span>}
                           <span>Dari: {task.assigner?.name || '—'}</span>
+                          {task.scheduleType && task.scheduleType !== 'ONE_TIME' && (
+                            <span className="flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5" />
+                              {task.scheduleType === 'DAILY' ? 'Harian' : 'Bulanan'}
+                              {task.scheduleDate ? `: ${format(new Date(task.scheduleDate), task.scheduleType === 'MONTHLY' ? 'MMM yyyy' : 'dd MMM yyyy', { locale: localeId })}` : ''}
+                            </span>
+                          )}
                         </div>
                       </div>
                       

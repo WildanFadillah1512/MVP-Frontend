@@ -50,7 +50,8 @@ export default function AdminDashboard() {
 
       {/* KPI Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group">
+        <Link href="/users" className="outline-none">
+        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group cursor-pointer transition-transform hover:-translate-y-1">
           <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform duration-500">
             <Users className="w-20 h-20" />
           </div>
@@ -65,8 +66,10 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
 
-        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group">
+        <Link href="/daily-reports" className="outline-none">
+        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group cursor-pointer transition-transform hover:-translate-y-1">
           <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform duration-500">
             <FileText className="w-20 h-20" />
           </div>
@@ -82,8 +85,10 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
 
-        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group">
+        <Link href="/performance" className="outline-none">
+        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group cursor-pointer transition-transform hover:-translate-y-1">
           <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform duration-500">
             <CheckCircle className="w-20 h-20" />
           </div>
@@ -97,8 +102,10 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
 
-        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group">
+        <Link href="/warehouse" className="outline-none">
+        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group cursor-pointer transition-transform hover:-translate-y-1">
           <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform duration-500">
             <AlertTriangle className="w-20 h-20" />
           </div>
@@ -112,6 +119,7 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
       </div>
 
       {/* Quick Action + Pending Reports */}
@@ -161,7 +169,7 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 data.reports.pendingUsers.map((u: any, idx: number) => (
-                  <div key={u.id} className="flex items-center justify-between px-6 py-4 hover:bg-muted/50 transition-colors">
+                  <Link key={u.id} href={`/performance?userId=${u.id}`} className="flex items-center justify-between px-6 py-4 hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-sm text-sm ${
                         idx % 3 === 0 ? 'bg-primary' : idx % 3 === 1 ? 'bg-primary/80' : 'bg-primary/60'
@@ -176,7 +184,7 @@ export default function AdminDashboard() {
                     <span className="text-[10px] font-bold tracking-wider uppercase text-rose-500 bg-rose-50 dark:bg-rose-950/30 px-2.5 py-1 rounded-lg">
                       Pending
                     </span>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>

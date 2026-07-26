@@ -6,6 +6,7 @@ import { Users, FileText, CheckCircle, AlertTriangle, TrendingUp, ArrowUpRight, 
 import { dashboardApi } from '@/features/dashboard/api/dashboard.api';
 import { exportApi } from '@/features/export/api/export.api';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 export default function GMDashboard() {
   const [data, setData] = useState<any>(null);
@@ -83,7 +84,8 @@ export default function GMDashboard() {
 
       {/* KPI Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-[#28374A] to-[#1a2535] text-[#FAF3E0] overflow-hidden relative group">
+        <Link href="/users" className="outline-none">
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-[#28374A] to-[#1a2535] text-[#FAF3E0] overflow-hidden relative group cursor-pointer transition-transform hover:-translate-y-1">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
             <Users className="w-20 h-20" />
           </div>
@@ -98,8 +100,10 @@ export default function GMDashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-[#89523D] to-[#754437] text-[#FAF3E0] overflow-hidden relative group">
+        <Link href="/daily-reports" className="outline-none">
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-[#89523D] to-[#754437] text-[#FAF3E0] overflow-hidden relative group cursor-pointer transition-transform hover:-translate-y-1">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
             <FileText className="w-20 h-20" />
           </div>
@@ -113,8 +117,10 @@ export default function GMDashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-[#6B6751] to-[#A6A89A] text-[#FAF3E0] overflow-hidden relative group">
+        <Link href="/cashier" className="outline-none">
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-[#6B6751] to-[#A6A89A] text-[#FAF3E0] overflow-hidden relative group cursor-pointer transition-transform hover:-translate-y-1">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
             <Building2 className="w-20 h-20" />
           </div>
@@ -128,8 +134,10 @@ export default function GMDashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-[#917B43] to-[#6b5a2f] text-[#FAF3E0] overflow-hidden relative group">
+        <Link href="/warehouse" className="outline-none">
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-[#917B43] to-[#6b5a2f] text-[#FAF3E0] overflow-hidden relative group cursor-pointer transition-transform hover:-translate-y-1">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
             <AlertTriangle className="w-20 h-20" />
           </div>
@@ -143,6 +151,7 @@ export default function GMDashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
       </div>
 
       {/* Division Performance & Pending Reports */}
@@ -190,7 +199,7 @@ export default function GMDashboard() {
                 </div>
               ) : (
                 data.reports.pendingUsers.map((u: any) => (
-                  <div key={u.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-[#FAF3E0] transition-colors border border-transparent hover:border-[#D7CBB5]">
+                  <Link key={u.id} href={`/performance?userId=${u.id}`} className="flex items-center justify-between p-3 rounded-xl hover:bg-[#FAF3E0] transition-colors border border-transparent hover:border-[#D7CBB5]">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-[#28374A] flex items-center justify-center text-[#FAF3E0] font-bold text-sm shadow-sm">
                         {u.name.substring(0, 2).toUpperCase()}
@@ -201,7 +210,7 @@ export default function GMDashboard() {
                       </div>
                     </div>
                     <span className="text-[10px] font-bold tracking-wider uppercase text-[#89523D] bg-[#89523D]/10 px-2 py-1 rounded-md">Pending</span>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>

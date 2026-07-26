@@ -5,11 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { api } from '@/lib/api/axios';
-import { Users, Plus, UserCheck, UserX, Search, Filter, Building2, Pencil, Trash2 } from "lucide-react";
+import { uploadApi } from '@/features/uploads/api/upload.api';
+import { Users, Plus, UserCheck, Search, Filter, Building2, Pencil, Trash2, KeyRound, Clock3, Megaphone, Upload, MessageSquare } from "lucide-react";
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -28,20 +30,45 @@ export default function UsersPage() {
   const [editingBranchId, setEditingBranchId] = useState('');
   const [savingBranch, setSavingBranch] = useState(false);
 
-  const emptyForm = { email: '', password: '', name: '', roleId: '', divisionId: '', branchId: 'none', supervisorId: '', totalQuota: '12' };
+  const emptyForm = { email: '', password: '', name: '', roleId: '', divisionId: '', branchId: 'none', shiftId: 'none', supervisorId: '', totalQuota: '12' };
   const [form, setForm] = useState(emptyForm);
   const [resignations, setResignations] = useState<any[]>([]);
+  const [passwordTarget, setPasswordTarget] = useState<any>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [shiftForms, setShiftForms] = useState<Record<string, { startTime: string; endTime: string }>>({});
+  const [announcementForm, setAnnouncementForm] = useState({
+    title: '',
+    message: '',
+    fileUrl: '',
+    fileName: '',
+    expiresAt: ''
+  });
+  const [eventThemeForm, setEventThemeForm] = useState({
+    enabled: false,
+    name: '',
+    theme: 'default'
+  });
+  const [isUploadingAnnouncement, setIsUploadingAnnouncement] = useState(false);
+  const [resignationMessages, setResignationMessages] = useState<Record<string, string>>({});
 
   const fetchData = async () => {
     try {
-      const [usersRes, optRes, resignationRes] = await Promise.all([
+      const [usersRes, optRes, resignationRes, themeRes] = await Promise.all([
         api.get('/users'),
         api.get('/users/options'),
-        api.get('/users/resignations')
+        api.get('/users/resignations'),
+        api.get('/settings/event-theme')
       ]);
       if (usersRes.data.success) setUsers(usersRes.data.data);
-      if (optRes.data.success) setOptions(optRes.data.data);
+      if (optRes.data.success) {
+        setOptions(optRes.data.data);
+        setShiftForms(Object.fromEntries((optRes.data.data.shifts || []).map((shift: any) => [
+          shift.id,
+          { startTime: shift.startTime, endTime: shift.endTime }
+        ])));
+      }
       if (resignationRes.data.success) setResignations(resignationRes.data.data);
+      if (themeRes.data.success) setEventThemeForm(themeRes.data.data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -178,6 +205,7 @@ export default function UsersPage() {
       roleId: user.roleId || user.role?.id || '',
       divisionId: user.divisionId || user.division?.id || '',
       branchId: user.branchId || user.branch?.id || 'none',
+      shiftId: user.shiftId || user.shift?.id || 'none',
       supervisorId: user.supervisorId || user.supervisor?.id || 'none',
       totalQuota: String(user.leaveBalances?.totalQuota ?? 12)
     });
@@ -194,6 +222,7 @@ export default function UsersPage() {
         roleId: form.roleId,
         divisionId: form.divisionId,
         branchId: form.branchId,
+        shiftId: form.shiftId,
         supervisorId: form.supervisorId,
         totalQuota: form.totalQuota
       });
@@ -214,6 +243,129 @@ export default function UsersPage() {
   const canCreateDivision = ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(userRole);
   const canManageBranches = ['OWNER', 'CEO', 'ADMIN'].includes(userRole);
   const canEditDeleteUsers = ['OWNER', 'CEO', 'ADMIN'].includes(userRole);
+  const canManageAnnouncements = ['OWNER', 'CEO', 'ADMIN'].includes(userRole);
+
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordTarget) return;
+    if (newPassword.length < 6) {
+      toast.error('Password minimal 6 karakter');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await api.patch(`/users/${passwordTarget.id}/password`, { password: newPassword });
+      if (res.data.success) {
+        toast.success('Password berhasil diperbarui');
+        setPasswordTarget(null);
+        setNewPassword('');
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal memperbarui password');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleShiftUpdate = async (shift: any) => {
+    const next = shiftForms[shift.id];
+    if (!next?.startTime || !next?.endTime) {
+      toast.error('Jam mulai dan selesai wajib diisi');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await api.put(`/shifts/${shift.id}`, {
+        name: shift.name,
+        startTime: next.startTime,
+        endTime: next.endTime
+      });
+      if (res.data.success) {
+        toast.success(`Shift ${shift.name} diperbarui`);
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal memperbarui shift');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAnnouncementUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setIsUploadingAnnouncement(true);
+    try {
+      const res = await uploadApi.uploadGenericFile(file, 'ANNOUNCEMENTS');
+      if (res.success) {
+        setAnnouncementForm((current) => ({
+          ...current,
+          fileUrl: res.data.fileUrl,
+          fileName: res.data.fileName || file.name
+        }));
+        toast.success('Lampiran pengumuman berhasil diupload');
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal upload lampiran');
+    } finally {
+      setIsUploadingAnnouncement(false);
+      event.target.value = '';
+    }
+  };
+
+  const handleCreateAnnouncement = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!announcementForm.title.trim() || !announcementForm.message.trim()) {
+      toast.error('Judul dan isi pengumuman wajib diisi');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await api.post('/announcements', announcementForm);
+      if (res.data.success) {
+        toast.success('Pengumuman dikirim ke semua karyawan');
+        setAnnouncementForm({ title: '', message: '', fileUrl: '', fileName: '', expiresAt: '' });
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal membuat pengumuman');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveEventTheme = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const res = await api.put('/settings/event-theme', eventThemeForm);
+      if (res.data.success) {
+        toast.success('Tema event berhasil diperbarui');
+        document.documentElement.setAttribute('data-event-theme', res.data.data.enabled ? res.data.data.theme : 'default');
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal menyimpan tema event');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResignationAction = async (request: any, status: 'APPROVED' | 'REJECTED' | 'PENDING', deleteAccount = false) => {
+    if (deleteAccount && !confirm(`Hapus/nonaktifkan akun ${request.user.name}?`)) return;
+    try {
+      const res = await api.patch(`/users/resignations/${request.id}`, {
+        status,
+        deleteAccount,
+        directMessage: resignationMessages[request.id] || ''
+      });
+      if (res.data.success) {
+        toast.success('Pengajuan resign diperbarui');
+        setResignationMessages((current) => ({ ...current, [request.id]: '' }));
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal memperbarui resign');
+    }
+  };
 
   if (loading) return (
     <div className="flex h-[60vh] items-center justify-center">
@@ -307,6 +459,24 @@ export default function UsersPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
+                  <Label className="text-foreground font-medium">Shift Kerja</Label>
+                  <Select value={form.shiftId} onValueChange={v => setForm({...form, shiftId: v || 'none'})}>
+                    <SelectTrigger className="rounded-xl overflow-hidden">
+                      <SelectValue placeholder="Pilih shift...">
+                        {form.shiftId === 'none' ? 'Belum ditentukan' : options.shifts?.find((shift: any) => shift.id === form.shiftId)?.name || 'Pilih shift...'}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="none">Belum ditentukan</SelectItem>
+                      {(options.shifts || []).map((shift: any) => (
+                        <SelectItem key={shift.id} value={shift.id} className="rounded-lg">
+                          {shift.name} ({shift.startTime} - {shift.endTime})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label className="text-foreground font-medium">Lapor Kepada (Atasan Langsung)</Label>
                   <Select value={form.supervisorId} onValueChange={v => setForm({...form, supervisorId: v || ''})}>
                     <SelectTrigger className="rounded-xl overflow-hidden">
@@ -377,7 +547,7 @@ export default function UsersPage() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <div className="space-y-2">
                 <Label className="text-foreground font-medium">Cabang</Label>
                 <Select value={form.branchId} onValueChange={v => setForm({...form, branchId: v || 'none'})}>
@@ -387,6 +557,22 @@ export default function UsersPage() {
                   <SelectContent className="rounded-xl">
                     <SelectItem value="none">Tidak ada cabang</SelectItem>
                     {(options.branches || []).map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground font-medium">Shift Kerja</Label>
+                <Select value={form.shiftId} onValueChange={v => setForm({...form, shiftId: v || 'none'})}>
+                  <SelectTrigger className="rounded-xl overflow-hidden">
+                    <SelectValue placeholder="Pilih shift..." />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="none">Belum ditentukan</SelectItem>
+                    {(options.shifts || []).map((shift: any) => (
+                      <SelectItem key={shift.id} value={shift.id}>
+                        {shift.name} ({shift.startTime} - {shift.endTime})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -417,6 +603,44 @@ export default function UsersPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!passwordTarget} onOpenChange={(open) => {
+        if (!open) {
+          setPasswordTarget(null);
+          setNewPassword('');
+        }
+      }}>
+        <DialogContent className="max-w-md rounded-2xl border-0 shadow-2xl">
+          <DialogHeader className="pb-4 border-b border-border">
+            <DialogTitle className="text-2xl font-bold">Ubah Password</DialogTitle>
+            <DialogDescription>
+              Set password baru untuk {passwordTarget?.name || 'karyawan'}.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handlePasswordUpdate} className="mt-4 flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label className="text-foreground font-medium">Password Baru</Label>
+              <Input
+                type="password"
+                minLength={6}
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                className="rounded-xl"
+                placeholder="Minimal 6 karakter"
+                required
+              />
+            </div>
+            <div className="flex gap-3 border-t border-border pt-4">
+              <Button type="button" variant="outline" onClick={() => setPasswordTarget(null)} className="flex-1 rounded-xl">
+                Batal
+              </Button>
+              <Button type="submit" disabled={isSubmitting} className="flex-1 rounded-xl">
+                {isSubmitting ? 'Menyimpan...' : 'Simpan Password'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {canCreateDivision && (
         <Card className="border-border shadow-md rounded-2xl">
           <CardHeader className="pb-3">
@@ -439,6 +663,50 @@ export default function UsersPage() {
                 {creatingDivision ? 'Menyimpan...' : 'Tambah Divisi'}
               </Button>
             </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {canManageBranches && (
+        <Card className="border-border shadow-md rounded-2xl">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg text-foreground">
+              <Clock3 className="w-5 h-5 text-primary" />
+              Setup Shift
+            </CardTitle>
+            <CardDescription>CEO dapat mengatur jam shift Pagi, Middle, dan Malam.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 md:grid-cols-3">
+              {(options.shifts || []).map((shift: any) => (
+                <div key={shift.id} className="rounded-xl border border-border bg-muted/20 p-4">
+                  <p className="font-semibold text-foreground">{shift.name}</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <Input
+                      type="time"
+                      value={shiftForms[shift.id]?.startTime || shift.startTime}
+                      onChange={(event) => setShiftForms({
+                        ...shiftForms,
+                        [shift.id]: { ...(shiftForms[shift.id] || shift), startTime: event.target.value }
+                      })}
+                      className="rounded-xl"
+                    />
+                    <Input
+                      type="time"
+                      value={shiftForms[shift.id]?.endTime || shift.endTime}
+                      onChange={(event) => setShiftForms({
+                        ...shiftForms,
+                        [shift.id]: { ...(shiftForms[shift.id] || shift), endTime: event.target.value }
+                      })}
+                      className="rounded-xl"
+                    />
+                  </div>
+                  <Button type="button" size="sm" variant="outline" onClick={() => handleShiftUpdate(shift)} disabled={isSubmitting} className="mt-3 w-full rounded-xl">
+                    Simpan Jam Shift
+                  </Button>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -536,6 +804,110 @@ export default function UsersPage() {
         </CardContent>
       </Card>
 
+      {canManageAnnouncements && (
+        <Card className="border-border shadow-md rounded-2xl overflow-hidden">
+          <CardHeader className="bg-card/50 border-b border-border p-6">
+            <CardTitle className="flex items-center gap-2 text-xl text-foreground">
+              <Megaphone className="w-5 h-5 text-primary" />
+              Pengumuman Global
+            </CardTitle>
+            <CardDescription>Buat pengumuman custom yang muncul sebagai popup di semua akun karyawan.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <form onSubmit={handleCreateAnnouncement} className="grid gap-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Judul Pengumuman</Label>
+                  <Input
+                    value={announcementForm.title}
+                    onChange={(event) => setAnnouncementForm({ ...announcementForm, title: event.target.value })}
+                    placeholder="Contoh: Briefing Operasional Besok"
+                    className="rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tanggal Kadaluarsa</Label>
+                  <Input
+                    type="date"
+                    value={announcementForm.expiresAt}
+                    onChange={(event) => setAnnouncementForm({ ...announcementForm, expiresAt: event.target.value })}
+                    className="rounded-xl"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Isi Pengumuman</Label>
+                <Textarea
+                  value={announcementForm.message}
+                  onChange={(event) => setAnnouncementForm({ ...announcementForm, message: event.target.value })}
+                  className="min-h-[110px] rounded-xl"
+                  placeholder="Tulis pengumuman untuk semua karyawan..."
+                />
+              </div>
+              <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Lampiran</p>
+                  <p className="text-xs text-muted-foreground">{announcementForm.fileName || 'Belum ada lampiran'}</p>
+                </div>
+                <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold hover:bg-muted/50">
+                  <Upload className="h-4 w-4" />
+                  {isUploadingAnnouncement ? 'Mengupload...' : 'Upload File'}
+                  <input type="file" className="hidden" onChange={handleAnnouncementUpload} disabled={isUploadingAnnouncement} />
+                </label>
+              </div>
+              <div className="flex justify-end">
+                <Button type="submit" disabled={isSubmitting || isUploadingAnnouncement} className="rounded-xl">
+                  <Megaphone className="w-4 h-4" />
+                  Kirim Pengumuman
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {canManageAnnouncements && (
+        <Card className="border-border shadow-md rounded-2xl overflow-hidden">
+          <CardHeader className="bg-card/50 border-b border-border p-6">
+            <CardTitle className="text-xl text-foreground">Tema Event</CardTitle>
+            <CardDescription>Aktifkan suasana visual event untuk semua akun, misalnya Idul Fitri.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <form onSubmit={handleSaveEventTheme} className="grid gap-4 md:grid-cols-4">
+              <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/30 px-3 py-2">
+                <input
+                  id="event-theme-enabled"
+                  type="checkbox"
+                  checked={eventThemeForm.enabled}
+                  onChange={(event) => setEventThemeForm({ ...eventThemeForm, enabled: event.target.checked })}
+                />
+                <Label htmlFor="event-theme-enabled">Aktif</Label>
+              </div>
+              <Input
+                value={eventThemeForm.name}
+                onChange={(event) => setEventThemeForm({ ...eventThemeForm, name: event.target.value })}
+                placeholder="Nama event"
+                className="rounded-xl"
+              />
+              <Select value={eventThemeForm.theme} onValueChange={(value) => setEventThemeForm({ ...eventThemeForm, theme: value || 'default' })}>
+                <SelectTrigger className="rounded-xl">
+                  <SelectValue placeholder="Pilih tema" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Default</SelectItem>
+                  <SelectItem value="fitri">Idul Fitri</SelectItem>
+                  <SelectItem value="year-end">Akhir Tahun</SelectItem>
+                  <SelectItem value="independence">Kemerdekaan</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button type="submit" disabled={isSubmitting} className="rounded-xl">
+                Simpan Tema
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="border-border shadow-md rounded-2xl overflow-hidden">
         <CardHeader className="bg-card/50 border-b border-border p-6">
           <CardTitle className="text-xl text-foreground">Pengajuan Resign</CardTitle>
@@ -570,19 +942,42 @@ export default function UsersPage() {
                       <Badge variant="outline">{request.status}</Badge>
                     </td>
                     {canEditDeleteUsers && (
-                      <td className="px-6 py-4 text-right">
-                        {request.user.isActive ? (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            className="rounded-lg"
-                            onClick={() => handleToggleActive(request.user.id, request.user.isActive)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-1.5" /> Hapus Akun
-                          </Button>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">Akun nonaktif</span>
-                        )}
+                      <td className="px-6 py-4">
+                        <div className="flex min-w-[420px] flex-col items-end gap-2">
+                          <Input
+                            value={resignationMessages[request.id] || ''}
+                            onChange={(event) => setResignationMessages((current) => ({ ...current, [request.id]: event.target.value }))}
+                            placeholder="Direct message ke staff"
+                            className="h-9 rounded-lg text-xs"
+                          />
+                          <div className="flex flex-wrap justify-end gap-2">
+                            <Button size="sm" className="h-8 rounded-lg" onClick={() => handleResignationAction(request, 'APPROVED')}>
+                              Approve
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => handleResignationAction(request, 'PENDING')}>
+                              Pending
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => handleResignationAction(request, 'REJECTED')}>
+                              Reject
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-8 rounded-lg" onClick={() => handleResignationAction(request, request.status || 'PENDING')}>
+                              <MessageSquare className="w-4 h-4" />
+                              DM
+                            </Button>
+                            {request.user.isActive ? (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-8 rounded-lg"
+                                onClick={() => handleResignationAction(request, 'APPROVED', true)}
+                              >
+                                <Trash2 className="w-4 h-4" /> Hapus Akun
+                              </Button>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Akun nonaktif</span>
+                            )}
+                          </div>
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -618,6 +1013,7 @@ export default function UsersPage() {
                   <th className="px-6 py-4 font-semibold">Karyawan</th>
                   <th className="px-6 py-4 font-semibold">Peran & Divisi</th>
                   <th className="px-6 py-4 font-semibold">Cabang</th>
+                  <th className="px-6 py-4 font-semibold">Shift</th>
                   <th className="px-6 py-4 font-semibold">Atasan Langsung</th>
                   <th className="px-6 py-4 font-semibold text-center">Status</th>
                   <th className="px-6 py-4 font-semibold text-right">Tindakan</th>
@@ -651,6 +1047,13 @@ export default function UsersPage() {
                       <span className="text-sm font-medium text-foreground">{u.branch?.name || '-'}</span>
                     </td>
                     <td className="px-6 py-4">
+                      {u.shift ? (
+                        <span className="text-sm font-medium text-foreground">{u.shift.name} ({u.shift.startTime} - {u.shift.endTime})</span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground italic">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
                       {u.supervisor ? (
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-muted dark:bg-muted flex items-center justify-center text-[10px] font-bold text-foreground">
@@ -678,6 +1081,11 @@ export default function UsersPage() {
                         {canEditDeleteUsers && (
                           <Button size="sm" variant="outline" className="rounded-lg" onClick={() => openEditDialog(u)}>
                             <Pencil className="w-4 h-4 mr-1.5" /> Edit
+                          </Button>
+                        )}
+                        {canEditDeleteUsers && (
+                          <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setPasswordTarget(u)}>
+                            <KeyRound className="w-4 h-4 mr-1.5" /> Password
                           </Button>
                         )}
                         {canEditDeleteUsers && (

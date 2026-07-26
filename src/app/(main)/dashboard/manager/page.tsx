@@ -6,6 +6,7 @@ import { Users, FileText, CheckCircle, Download, TrendingUp, ArrowUpRight } from
 import { dashboardApi } from '@/features/dashboard/api/dashboard.api';
 import { exportApi } from '@/features/export/api/export.api';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 export default function ManagerDashboard() {
   const [data, setData] = useState<any>(null);
@@ -84,7 +85,8 @@ export default function ManagerDashboard() {
 
       {/* KPI Cards */}
       <div className="grid gap-6 md:grid-cols-3">
-        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group">
+        <Link href="/users" className="outline-none">
+        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group cursor-pointer transition-transform hover:-translate-y-1">
           <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform duration-500">
             <Users className="w-20 h-20" />
           </div>
@@ -100,8 +102,10 @@ export default function ManagerDashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
 
-        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group">
+        <Link href="/daily-reports" className="outline-none">
+        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group cursor-pointer transition-transform hover:-translate-y-1">
           <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform duration-500">
             <FileText className="w-20 h-20" />
           </div>
@@ -115,8 +119,10 @@ export default function ManagerDashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
 
-        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group">
+        <Link href="/performance" className="outline-none">
+        <Card className="border-0 shadow-sm bg-card border border-border text-foreground overflow-hidden relative group cursor-pointer transition-transform hover:-translate-y-1">
           <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform duration-500">
             <CheckCircle className="w-20 h-20" />
           </div>
@@ -130,6 +136,7 @@ export default function ManagerDashboard() {
             </div>
           </CardContent>
         </Card>
+        </Link>
       </div>
 
       {/* Analisa */}

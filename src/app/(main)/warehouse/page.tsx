@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { warehouseApi } from '@/features/warehouse/api/warehouse.api';
-import { Box, Plus, Minus, ArrowLeftRight, AlertTriangle, Package2, Activity, Trash2 } from "lucide-react";
+import { Box, Plus, Minus, ArrowLeftRight, AlertTriangle, Package2, Activity, Trash2, Pencil, X } from "lucide-react";
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -19,6 +19,7 @@ export default function WarehousePage() {
   const [userRole, setUserRole] = useState('');
   const [userDivision, setUserDivision] = useState('');
   const [activeTab, setActiveTab] = useState<'stock' | 'movements'>('stock');
+  const [editingItemId, setEditingItemId] = useState('');
 
   const [formData, setFormData] = useState({ warehouseItemId: '', type: 'IN', quantity: '', notes: '' });
   const [itemForm, setItemForm] = useState({
@@ -27,7 +28,9 @@ export default function WarehousePage() {
     category: '',
     minStock: '',
     currentStock: '',
-    unit: ''
+    unit: 'gram',
+    purchasePrice: '',
+    purchaseGram: ''
   });
 
   const fetchData = async () => {
@@ -62,16 +65,18 @@ export default function WarehousePage() {
 
   const handleCreateItem = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!itemForm.code || !itemForm.name || !itemForm.category || !itemForm.unit) {
-      toast.error('Kode, nama, kategori, dan unit barang wajib diisi');
+    if (!itemForm.name) {
+      toast.error('Nama barang wajib diisi');
       return;
     }
     setIsSubmitting(true);
     try {
-      const res = await warehouseApi.createItem(itemForm);
+      const res = editingItemId
+        ? await warehouseApi.updateItem(editingItemId, itemForm)
+        : await warehouseApi.createItem(itemForm);
       if (res.success) {
-        toast.success('Master barang berhasil dibuat');
-        setItemForm({ code: '', name: '', category: '', minStock: '', currentStock: '', unit: '' });
+        toast.success(editingItemId ? 'Master barang berhasil diperbarui' : 'Master barang berhasil dibuat');
+        resetItemForm();
         fetchData();
       }
     } catch (error: any) {
@@ -79,6 +84,26 @@ export default function WarehousePage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const resetItemForm = () => {
+    setEditingItemId('');
+    setItemForm({ code: '', name: '', category: '', minStock: '', currentStock: '', unit: 'gram', purchasePrice: '', purchaseGram: '' });
+  };
+
+  const startEditItem = (item: any) => {
+    setEditingItemId(item.id);
+    setItemForm({
+      code: item.code || '',
+      name: item.name || '',
+      category: item.category || '',
+      minStock: String(item.minStock ?? ''),
+      currentStock: String(item.currentStock ?? ''),
+      unit: item.unit || 'gram',
+      purchasePrice: String(item.purchasePrice ?? ''),
+      purchaseGram: String(item.purchaseGram ?? '')
+    });
+    setActiveTab('stock');
   };
 
   const handleDeleteItem = async (itemId: string, itemName: string) => {
@@ -102,6 +127,9 @@ export default function WarehousePage() {
   const canDeleteItem = userRole === 'CEO' || userDivision === 'PURCHASING';
   const lowStockItems = items.filter(i => i.currentStock <= i.minStock);
   const todayMovements = movements.filter(m => new Date(m.date).toDateString() === new Date().toDateString());
+  const previewPricePerGram = Number(itemForm.purchasePrice || 0) > 0 && Number(itemForm.purchaseGram || 0) > 0
+    ? Number(itemForm.purchasePrice) / Number(itemForm.purchaseGram)
+    : 0;
 
   if (loading) return (
     <div className="flex h-[60vh] items-center justify-center">
@@ -179,19 +207,29 @@ export default function WarehousePage() {
             <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
               <Plus className="w-5 h-5 text-primary" /> Setup Master Barang
             </CardTitle>
-            <CardDescription>Tambahkan bahan baku, kemasan, atau item gudang baru</CardDescription>
+            <CardDescription>Tambahkan bahan baku dengan nama saja, lalu lengkapi harga dan gram bila sudah ada.</CardDescription>
           </CardHeader>
           <CardContent className="p-6">
             <form onSubmit={handleCreateItem} className="grid gap-3 md:grid-cols-6">
-              <Input value={itemForm.code} onChange={(e) => setItemForm({...itemForm, code: e.target.value})} placeholder="Kode" className="rounded-xl" />
-              <Input value={itemForm.name} onChange={(e) => setItemForm({...itemForm, name: e.target.value})} placeholder="Nama barang" className="rounded-xl md:col-span-2" />
+              <Input value={itemForm.name} onChange={(e) => setItemForm({...itemForm, name: e.target.value})} placeholder="Nama bahan/barang" className="rounded-xl md:col-span-2" />
+              <Input value={itemForm.code} onChange={(e) => setItemForm({...itemForm, code: e.target.value})} placeholder="Kode opsional" className="rounded-xl" />
               <Input value={itemForm.category} onChange={(e) => setItemForm({...itemForm, category: e.target.value})} placeholder="Kategori" className="rounded-xl" />
               <Input value={itemForm.unit} onChange={(e) => setItemForm({...itemForm, unit: e.target.value})} placeholder="Unit" className="rounded-xl" />
               <Input type="number" min="0" value={itemForm.minStock} onChange={(e) => setItemForm({...itemForm, minStock: e.target.value})} placeholder="Min stok" className="rounded-xl" />
               <Input type="number" min="0" value={itemForm.currentStock} onChange={(e) => setItemForm({...itemForm, currentStock: e.target.value})} placeholder="Stok awal" className="rounded-xl" />
-              <button type="submit" disabled={isSubmitting} className="md:col-span-5 h-10 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold transition-colors disabled:opacity-50">
-                {isSubmitting ? 'Menyimpan...' : 'Tambah Barang'}
+              <Input type="number" min="0" value={itemForm.purchasePrice} onChange={(e) => setItemForm({...itemForm, purchasePrice: e.target.value})} placeholder="Harga beli total" className="rounded-xl md:col-span-2" />
+              <Input type="number" min="0" value={itemForm.purchaseGram} onChange={(e) => setItemForm({...itemForm, purchaseGram: e.target.value})} placeholder="Total gram" className="rounded-xl md:col-span-2" />
+              <div className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm font-semibold text-foreground">
+                Rp {previewPricePerGram.toLocaleString('id-ID', { maximumFractionDigits: 2 })} / gram
+              </div>
+              <button type="submit" disabled={isSubmitting} className="h-10 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold transition-colors disabled:opacity-50">
+                {isSubmitting ? 'Menyimpan...' : editingItemId ? 'Update Barang' : 'Tambah Barang'}
               </button>
+              {editingItemId && (
+                <button type="button" onClick={resetItemForm} className="md:col-span-6 inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border font-semibold text-foreground transition-colors hover:bg-muted">
+                  <X className="h-4 w-4" /> Batal Edit
+                </button>
+              )}
             </form>
           </CardContent>
         </Card>
@@ -212,13 +250,18 @@ export default function WarehousePage() {
                   <th className="px-6 py-3 font-semibold text-foreground">Nama Barang</th>
                   <th className="px-6 py-3 font-semibold text-foreground text-right">Stok Aktual</th>
                   <th className="px-6 py-3 font-semibold text-foreground text-right">Batas Min.</th>
+                  <th className="px-6 py-3 font-semibold text-foreground text-right">Harga/Gram</th>
                   <th className="px-6 py-3 font-semibold text-foreground">Status</th>
-                  {canDeleteItem && <th className="px-6 py-3 font-semibold text-foreground text-right">Aksi</th>}
+                  {(canSetupItem || canDeleteItem) && <th className="px-6 py-3 font-semibold text-foreground text-right">Aksi</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                 {items.length === 0 ? (
-                  <tr><td colSpan={canDeleteItem ? 6 : 5} className="px-6 py-12 text-center text-muted-foreground">Master barang masih kosong — hubungi Admin</td></tr>
+                  <tr>
+                    <td colSpan={(canSetupItem || canDeleteItem) ? 7 : 6} className="px-6 py-12 text-center text-muted-foreground">
+                      Master barang masih kosong - hubungi Admin
+                    </td>
+                  </tr>
                 ) : items.map(i => (
                   <tr key={i.id} className={`transition-colors ${i.currentStock <= i.minStock ? 'bg-rose-50/30 dark:bg-rose-900/10 hover:bg-rose-50/50' : 'hover:bg-muted/50'}`}>
                     <td className="px-6 py-4">
@@ -231,6 +274,9 @@ export default function WarehousePage() {
                     <td className="px-6 py-4 text-right text-muted-foreground">
                       {i.minStock.toLocaleString('id-ID')} <span className="text-xs">{i.unit}</span>
                     </td>
+                    <td className="px-6 py-4 text-right font-bold text-foreground">
+                      Rp {Number(i.pricePerGram || 0).toLocaleString('id-ID', { maximumFractionDigits: 2 })}
+                    </td>
                     <td className="px-6 py-4">
                       {i.currentStock <= i.minStock ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800/50">
@@ -238,21 +284,36 @@ export default function WarehousePage() {
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50">
-                          ? Aman
+                          Aman
                         </span>
                       )}
                     </td>
-                    {canDeleteItem && (
+                    {(canSetupItem || canDeleteItem) && (
                       <td className="px-6 py-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteItem(i.id, i.name)}
-                          disabled={isSubmitting}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-200 text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-50"
-                          title="Hapus barang"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <div className="flex justify-end gap-2">
+                          {canSetupItem && (
+                            <button
+                              type="button"
+                              onClick={() => startEditItem(i)}
+                              disabled={isSubmitting}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+                              title="Edit barang"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                          )}
+                          {canDeleteItem && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteItem(i.id, i.name)}
+                              disabled={isSubmitting}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-200 text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-50"
+                              title="Hapus barang"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -364,7 +425,7 @@ export default function WarehousePage() {
                       <td className={`px-6 py-4 text-right font-bold font-mono ${m.type === 'IN' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                         {m.type === 'IN' ? '+' : '-'}{m.quantity.toLocaleString('id-ID')}
                       </td>
-                      <td className="px-6 py-4 text-muted-foreground">{m.notes || '—'}</td>
+                      <td className="px-6 py-4 text-muted-foreground">{m.notes || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
