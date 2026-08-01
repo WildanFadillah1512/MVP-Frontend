@@ -273,7 +273,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
       
       <div className="space-y-3 p-4 border-t border-sidebar-border">
-        <div className="rounded-xl bg-sidebar-accent p-4 flex items-center gap-3">
+        <Link href="/profile" className="rounded-xl bg-sidebar-accent p-4 flex items-center gap-3 hover:bg-sidebar-accent/80 transition-colors cursor-pointer">
           <div className="w-10 h-10 rounded-full bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground font-bold text-sm shadow-sm">
             {profileImageUrl ? (
               <img src={profileImageUrl} alt="Profile" className="w-10 h-10 rounded-full object-cover" />
@@ -285,7 +285,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="text-sm font-bold text-sidebar-foreground truncate">{user.name}</span>
             <span className="text-xs font-medium text-muted-foreground truncate">{user.role.name} - {user.division.name}</span>
           </div>
-        </div>
+        </Link>
         <button
           type="button"
           onClick={handleLogout}

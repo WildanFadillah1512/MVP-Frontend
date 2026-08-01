@@ -215,7 +215,7 @@ export default function PayrollPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <p className="text-sm text-gray-600">Gaji Pokok</p>
                   <p className="text-lg font-semibold">Rp {payroll.basicSalary.toLocaleString()}</p>
@@ -233,7 +233,7 @@ export default function PayrollPage() {
                   <p className="text-xl font-bold text-green-600">Rp {payroll.totalSalary.toLocaleString()}</p>
                 </div>
               </div>
-              <div className="mt-4 grid grid-cols-4 gap-2 text-sm text-gray-600">
+              <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-2 text-sm text-gray-600">
                 <p>Hari Kerja: {payroll.workDays}</p>
                 <p>Hadir: {payroll.attendanceDays}</p>
                 <p>Cuti: {payroll.leaveDays}</p>
@@ -337,7 +337,7 @@ export default function PayrollPage() {
                   Periode: {format(new Date(selectedPayroll.period), 'MMMM yyyy')}
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm font-semibold">Komponen Gaji</p>
                   <div className="space-y-2 mt-2">
