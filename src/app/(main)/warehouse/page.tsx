@@ -104,6 +104,7 @@ export default function WarehousePage() {
       purchaseGram: String(item.purchaseGram ?? '')
     });
     setActiveTab('stock');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDeleteItem = async (itemId: string, itemName: string) => {
