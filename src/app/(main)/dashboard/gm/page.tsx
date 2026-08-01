@@ -156,7 +156,7 @@ export default function GMDashboard() {
 
       {/* Division Performance & Pending Reports */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4 bg-white/90 border border-[#D7CBB5] shadow-md rounded-2xl">
+        <Card className="md:col-span-2 lg:col-span-4 bg-white/90 border border-[#D7CBB5] shadow-md rounded-2xl">
           <CardHeader className="border-b border-[#D7CBB5] pb-4">
             <CardTitle className="text-lg text-[#3E231B] flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-[#28374A]" /> Performa Divisi
@@ -181,7 +181,7 @@ export default function GMDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-3 bg-white/90 border border-[#D7CBB5] shadow-md rounded-2xl">
+        <Card className="md:col-span-2 lg:col-span-3 bg-white/90 border border-[#D7CBB5] shadow-md rounded-2xl">
           <CardHeader className="border-b border-[#D7CBB5] pb-4">
             <CardTitle className="text-lg text-[#3E231B] flex items-center justify-between">
               Belum Laporan

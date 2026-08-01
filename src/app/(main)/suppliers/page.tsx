@@ -227,7 +227,7 @@ export default function SuppliersPage() {
             <DialogTitle>{editSupplier ? 'Edit Supplier' : 'Tambah Supplier'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label>Kode Supplier</Label>
                 <Input
@@ -266,7 +266,7 @@ export default function SuppliersPage() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
-              <div className="col-span-2">
+              <div className="md:col-span-2">
                 <Label>Alamat</Label>
                 <Input
                   value={formData.address}

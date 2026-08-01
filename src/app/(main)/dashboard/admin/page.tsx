@@ -125,7 +125,7 @@ export default function AdminDashboard() {
       {/* Quick Action + Pending Reports */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         {/* Quick Actions */}
-        <Card className="col-span-3 border-border shadow-md rounded-2xl overflow-hidden">
+        <Card className="md:col-span-2 lg:col-span-3 border-border shadow-md rounded-2xl overflow-hidden">
           <CardHeader className="border-b border-border p-6">
             <CardTitle className="text-lg text-foreground flex items-center gap-2">
               <Settings className="w-5 h-5 text-primary" /> Aksi Cepat Admin
@@ -151,7 +151,7 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Pending Reports */}
-        <Card className="col-span-4 border-border shadow-md rounded-2xl overflow-hidden">
+        <Card className="md:col-span-2 lg:col-span-4 border-border shadow-md rounded-2xl overflow-hidden">
           <CardHeader className="border-b border-border p-6">
             <CardTitle className="text-lg text-foreground flex items-center justify-between">
               Karyawan Belum Laporan
