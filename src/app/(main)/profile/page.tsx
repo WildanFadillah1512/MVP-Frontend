@@ -186,7 +186,7 @@ export default function ProfilePage() {
                   <input
                     type="file"
                     accept="image/jpeg,image/jpg,image/png,image/webp"
-                    className="hidden"
+                    className="sr-only"
                     onChange={handlePhotoUpload}
                     disabled={isUploadingPhoto}
                   />
