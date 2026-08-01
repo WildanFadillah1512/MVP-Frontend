@@ -62,7 +62,7 @@ export default function PayrollPage() {
   }, []);
 
   useEffect(() => {
-    if (['OWNER', 'CEO', 'ADMIN', 'MANAGER'].includes(userRole)) {
+    if (['OWNER', 'CEO'].includes(userRole)) {
       fetchUsers();
     }
   }, [userRole]);
@@ -142,9 +142,9 @@ export default function PayrollPage() {
     setShowDetailDialog(true);
   };
 
-  const canManagePayroll = ['OWNER', 'CEO', 'ADMIN', 'MANAGER'].includes(userRole);
+  const canManagePayroll = ['OWNER', 'CEO'].includes(userRole);
   const canApprovePayroll = ['OWNER', 'CEO'].includes(userRole);
-  const canMarkPaid = ['OWNER', 'CEO', 'ADMIN'].includes(userRole);
+  const canMarkPaid = ['OWNER', 'CEO'].includes(userRole);
 
   const getStatusColor = (status: string) => {
     switch (status) {
