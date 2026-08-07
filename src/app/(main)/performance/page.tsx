@@ -13,6 +13,7 @@ import { dashboardApi } from '@/features/dashboard/api/dashboard.api';
 import { api } from '@/lib/api/axios';
 import { Target, TrendingUp, CheckCircle, Clock, Plus, Users } from "lucide-react";
 import { toast } from 'sonner';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 
 export default function PerformancePage() {
   const [targets, setTargets] = useState<any[]>([]);
@@ -109,7 +110,7 @@ export default function PerformancePage() {
   const handleUpdateProgress = async (id: string, currentVal: number, targetVal: number) => {
     const input = prompt(`Update progress (saat ini: ${currentVal} / ${targetVal}). Masukkan nilai baru:`);
     if (!input) return;
-    const newVal = parseInt(input);
+    const newVal = parseFloat(input);
     if (isNaN(newVal) || newVal < 0) { toast.error('Nilai tidak valid'); return; }
     try {
       const res = await targetApi.updateProgress(id, newVal);
@@ -155,36 +156,56 @@ export default function PerformancePage() {
             <CardDescription>{employeeStats.employee.role} / {employeeStats.employee.division} · Periode {employeeStats.period}</CardDescription>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="grid gap-4 md:grid-cols-5">
-              {[
-                { label: 'KPI', value: `${employeeStats.scores.kpiScore} (${employeeStats.scores.grade})` },
-                { label: 'Absensi', value: `${employeeStats.summary.attendanceDays} hari` },
-                { label: 'Laporan', value: `${employeeStats.summary.reportDays} hari` },
-                { label: 'Upload', value: `${employeeStats.summary.uploadCount} file` },
-                { label: 'Lembur', value: `${employeeStats.summary.overtimeHours} jam` },
-              ].map((item) => (
-                <div key={item.label} className="rounded-xl border border-border bg-muted/20 p-4">
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{item.label}</p>
-                  <p className="mt-2 text-2xl font-black text-foreground">{item.value}</p>
+            <div className="grid gap-6 md:grid-cols-2">
+              <div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {[
+                    { label: 'KPI', value: `${employeeStats.scores.kpiScore} (${employeeStats.scores.grade})` },
+                    { label: 'Absensi', value: `${employeeStats.summary.attendanceDays} hari` },
+                    { label: 'Laporan', value: `${employeeStats.summary.reportDays} hari` },
+                    { label: 'Upload', value: `${employeeStats.summary.uploadCount} file` },
+                    { label: 'Lembur', value: `${employeeStats.summary.overtimeHours} jam` },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-xl border border-border bg-muted/20 p-4">
+                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{item.label}</p>
+                      <p className="mt-2 text-2xl font-black text-foreground">{item.value}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="mt-5 grid gap-3 md:grid-cols-3">
-              {[
-                { label: 'Skor Absensi', value: employeeStats.scores.attendanceScore },
-                { label: 'Skor Laporan', value: employeeStats.scores.reportScore },
-                { label: 'Skor Target', value: employeeStats.scores.targetScore },
-              ].map((score) => (
-                <div key={score.label}>
-                  <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="font-medium text-muted-foreground">{score.label}</span>
-                    <span className="font-bold text-foreground">{score.value}%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, score.value)}%` }} />
-                  </div>
+                <div className="mt-6 grid gap-4">
+                  {[
+                    { label: 'Skor Absensi', value: employeeStats.scores.attendanceScore },
+                    { label: 'Skor Laporan', value: employeeStats.scores.reportScore },
+                    { label: 'Skor Target', value: employeeStats.scores.targetScore },
+                  ].map((score) => (
+                    <div key={score.label}>
+                      <div className="mb-1 flex items-center justify-between text-sm">
+                        <span className="font-medium text-muted-foreground">{score.label}</span>
+                        <span className="font-bold text-foreground">{score.value}%</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, score.value)}%` }} />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+              <div className="h-[300px] bg-muted/10 rounded-2xl border border-border p-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart cx="50%" cy="50%" outerRadius="70%" data={[
+                    { subject: 'KPI', score: employeeStats.scores.kpiScore, fullMark: 100 },
+                    { subject: 'Absensi', score: employeeStats.scores.attendanceScore, fullMark: 100 },
+                    { subject: 'Laporan', score: employeeStats.scores.reportScore, fullMark: 100 },
+                    { subject: 'Target', score: employeeStats.scores.targetScore, fullMark: 100 },
+                  ]}>
+                    <PolarGrid strokeDasharray="3 3" />
+                    <PolarAngleAxis dataKey="subject" />
+                    <PolarRadiusAxis angle={30} domain={[0, 100]} />
+                    <Radar name="Skor Karyawan" dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.5} />
+                    <Tooltip />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -351,7 +372,7 @@ export default function PerformancePage() {
               <div className="space-y-2">
                 <Label className="font-semibold text-foreground text-sm">Target Angka <span className="text-rose-500">*</span></Label>
                 <Input
-                  type="number" min="1"
+                  type="number" step="any" min="1"
                   value={form.targetValue}
                   onChange={e => setForm({...form, targetValue: e.target.value})}
                   placeholder="500"

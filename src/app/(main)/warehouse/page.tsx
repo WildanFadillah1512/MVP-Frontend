@@ -10,6 +10,8 @@ import { Box, Plus, Minus, ArrowLeftRight, AlertTriangle, Package2, Activity, Tr
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export default function WarehousePage() {
   const [items, setItems] = useState<any[]>([]);
@@ -20,6 +22,7 @@ export default function WarehousePage() {
   const [userDivision, setUserDivision] = useState('');
   const [activeTab, setActiveTab] = useState<'stock' | 'movements'>('stock');
   const [editingItemId, setEditingItemId] = useState('');
+  const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
 
   const [formData, setFormData] = useState({ warehouseItemId: '', type: 'IN', quantity: '', notes: '' });
   const [itemForm, setItemForm] = useState({
@@ -27,6 +30,7 @@ export default function WarehousePage() {
     name: '',
     category: '',
     minStock: '',
+    maxStock: '',
     currentStock: '',
     unit: 'gram',
     purchasePrice: '',
@@ -77,6 +81,7 @@ export default function WarehousePage() {
       if (res.success) {
         toast.success(editingItemId ? 'Master barang berhasil diperbarui' : 'Master barang berhasil dibuat');
         resetItemForm();
+        setIsItemDialogOpen(false);
         fetchData();
       }
     } catch (error: any) {
@@ -88,7 +93,7 @@ export default function WarehousePage() {
 
   const resetItemForm = () => {
     setEditingItemId('');
-    setItemForm({ code: '', name: '', category: '', minStock: '', currentStock: '', unit: 'gram', purchasePrice: '', purchaseGram: '' });
+    setItemForm({ code: '', name: '', category: '', minStock: '', maxStock: '', currentStock: '', unit: 'gram', purchasePrice: '', purchaseGram: '' });
   };
 
   const startEditItem = (item: any) => {
@@ -98,13 +103,13 @@ export default function WarehousePage() {
       name: item.name || '',
       category: item.category || '',
       minStock: String(item.minStock ?? ''),
+      maxStock: String(item.maxStock ?? ''),
       currentStock: String(item.currentStock ?? ''),
       unit: item.unit || 'gram',
       purchasePrice: String(item.purchasePrice ?? ''),
       purchaseGram: String(item.purchaseGram ?? '')
     });
-    setActiveTab('stock');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setIsItemDialogOpen(true);
   };
 
   const handleDeleteItem = async (itemId: string, itemName: string) => {
@@ -124,7 +129,7 @@ export default function WarehousePage() {
   };
 
   const isWarehouseOrAbove = ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(userRole) || ['GUDANG', 'PURCHASING'].includes(userDivision);
-  const canSetupItem = ['OWNER', 'CEO', 'GM', 'ADMIN', 'MANAGER'].includes(userRole) || ['GUDANG', 'PURCHASING'].includes(userDivision);
+  const canSetupItem = ['OWNER', 'CEO'].includes(userRole);
   const canDeleteItem = userRole === 'CEO' || userDivision === 'PURCHASING';
   const lowStockItems = items.filter(i => i.currentStock <= i.minStock);
   const todayMovements = movements.filter(m => new Date(m.date).toDateString() === new Date().toDateString());
@@ -193,52 +198,89 @@ export default function WarehousePage() {
       </div>
 
       {/* Tab Switcher */}
-      <div className="flex gap-2 bg-muted/50 p-1 rounded-xl w-fit">
-        {(['stock', 'movements'] as const).map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-            {tab === 'stock' ? `?? Stok Saat Ini (${lowStockItems.length} warning)` : '?? Riwayat & Input'}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex gap-2 bg-muted/50 p-1 rounded-xl w-fit">
+          {(['stock', 'movements'] as const).map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+              {tab === 'stock' ? `📦 Stok Saat Ini (${lowStockItems.length} warning)` : '🔄 Riwayat & Input'}
+            </button>
+          ))}
+        </div>
+        
+        {canSetupItem && (
+          <Dialog open={isItemDialogOpen} onOpenChange={(open) => {
+            setIsItemDialogOpen(open);
+            if (!open) resetItemForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button className="rounded-xl font-bold h-10">
+                <Plus className="w-4 h-4 mr-2" /> Tambah Barang
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-xl">
+              <DialogHeader>
+                <DialogTitle>{editingItemId ? 'Edit Master Barang' : 'Setup Master Barang'}</DialogTitle>
+                <DialogDescription>Tambahkan bahan baku dengan nama saja, lalu lengkapi harga dan gram bila sudah ada.</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateItem} className="grid gap-4 mt-4 md:grid-cols-2">
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Nama Bahan/Barang</Label>
+                  <Input value={itemForm.name} onChange={(e) => setItemForm({...itemForm, name: e.target.value})} placeholder="Misal: Biji Kopi Arabika" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Kode (Opsional)</Label>
+                  <Input value={itemForm.code} onChange={(e) => setItemForm({...itemForm, code: e.target.value})} placeholder="Misal: KOP-01" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Kategori</Label>
+                  <Input value={itemForm.category} onChange={(e) => setItemForm({...itemForm, category: e.target.value})} placeholder="Kategori" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Unit Kemasan</Label>
+                  <Input value={itemForm.unit} onChange={(e) => setItemForm({...itemForm, unit: e.target.value})} placeholder="Misal: gram, pcs, kg" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Batas Min. Stok</Label>
+                  <Input type="number" step="any" min="0" value={itemForm.minStock} onChange={(e) => setItemForm({...itemForm, minStock: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Batas Max. Stok (Opsional)</Label>
+                  <Input type="number" step="any" min="0" value={itemForm.maxStock} onChange={(e) => setItemForm({...itemForm, maxStock: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Stok Awal</Label>
+                  <Input type="number" step="any" min="0" value={itemForm.currentStock} onChange={(e) => setItemForm({...itemForm, currentStock: e.target.value})} />
+                </div>
+                <div className="space-y-2 md:col-span-2 mt-4 pt-4 border-t border-border">
+                  <Label className="text-primary font-bold">Pengaturan Harga Modal</Label>
+                </div>
+                <div className="space-y-2">
+                  <Label>Total Harga Beli (Rp)</Label>
+                  <Input type="number" step="any" min="0" value={itemForm.purchasePrice} onChange={(e) => setItemForm({...itemForm, purchasePrice: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Total Gram (Isi)</Label>
+                  <Input type="number" step="any" min="0" value={itemForm.purchaseGram} onChange={(e) => setItemForm({...itemForm, purchaseGram: e.target.value})} />
+                </div>
+                <div className="md:col-span-2 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm font-semibold text-foreground text-center">
+                  Harga Satuan Terhitung: <span className="text-primary">Rp {previewPricePerGram.toLocaleString('id-ID', { maximumFractionDigits: 2 })} / gram</span>
+                </div>
+                <DialogFooter className="md:col-span-2 mt-4">
+                  <Button type="button" variant="outline" onClick={() => setIsItemDialogOpen(false)}>Batal</Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Menyimpan...' : editingItemId ? 'Update Barang' : 'Simpan Barang'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
-
-      {canSetupItem && (
-        <Card className="border-border shadow-md rounded-2xl overflow-hidden">
-          <CardHeader className="bg-card/50 border-b border-border p-6">
-            <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
-              <Plus className="w-5 h-5 text-primary" /> Setup Master Barang
-            </CardTitle>
-            <CardDescription>Tambahkan bahan baku dengan nama saja, lalu lengkapi harga dan gram bila sudah ada.</CardDescription>
-          </CardHeader>
-          <CardContent className="p-6">
-            <form onSubmit={handleCreateItem} className="grid gap-3 md:grid-cols-6">
-              <Input value={itemForm.name} onChange={(e) => setItemForm({...itemForm, name: e.target.value})} placeholder="Nama bahan/barang" className="rounded-xl md:col-span-2" />
-              <Input value={itemForm.code} onChange={(e) => setItemForm({...itemForm, code: e.target.value})} placeholder="Kode opsional" className="rounded-xl" />
-              <Input value={itemForm.category} onChange={(e) => setItemForm({...itemForm, category: e.target.value})} placeholder="Kategori" className="rounded-xl" />
-              <Input value={itemForm.unit} onChange={(e) => setItemForm({...itemForm, unit: e.target.value})} placeholder="Unit" className="rounded-xl" />
-              <Input type="number" min="0" value={itemForm.minStock} onChange={(e) => setItemForm({...itemForm, minStock: e.target.value})} placeholder="Min stok" className="rounded-xl" />
-              <Input type="number" min="0" value={itemForm.currentStock} onChange={(e) => setItemForm({...itemForm, currentStock: e.target.value})} placeholder="Stok awal" className="rounded-xl" />
-              <Input type="number" min="0" value={itemForm.purchasePrice} onChange={(e) => setItemForm({...itemForm, purchasePrice: e.target.value})} placeholder="Harga beli total" className="rounded-xl md:col-span-2" />
-              <Input type="number" min="0" value={itemForm.purchaseGram} onChange={(e) => setItemForm({...itemForm, purchaseGram: e.target.value})} placeholder="Total gram" className="rounded-xl md:col-span-2" />
-              <div className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm font-semibold text-foreground">
-                Rp {previewPricePerGram.toLocaleString('id-ID', { maximumFractionDigits: 2 })} / gram
-              </div>
-              <button type="submit" disabled={isSubmitting} className="h-10 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold transition-colors disabled:opacity-50">
-                {isSubmitting ? 'Menyimpan...' : editingItemId ? 'Update Barang' : 'Tambah Barang'}
-              </button>
-              {editingItemId && (
-                <button type="button" onClick={resetItemForm} className="md:col-span-6 inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border font-semibold text-foreground transition-colors hover:bg-muted">
-                  <X className="h-4 w-4" /> Batal Edit
-                </button>
-              )}
-            </form>
-          </CardContent>
-        </Card>
-      )}
 
       {/* TAB: STOK */}
       {activeTab === 'stock' && (
-        <Card className="border-border shadow-md rounded-2xl overflow-hidden">
+        <Card className="border-border shadow-md rounded-2xl overflow-hidden mt-4">
           <CardHeader className="bg-card/50 border-b border-border p-6">
             <CardTitle className="text-xl font-bold text-foreground">Daftar Inventori Gudang</CardTitle>
             <CardDescription>Pemantauan jumlah stok fisik dan batas minimal</CardDescription>
@@ -251,6 +293,7 @@ export default function WarehousePage() {
                   <th className="px-6 py-3 font-semibold text-foreground">Nama Barang</th>
                   <th className="px-6 py-3 font-semibold text-foreground text-right">Stok Aktual</th>
                   <th className="px-6 py-3 font-semibold text-foreground text-right">Batas Min.</th>
+                  <th className="px-6 py-3 font-semibold text-foreground text-right">Batas Max.</th>
                   <th className="px-6 py-3 font-semibold text-foreground text-right">Harga/Gram</th>
                   <th className="px-6 py-3 font-semibold text-foreground">Status</th>
                   {(canSetupItem || canDeleteItem) && <th className="px-6 py-3 font-semibold text-foreground text-right">Aksi</th>}
@@ -275,6 +318,9 @@ export default function WarehousePage() {
                     <td className="px-6 py-4 text-right text-muted-foreground">
                       {i.minStock.toLocaleString('id-ID')} <span className="text-xs">{i.unit}</span>
                     </td>
+                    <td className="px-6 py-4 text-right text-muted-foreground">
+                      {i.maxStock ? i.maxStock.toLocaleString('id-ID') : '-'} <span className="text-xs">{i.maxStock ? i.unit : ''}</span>
+                    </td>
                     <td className="px-6 py-4 text-right font-bold text-foreground">
                       Rp {Number(i.pricePerGram || 0).toLocaleString('id-ID', { maximumFractionDigits: 2 })}
                     </td>
@@ -282,6 +328,10 @@ export default function WarehousePage() {
                       {i.currentStock <= i.minStock ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800/50">
                           <AlertTriangle className="w-3 h-3" /> Restock
+                        </span>
+                      ) : (i.maxStock && i.currentStock >= i.maxStock) ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800/50">
+                          <AlertTriangle className="w-3 h-3" /> Overstock
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50">
@@ -377,7 +427,7 @@ export default function WarehousePage() {
                   </div>
                   <div className="space-y-2">
                     <Label className="font-medium text-foreground">Jumlah (Qty) <span className="text-rose-500">*</span></Label>
-                    <Input type="number" required min="1" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} className="rounded-xl border-border bg-muted/30  focus-visible:ring-primary" />
+                    <Input type="number" step="any" required min="1" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} className="rounded-xl border-border bg-muted/30  focus-visible:ring-primary" />
                   </div>
                   <div className="space-y-2">
                     <Label className="font-medium text-foreground">Keterangan <span className="text-muted-foreground font-normal text-xs">(Opsional)</span></Label>

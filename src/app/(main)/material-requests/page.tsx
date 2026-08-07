@@ -133,7 +133,7 @@ export default function MaterialRequestsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Jumlah</Label>
-                  <Input type="number" min="1" value={form.quantity} onChange={(event) => setForm({ ...form, quantity: event.target.value })} required className="rounded-xl" />
+                  <Input type="number" step="any" min="1" value={form.quantity} onChange={(event) => setForm({ ...form, quantity: event.target.value })} required className="rounded-xl" />
                 </div>
                 <div className="space-y-2">
                   <Label>Untuk Apa</Label>

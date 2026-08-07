@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { productionApi } from '@/features/production/api/production.api';
 import { warehouseApi } from '@/features/warehouse/api/warehouse.api';
-import { Package, Plus, ClipboardList, BarChart3, AlertTriangle, TrendingUp, Box, Target, PackagePlus } from "lucide-react";
+import { Package, Plus, ClipboardList, BarChart3, AlertTriangle, TrendingUp, Box, Target, PackagePlus, CheckCircle } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -335,23 +335,31 @@ export default function ProductionPage() {
       </div>
 
       {/* Tab Switcher */}
-      <div className="flex gap-2 bg-muted/50 p-1 rounded-xl w-fit">
-        {(['input', 'materials', 'targets', 'matrix'] as const).map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === tab
-                ? 'bg-card shadow-sm text-foreground'
-                : 'text-muted-foreground hover:text-foreground dark:hover:text-foreground/80'
-            }`}
-          >
-            {tab === 'input' && '?? Input Harian'}
-            {tab === 'materials' && '?? Pakai Bahan Baku'}
-            {tab === 'matrix' && '?? Matriks Bulanan'}
-            {tab === 'targets' && 'Target Bulanan'}
-          </button>
-        ))}
+      <div className="flex gap-2 flex-wrap items-center">
+        <div className="flex gap-2 bg-muted/50 p-1 rounded-xl w-fit">
+          {(['input', 'materials', 'targets', 'matrix'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === tab
+                  ? 'bg-card shadow-sm text-foreground'
+                  : 'text-muted-foreground hover:text-foreground dark:hover:text-foreground/80'
+              }`}
+            >
+              {tab === 'input' && '?? Input Harian'}
+              {tab === 'materials' && '?? Pakai Bahan Baku'}
+              {tab === 'matrix' && '?? Matriks Bulanan'}
+              {tab === 'targets' && 'Target Bulanan'}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => setActiveTab('input')}
+          className="ml-auto px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl shadow-md hover:bg-primary/90 transition flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" /> Tambah Input Produksi
+        </button>
       </div>
 
       {canSetupProduct && (
@@ -403,7 +411,7 @@ export default function ProductionPage() {
                 </SelectContent>
               </Select>
               <Input
-                type="number"
+                type="number" step="any"
                 min="0"
                 value={initialStockForm.quantity}
                 onChange={(e) => setInitialStockForm({...initialStockForm, quantity: e.target.value})}
@@ -546,7 +554,7 @@ export default function ProductionPage() {
                 <div className="space-y-2">
                   <Label className="font-medium text-foreground">Jumlah Hasil (Qty) <span className="text-rose-500">*</span></Label>
                   <Input
-                    type="number" min="1"
+                    type="number" step="any" min="1"
                     placeholder="Contoh: 100"
                     value={formData.quantity}
                     onChange={(e) => setFormData({...formData, quantity: e.target.value})}
@@ -558,7 +566,7 @@ export default function ProductionPage() {
                   <div className="space-y-2">
                     <Label className="font-medium text-foreground">Qty Reject</Label>
                     <Input
-                      type="number" min="0"
+                      type="number" step="any" min="0"
                       placeholder="0"
                       value={formData.rejectQty}
                       onChange={(e) => setFormData({...formData, rejectQty: e.target.value})}
@@ -589,24 +597,24 @@ export default function ProductionPage() {
                     type="button"
                     onClick={addProductionDraft}
                     disabled={isSubmitting || products.length === 0}
-                    className="h-11 rounded-xl border border-primary/30 bg-primary/5 text-primary font-semibold transition-colors hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="h-11 rounded-xl border border-primary/30 bg-primary/5 text-primary font-semibold transition-colors hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    Tambah ke Draft
+                    <Plus className="w-4 h-4" /> Tambah Item
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting || products.length === 0}
                     className="h-11 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmitting ? 'Menyimpan...' : 'Simpan Langsung'}
+                    {isSubmitting ? 'Menyimpan...' : 'Simpan Satu Item'}
                   </button>
                 </div>
                 {productionDrafts.length > 0 && (
                   <div className="rounded-2xl border border-border bg-muted/20 p-4">
                     <div className="mb-3 flex items-center justify-between">
-                      <p className="font-bold text-foreground">Draft Produksi ({productionDrafts.length})</p>
-                      <button type="button" onClick={handleSubmitDrafts} disabled={isSubmitting} className="rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50">
-                        Simpan Semua
+                      <p className="font-bold text-foreground">Daftar Item ({productionDrafts.length})</p>
+                      <button type="button" onClick={handleSubmitDrafts} disabled={isSubmitting} className="rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50 flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" /> Simpan Semua Item
                       </button>
                     </div>
                     <div className="flex flex-col gap-2">
@@ -711,7 +719,7 @@ export default function ProductionPage() {
               <div className="space-y-2">
                 <Label className="font-medium text-foreground">Jumlah Terpakai <span className="text-rose-500">*</span></Label>
                 <Input
-                  type="number" min="1"
+                  type="number" step="any" min="1"
                   placeholder="Contoh: 5"
                   value={materialForm.quantity}
                   onChange={(e) => setMaterialForm({...materialForm, quantity: e.target.value})}
@@ -770,7 +778,7 @@ export default function ProductionPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="font-medium text-foreground">Jumlah Target</Label>
-                  <Input type="number" min="1" value={targetForm.targetQty} onChange={(e) => setTargetForm({...targetForm, targetQty: e.target.value})} placeholder="Contoh: 5000" className="rounded-xl" />
+                  <Input type="number" step="any" min="1" value={targetForm.targetQty} onChange={(e) => setTargetForm({...targetForm, targetQty: e.target.value})} placeholder="Contoh: 5000" className="rounded-xl" />
                 </div>
                 <div className="space-y-2">
                   <Label className="font-medium text-foreground">Catatan</Label>

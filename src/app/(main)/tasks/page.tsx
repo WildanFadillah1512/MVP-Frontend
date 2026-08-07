@@ -41,7 +41,7 @@ export default function TasksPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userRole, setUserRole] = useState('');
   const [userId, setUserId] = useState('');
-  const [activeFilter, setActiveFilter] = useState<string>('all');
+  const [activeFilter, setActiveFilter] = useState<string>('active');
 
   const [form, setForm] = useState({
     title: '', description: '', assignedTo: '', priority: 'MEDIUM', scheduleType: 'ONE_TIME', scheduleDate: '', dueDate: ''
@@ -97,7 +97,9 @@ export default function TasksPage() {
     } catch { toast.error('Gagal memperbarui status'); }
   };
 
-  const filtered = activeFilter === 'all' ? tasks : tasks.filter(t => t.status === activeFilter);
+  const filtered = activeFilter === 'active' 
+    ? tasks.filter(t => ['TODO', 'IN_PROGRESS', 'REVIEW'].includes(t.status))
+    : tasks.filter(t => ['COMPLETED', 'CANCELLED'].includes(t.status));
   const stats = {
     total: tasks.length,
     todo: tasks.filter(t => t.status === 'TODO').length,
@@ -238,27 +240,27 @@ export default function TasksPage() {
         {/* Task List */}
         <Card className={`${canAssign ? 'lg:col-span-3' : 'lg:col-span-5'} border-border shadow-sm rounded-2xl overflow-hidden h-full flex flex-col`}>
           <CardHeader className="bg-card border-b border-border/50 px-6 py-5">
-            <CardTitle className="text-xl font-bold text-foreground">Daftar Tugas</CardTitle>
-            <div className="flex flex-wrap gap-2 mt-4">
-              {['all', 'TODO', 'IN_PROGRESS', 'REVIEW', 'COMPLETED'].map(f => (
-                <button key={f} onClick={() => setActiveFilter(f)}
-                  className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all border ${activeFilter === f
-                    ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                    : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted/50'}`}>
-                  {f === 'all' ? 'Semua' : STATUS_CONFIG[f]?.label}
-                </button>
-              ))}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <CardTitle className="text-xl font-bold text-foreground">Daftar Tugas</CardTitle>
+              <div className="flex gap-2 bg-muted/50 p-1 rounded-xl w-fit">
+                {(['active', 'history'] as const).map(tab => (
+                  <button key={tab} onClick={() => setActiveFilter(tab)}
+                    className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeFilter === tab ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                    {tab === 'active' ? 'Tugas Aktif' : 'Riwayat / Arsip'}
+                  </button>
+                ))}
+              </div>
             </div>
           </CardHeader>
-          <CardContent className="p-0 flex-1">
-            <div className="divide-y divide-border/50">
+          <CardContent className="p-6 flex-1 bg-muted/5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filtered.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-24 text-center">
-                  <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                <div className="col-span-1 md:col-span-2 flex flex-col items-center justify-center py-24 text-center">
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4 border border-border">
                     <CheckCircle2 className="w-8 h-8 text-muted-foreground/50" />
                   </div>
                   <p className="text-lg font-semibold text-foreground">Tidak Ada Tugas</p>
-                  <p className="text-muted-foreground mt-1">Daftar tugas {activeFilter !== 'all' ? `berstatus "${STATUS_CONFIG[activeFilter]?.label}" ` : ''}masih kosong.</p>
+                  <p className="text-muted-foreground mt-1">Daftar tugas di tab ini masih kosong.</p>
                 </div>
               ) : filtered.map(task => {
                 const sCfg = STATUS_CONFIG[task.status] || STATUS_CONFIG['TODO'];
@@ -266,7 +268,7 @@ export default function TasksPage() {
                 const StatusIcon = sCfg.icon;
                 const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'COMPLETED';
                 return (
-                  <div key={task.id} className="p-6 hover:bg-muted/50 transition-colors">
+                  <div key={task.id} className="bg-card border border-border shadow-sm rounded-2xl p-6 hover:shadow-md hover:border-primary/40 transition-all flex flex-col justify-between">
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 flex-wrap mb-3">

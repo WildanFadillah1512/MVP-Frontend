@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle, TrendingUp, FileText, Upload, Target, ClipboardList, CalendarClock } from "lucide-react";
+import { CheckCircle, TrendingUp, FileText, Upload, Target, ClipboardList, CalendarClock, Eye, EyeOff } from "lucide-react";
 import { dashboardApi } from '@/features/dashboard/api/dashboard.api';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
@@ -12,6 +12,7 @@ export default function StaffDashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [hideAttendance, setHideAttendance] = useState(false);
 
   useEffect(() => {
     const userStr = sessionStorage.getItem('user');
@@ -48,24 +49,36 @@ export default function StaffDashboard() {
           <p className="text-secondary-foreground/70 mt-2 font-medium">{user?.division?.name} · {user?.role?.name} <span className="mx-2 opacity-50">|</span> {format(new Date(), 'EEEE, dd MMM yyyy', { locale: localeId })}</p>
         </div>
         
-        <div className={`relative z-10 px-6 py-4 rounded-2xl border  min-w-[200px] ${attendance ? 'bg-black/20 border-white/10' : 'bg-rose-500/20 border-rose-500/30'}`}>
-          {attendance ? (
-            <>
-              <p className="text-xs font-semibold text-secondary-foreground/70 uppercase tracking-widest mb-1">Status Hari Ini</p>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-emerald-400" />
-                <p className="text-xl font-bold">{attendance.status === 'HADIR' ? 'Hadir' : attendance.status}</p>
-              </div>
-              <p className="text-sm font-mono text-secondary-foreground/80 mt-2 bg-black/20 inline-block px-2 py-1 rounded-md">
-                In: {attendance.checkIn ? format(new Date(attendance.checkIn), 'HH:mm') : '--:--'}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="text-xs font-semibold text-rose-200 uppercase tracking-widest mb-1">Status Hari Ini</p>
-              <p className="text-xl font-bold text-rose-400 flex items-center gap-2">⚠ Belum Hadir</p>
-              <p className="text-sm text-rose-200 mt-2">Segera lakukan check-in!</p>
-            </>
+        <div className="relative z-10 flex flex-col items-end gap-2">
+          <button 
+            onClick={() => setHideAttendance(!hideAttendance)} 
+            className="text-white/60 hover:text-white transition-colors"
+            title={hideAttendance ? "Tampilkan Absensi" : "Sembunyikan Absensi"}
+          >
+            {hideAttendance ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+          </button>
+          
+          {!hideAttendance && (
+            <div className={`px-6 py-4 rounded-2xl border min-w-[200px] ${attendance ? 'bg-black/20 border-white/10' : 'bg-rose-500/20 border-rose-500/30'}`}>
+              {attendance ? (
+                <>
+                  <p className="text-xs font-semibold text-secondary-foreground/70 uppercase tracking-widest mb-1">Status Hari Ini</p>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-emerald-400" />
+                    <p className="text-xl font-bold">{attendance.status === 'HADIR' ? 'Hadir' : attendance.status}</p>
+                  </div>
+                  <p className="text-sm font-mono text-secondary-foreground/80 mt-2 bg-black/20 inline-block px-2 py-1 rounded-md">
+                    In: {attendance.checkIn ? format(new Date(attendance.checkIn), 'HH:mm') : '--:--'}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs font-semibold text-rose-200 uppercase tracking-widest mb-1">Status Hari Ini</p>
+                  <p className="text-xl font-bold text-rose-400 flex items-center gap-2">⚠ Belum Hadir</p>
+                  <p className="text-sm text-rose-200 mt-2">Segera lakukan check-in!</p>
+                </>
+              )}
+            </div>
           )}
         </div>
       </div>

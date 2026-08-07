@@ -149,7 +149,8 @@ export default function CEODashboard() {
 
       {/* Division + Pending Reports */}
       <div className="grid gap-6 lg:grid-cols-7">
-        <Card className="md:col-span-2 lg:col-span-4 bg-card border-border shadow-sm rounded-2xl overflow-hidden">
+        <Link href="/performance" className="md:col-span-2 lg:col-span-4 outline-none">
+        <Card className="bg-card border-border shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-shadow h-full">
           <CardHeader className="border-b border-border/50 bg-muted/10 pb-4">
             <CardTitle className="text-lg text-foreground flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-primary" /> Performa Divisi
@@ -173,6 +174,7 @@ export default function CEODashboard() {
             ))}
           </CardContent>
         </Card>
+        </Link>
 
         <Card className="md:col-span-2 lg:col-span-3 bg-card border-border shadow-sm rounded-2xl overflow-hidden">
           <CardHeader className="border-b border-border/50 bg-muted/10 pb-4">

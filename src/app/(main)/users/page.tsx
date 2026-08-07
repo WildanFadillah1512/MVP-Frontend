@@ -409,7 +409,7 @@ export default function UsersPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-foreground font-medium">Kuota Cuti Tahunan (Hari)</Label>
-                  <Input type="number" min="0" value={form.totalQuota} onChange={e => setForm({...form, totalQuota: e.target.value})} className="rounded-xl border-border bg-muted/30  focus-visible:ring-primary" />
+                  <Input type="number" step="any" min="0" value={form.totalQuota} onChange={e => setForm({...form, totalQuota: e.target.value})} className="rounded-xl border-border bg-muted/30  focus-visible:ring-primary" />
                 </div>
               </div>
               
@@ -578,7 +578,7 @@ export default function UsersPage() {
               </div>
               <div className="space-y-2">
                 <Label className="text-foreground font-medium">Kuota Cuti</Label>
-                <Input type="number" min="0" value={form.totalQuota} onChange={e => setForm({...form, totalQuota: e.target.value})} className="rounded-xl" />
+                <Input type="number" step="any" min="0" value={form.totalQuota} onChange={e => setForm({...form, totalQuota: e.target.value})} className="rounded-xl" />
               </div>
             </div>
             <div className="space-y-2">

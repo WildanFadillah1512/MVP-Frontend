@@ -21,6 +21,7 @@ export default function ProfilePage() {
   const [isSubmittingResign, setIsSubmittingResign] = useState(false);
   const [documents, setDocuments] = useState<any>({ warnings: [], paklarings: [], payrolls: [] });
   const [photoVersion, setPhotoVersion] = useState(Date.now());
+  const [customBg, setCustomBg] = useState('');
   
   const [form, setForm] = useState({
     photoUrl: '',
@@ -47,6 +48,9 @@ export default function ProfilePage() {
     } else {
       router.push('/login');
     }
+    
+    const bg = localStorage.getItem('custom-bg');
+    if (bg) setCustomBg(bg);
     api.get('/users/me/documents')
       .then((res) => {
         if (res.data.success) setDocuments(res.data.data);
@@ -66,6 +70,12 @@ export default function ProfilePage() {
         const updatedUser = { ...userContext, ...res.data.data };
         sessionStorage.setItem('user', JSON.stringify(updatedUser));
         setUserContext(updatedUser);
+
+        if (customBg) {
+          localStorage.setItem('custom-bg', customBg);
+        } else {
+          localStorage.removeItem('custom-bg');
+        }
         
         // Refresh to update sidebar/header image
         window.location.reload();
@@ -231,6 +241,17 @@ export default function ProfilePage() {
                 placeholder="Tuliskan sedikit tentang diri Anda..." 
                 className="rounded-xl min-h-[120px] resize-none"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="font-medium text-foreground">Background Custom (URL Gambar atau Warna Hex)</Label>
+              <Input 
+                value={customBg} 
+                onChange={e => setCustomBg(e.target.value)} 
+                placeholder="Contoh: #1e1e1e atau url('https://...')" 
+                className="rounded-xl"
+              />
+              <p className="text-[11px] text-muted-foreground">Tampilan background akan berubah setelah Anda menyimpan dan halaman dimuat ulang.</p>
             </div>
 
             <div className="pt-4 border-t border-border flex justify-end">

@@ -221,7 +221,7 @@ export default function DailyReportsPage() {
                     <div className="space-y-2">
                       <FormLabel className="font-bold text-foreground">Progress Target Hari Ini</FormLabel>
                       <Input
-                        type="number"
+                        type="number" step="any"
                         min="0"
                         step="0.01"
                         value={workQuantity}

@@ -224,7 +224,7 @@ export default function PurchasingPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="font-medium text-foreground">Jumlah (Qty) <span className="text-rose-500">*</span></Label>
-                  <Input type="number" required min="1" value={needForm.quantity} onChange={e => setNeedForm({...needForm, quantity: e.target.value})} placeholder="10" className="rounded-xl border-border bg-muted/30  focus-visible:ring-primary" />
+                  <Input type="number" step="any" required min="1" value={needForm.quantity} onChange={e => setNeedForm({...needForm, quantity: e.target.value})} placeholder="10" className="rounded-xl border-border bg-muted/30  focus-visible:ring-primary" />
                 </div>
                 <div className="space-y-2">
                   <Label className="font-medium text-foreground">Prioritas</Label>
@@ -324,11 +324,11 @@ export default function PurchasingPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label className="font-medium text-foreground">Jumlah <span className="text-rose-500">*</span></Label>
-                      <Input type="number" required min="1" value={purchaseForm.quantity} onChange={e => setPurchaseForm({...purchaseForm, quantity: e.target.value})} className="rounded-xl border-border bg-muted/30  focus-visible:ring-primary" />
+                      <Input type="number" step="any" required min="1" value={purchaseForm.quantity} onChange={e => setPurchaseForm({...purchaseForm, quantity: e.target.value})} className="rounded-xl border-border bg-muted/30  focus-visible:ring-primary" />
                     </div>
                     <div className="space-y-2">
                       <Label className="font-medium text-foreground">Harga Satuan <span className="text-rose-500">*</span></Label>
-                      <Input type="number" required min="0" value={purchaseForm.unitPrice} onChange={e => setPurchaseForm({...purchaseForm, unitPrice: e.target.value})} className="rounded-xl border-border bg-muted/30  focus-visible:ring-primary" />
+                      <Input type="number" step="any" required min="0" value={purchaseForm.unitPrice} onChange={e => setPurchaseForm({...purchaseForm, unitPrice: e.target.value})} className="rounded-xl border-border bg-muted/30  focus-visible:ring-primary" />
                     </div>
                   </div>
                   <div className="p-3 rounded-xl bg-muted/30  border border-border flex items-center justify-between">

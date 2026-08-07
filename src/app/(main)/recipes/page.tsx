@@ -39,9 +39,11 @@ export default function RecipesPage() {
   const [warehouseItems, setWarehouseItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [showCalcDialog, setShowCalcDialog] = useState(false);
   const [showProduceDialog, setShowProduceDialog] = useState(false);
   const [calculation, setCalculation] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [formData, setFormData] = useState({
     productId: '',
@@ -126,14 +128,29 @@ export default function RecipesPage() {
           unitPrice: Number(ing.unitPrice || 0)
         }))
       });
-      toast.success('Resep berhasil disimpan');
+      toast.success(isEditMode ? 'Resep berhasil diperbarui' : 'Resep berhasil disimpan');
       setShowDialog(false);
+      setIsEditMode(false);
       resetForm();
       fetchRecipes();
       fetchProducts();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Gagal menyimpan resep');
     }
+  };
+
+  const openEditDialog = (recipe: Recipe) => {
+    setIsEditMode(true);
+    setFormData({
+      productId: recipe.product.id,
+      outputQtyPerBatch: String(recipe.product.recipeOutputQty || 1),
+      ingredients: recipe.ingredients.map(ing => ({
+        warehouseItemId: ing.ingredient.id,
+        qtyNeeded: String(ing.qtyNeeded),
+        unitPrice: String(ing.unitPrice || 0)
+      }))
+    });
+    setShowDialog(true);
   };
 
   const handleCalculate = async (e: React.FormEvent) => {
@@ -178,6 +195,7 @@ export default function RecipesPage() {
   };
 
   const resetForm = () => {
+    setIsEditMode(false);
     setFormData({
       productId: '',
       outputQtyPerBatch: '1',
@@ -203,7 +221,7 @@ export default function RecipesPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Resep Produk (CEO Only)</h1>
         <div className="space-x-2">
-          <Button onClick={() => setShowDialog(true)}>
+          <Button onClick={() => { resetForm(); setShowDialog(true); }}>
             <Plus className="mr-2 h-4 w-4" /> Set Resep
           </Button>
           <Button variant="outline" onClick={() => setShowCalcDialog(true)}>
@@ -215,13 +233,28 @@ export default function RecipesPage() {
         </div>
       </div>
 
+      <div className="flex items-center space-x-2">
+        <Input 
+          placeholder="Cari produk resep..." 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="max-w-md"
+        />
+      </div>
+
       <div className="grid gap-4">
-        {recipes.map((recipe) => (
+        {recipes.filter(r => 
+          r.product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+          r.product.code.toLowerCase().includes(searchQuery.toLowerCase())
+        ).map((recipe) => (
           <Card key={recipe.product.id}>
-            <CardHeader>
-              <CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xl">
                 {recipe.product.name} ({recipe.product.code})
               </CardTitle>
+              <Button variant="outline" size="sm" onClick={() => openEditDialog(recipe)}>
+                Edit Resep
+              </Button>
             </CardHeader>
             <CardContent>
               <p className="text-sm font-semibold mb-2">
@@ -253,13 +286,6 @@ export default function RecipesPage() {
                         (Stok: {ing.ingredient.currentStock} {ing.ingredient.unit})
                       </span>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDeleteIngredient(ing.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
                   </div>
                 ))}
               </div>
@@ -270,9 +296,9 @@ export default function RecipesPage() {
 
       {/* Set Recipe Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Set Resep Produk</DialogTitle>
+            <DialogTitle>{isEditMode ? 'Edit Resep' : 'Set Resep Baru'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -289,6 +315,7 @@ export default function RecipesPage() {
                   });
                 }}
                 required
+                disabled={isEditMode}
               >
                 <option value="">Pilih Produk</option>
                 {products.map((p) => (
@@ -302,9 +329,8 @@ export default function RecipesPage() {
             <div>
               <Label>Hasil per 1 batch/adonan</Label>
               <Input
-                type="number"
+                type="number" step="1"
                 min="1"
-                step="1"
                 value={formData.outputQtyPerBatch}
                 onChange={(e) => setFormData({ ...formData, outputQtyPerBatch: e.target.value })}
                 placeholder="Contoh: 24"
@@ -339,8 +365,7 @@ export default function RecipesPage() {
                     ))}
                   </select>
                   <Input
-                    type="number"
-                    step="0.01"
+                    type="number" step="0.01"
                     min="0.01"
                     placeholder="Qty gram"
                     value={ing.qtyNeeded}
@@ -348,10 +373,9 @@ export default function RecipesPage() {
                     required
                   />
                   <Input
-                    type="number"
-                    step="0.01"
+                    type="number" step="0.01"
                     min="0"
-                    placeholder={autoUnitPrice > 0 ? `Auto Rp ${autoUnitPrice.toLocaleString('id-ID', { maximumFractionDigits: 2 })}/gram` : 'Harga per gram'}
+                    placeholder={autoUnitPrice > 0 ? `Auto Rp ${autoUnitPrice.toFixed(0)}/g` : 'Harga per gram'}
                     value={ing.unitPrice}
                     onChange={(e) => handleIngredientChange(index, 'unitPrice', e.target.value)}
                   />
@@ -369,12 +393,11 @@ export default function RecipesPage() {
                 );
               })}
             </div>
-
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end space-x-2 mt-6">
               <Button type="button" variant="outline" onClick={() => setShowDialog(false)}>
                 Batal
               </Button>
-              <Button type="submit">Simpan Resep</Button>
+              <Button type="submit">{isEditMode ? 'Simpan Perubahan' : 'Simpan Resep'}</Button>
             </div>
           </form>
         </DialogContent>
@@ -406,7 +429,7 @@ export default function RecipesPage() {
             <div>
               <Label>Jumlah Batch</Label>
               <Input
-                type="number"
+                type="number" step="any"
                 value={calcData.batchCount}
                 onChange={(e) => setCalcData({ ...calcData, batchCount: e.target.value })}
                 required
@@ -466,7 +489,7 @@ export default function RecipesPage() {
             <div>
               <Label>Jumlah Batch</Label>
               <Input
-                type="number"
+                type="number" step="any"
                 value={produceData.batchCount}
                 onChange={(e) => setProduceData({ ...produceData, batchCount: e.target.value })}
                 required

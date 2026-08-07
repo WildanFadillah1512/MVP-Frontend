@@ -326,7 +326,7 @@ export default function SuppliersPage() {
             <div>
               <Label>Harga per Unit</Label>
               <Input
-                type="number"
+                type="number" step="any"
                 value={priceData.unitPrice}
                 onChange={(e) => setPriceData({ ...priceData, unitPrice: e.target.value })}
                 required

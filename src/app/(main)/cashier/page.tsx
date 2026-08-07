@@ -268,7 +268,7 @@ export default function CashierPage() {
                 ].map(({ label, key }) => (
                   <div key={key} className="space-y-1">
                     <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
-                    <Input type="number" min="0" value={(formData as any)[key]} onChange={e => setFormData({...formData, [key]: e.target.value})} placeholder="Rp 0" className="rounded-xl border-border bg-white  focus-visible:ring-primary h-9 text-sm" />
+                    <Input type="number" step="any" min="0" value={(formData as any)[key]} onChange={e => setFormData({...formData, [key]: e.target.value})} placeholder="Rp 0" className="rounded-xl border-border bg-white  focus-visible:ring-primary h-9 text-sm" />
                   </div>
                 ))}
               </div>
@@ -297,7 +297,7 @@ export default function CashierPage() {
                 </p>
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-muted-foreground">Pengeluaran Kas</Label>
-                  <Input type="number" min="0" value={formData.totalExpense} onChange={e => setFormData({...formData, totalExpense: e.target.value})} placeholder="Rp 0" className="rounded-xl border-border bg-white  focus-visible:ring-primary h-9 text-sm" />
+                  <Input type="number" step="any" min="0" value={formData.totalExpense} onChange={e => setFormData({...formData, totalExpense: e.target.value})} placeholder="Rp 0" className="rounded-xl border-border bg-white  focus-visible:ring-primary h-9 text-sm" />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-muted-foreground">Catatan Selisih / Lainnya</Label>
@@ -330,7 +330,7 @@ export default function CashierPage() {
                       {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                     <Input
-                      type="number" min="1"
+                      type="number" step="any" min="1"
                       placeholder="Qty"
                       value={row.quantity}
                       onChange={e => updateProductRow(i, 'quantity', e.target.value)}

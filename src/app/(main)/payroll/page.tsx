@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { api } from '@/lib/api/axios';
-import { Plus, CheckCircle, DollarSign, Eye } from 'lucide-react';
+import { Plus, CheckCircle, DollarSign, Eye, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Payroll {
@@ -126,6 +126,17 @@ export default function PayrollPage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm('Apakah Anda yakin ingin menghapus payroll ini?')) return;
+    try {
+      await api.delete(`/payroll/${id}`);
+      toast.success('Payroll berhasil dihapus');
+      fetchPayrolls();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal menghapus payroll');
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       userId: '',
@@ -211,6 +222,11 @@ export default function PayrollPage() {
                       <DollarSign className="h-4 w-4 mr-1" /> Tandai Dibayar
                     </Button>
                   )}
+                  {canManagePayroll && (
+                    <Button size="sm" variant="destructive" onClick={(event) => { event.stopPropagation(); handleDelete(payroll.id); }}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </CardTitle>
             </CardHeader>
@@ -279,7 +295,7 @@ export default function PayrollPage() {
             <div>
               <Label>Gaji Pokok</Label>
               <Input
-                type="number"
+                type="number" step="any"
                 value={formData.basicSalary}
                 onChange={(e) => setFormData({ ...formData, basicSalary: e.target.value })}
                 required
@@ -288,7 +304,7 @@ export default function PayrollPage() {
             <div>
               <Label>Tunjangan</Label>
               <Input
-                type="number"
+                type="number" step="any"
                 value={formData.allowances}
                 onChange={(e) => setFormData({ ...formData, allowances: e.target.value })}
               />
@@ -296,7 +312,7 @@ export default function PayrollPage() {
             <div>
               <Label>Bonus</Label>
               <Input
-                type="number"
+                type="number" step="any"
                 value={formData.bonus}
                 onChange={(e) => setFormData({ ...formData, bonus: e.target.value })}
               />
@@ -304,7 +320,7 @@ export default function PayrollPage() {
             <div>
               <Label>Potongan</Label>
               <Input
-                type="number"
+                type="number" step="any"
                 value={formData.deductions}
                 onChange={(e) => setFormData({ ...formData, deductions: e.target.value })}
               />

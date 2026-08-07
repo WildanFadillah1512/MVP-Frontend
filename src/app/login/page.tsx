@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -29,6 +29,14 @@ export default function LoginPage() {
     },
   });
 
+  const clearAnnouncementDismissals = () => {
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('announcement-dismissed-')) {
+        localStorage.removeItem(key);
+      }
+    });
+  };
+
   const onSubmit = async (data: LoginInput) => {
     setIsLoading(true);
     try {
@@ -45,6 +53,7 @@ export default function LoginPage() {
         sessionStorage.clear();
         sessionStorage.setItem("token", response.data.token);
         sessionStorage.setItem("user", JSON.stringify(response.data.user));
+        clearAnnouncementDismissals();
         toast.success("Login berhasil");
 
         const role = response.data.user.role.name;
@@ -68,6 +77,7 @@ export default function LoginPage() {
         sessionStorage.clear();
         sessionStorage.setItem("token", response.data.token);
         sessionStorage.setItem("user", JSON.stringify(response.data.user));
+        clearAnnouncementDismissals();
         toast.success("OTP berhasil diverifikasi");
 
         const role = response.data.user.role.name;

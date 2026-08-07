@@ -25,7 +25,11 @@ import {
   Search,
   ChevronDown,
   CheckSquare,
-  MapPin
+  MapPin,
+  Megaphone,
+  ChevronRight,
+  ChevronLeft,
+  Settings
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -39,6 +43,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { getRenderableImageUrl } from '@/lib/media/drive';
 
 const getSidebarMenus = (role: string, division: string) => {
@@ -66,6 +75,7 @@ const getSidebarMenus = (role: string, division: string) => {
   const managerialMenus = [
     { name: 'Tracking Lokasi', href: '/tracking', icon: MapPin },
     { name: 'SP Karyawan', href: '/warnings', icon: FileText },
+    { name: 'Laporan Bulanan', href: '/monthly-reports', icon: FileText },
   ];
 
   // === MENU CEO & OWNER SAJA ===
@@ -107,9 +117,7 @@ const getSidebarMenus = (role: string, division: string) => {
     division.toUpperCase() === 'GUDANG' ||
     (division.toUpperCase() === 'PRODUKSI' && ['LEADER', 'MANAGER'].includes(role));
 
-  if (role === 'OWNER') {
-    menus = commonMenus.filter((menu) => ['/dashboard/owner', '/daily-reports'].includes(menu.href));
-  } else if (role === 'CEO' || role === 'ADMIN') {
+  if (role === 'OWNER' || role === 'CEO' || role === 'ADMIN') {
     menus = [
       ...menus,
       ...managerialMenus,
@@ -160,7 +168,9 @@ const getSidebarMenus = (role: string, division: string) => {
     }
   }
 
-  return menus.filter((menu, index, allMenus) => allMenus.findIndex((item) => item.href === menu.href) === index);
+  return menus
+    .filter((menu, index, allMenus) => allMenus.findIndex((item) => item.href === menu.href) === index)
+    .sort((a, b) => a.name.localeCompare(b.name));
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -168,7 +178,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
   const [menus, setMenus] = useState<any[]>([]);
-  const [popupAnnouncement, setPopupAnnouncement] = useState<any>(null);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [currentAnnIndex, setCurrentAnnIndex] = useState(0);
+  const [historyAnnouncements, setHistoryAnnouncements] = useState<any[]>([]);
 
   useEffect(() => {
     const token = sessionStorage.getItem('token');
@@ -190,13 +202,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (!token) return;
 
       try {
-        const res = await api.get('/announcements/active-popup');
-        const announcement = res.data?.data;
-        if (!announcement) return;
+        const [popupRes, historyRes] = await Promise.all([
+          api.get('/announcements/active-popup'),
+          api.get('/announcements')
+        ]);
+        
+        let arr = popupRes.data?.data || [];
+        if (!Array.isArray(arr)) arr = [arr].filter(Boolean);
+        
+        const activeAnns = arr.filter((a: any) => !localStorage.getItem(`announcement-dismissed-${a.id}`));
+        if (activeAnns.length > 0) {
+          setAnnouncements(activeAnns);
+        }
 
-        const dismissedKey = `announcement-dismissed-${announcement.id}`;
-        if (localStorage.getItem(dismissedKey)) return;
-        setPopupAnnouncement(announcement);
+        if (historyRes.data?.success) {
+          setHistoryAnnouncements(historyRes.data.data.slice(0, 5)); // Last 5
+        }
       } catch (error) {
         console.error(error);
       }
@@ -221,16 +242,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     fetchEventTheme();
   }, []);
 
+  useEffect(() => {
+    const customBg = localStorage.getItem('custom-bg');
+    if (customBg) {
+      document.body.style.background = customBg;
+      document.body.style.backgroundSize = 'cover';
+      document.body.style.backgroundPosition = 'center';
+      document.body.style.backgroundAttachment = 'fixed';
+    } else {
+      document.body.style.background = '';
+    }
+  }, []);
+
   const handleLogout = () => {
     sessionStorage.clear(); // Bersihkan SEMUA data sesi, bukan hanya token dan user
     router.push('/login');
   };
 
-  const closePopupAnnouncement = () => {
-    if (popupAnnouncement?.id) {
-      localStorage.setItem(`announcement-dismissed-${popupAnnouncement.id}`, '1');
+  const handleNextAnnouncement = () => {
+    if (announcements.length > 0) {
+      localStorage.setItem(`announcement-dismissed-${announcements[currentAnnIndex].id}`, '1');
+      if (currentAnnIndex < announcements.length - 1) {
+        setCurrentAnnIndex(currentAnnIndex + 1);
+      } else {
+        setAnnouncements([]);
+      }
     }
-    setPopupAnnouncement(null);
+  };
+
+  const closeAllAnnouncements = () => {
+    announcements.forEach(a => {
+      localStorage.setItem(`announcement-dismissed-${a.id}`, '1');
+    });
+    setAnnouncements([]);
   };
 
   if (!user) return null;
@@ -336,6 +380,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           
           <div className="flex items-center gap-4">
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="relative inline-flex items-center justify-center rounded-full p-2 hover:bg-accent hover:text-accent-foreground transition-colors outline-none">
+                  <Megaphone className="h-5 w-5 text-muted-foreground" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-80 p-0 rounded-2xl shadow-xl border-border">
+                <div className="p-4 border-b border-border/50 bg-muted/30 rounded-t-2xl">
+                  <h3 className="font-bold text-foreground flex items-center gap-2"><Megaphone className="w-4 h-4 text-primary" /> Pengumuman Terbaru</h3>
+                </div>
+                <div className="max-h-[300px] overflow-y-auto">
+                  {historyAnnouncements.length === 0 ? (
+                    <div className="p-6 text-center text-sm text-muted-foreground">Belum ada pengumuman.</div>
+                  ) : (
+                    historyAnnouncements.map((ann, i) => (
+                      <div key={ann.id} className={`p-4 ${i !== historyAnnouncements.length - 1 ? 'border-b border-border/50' : ''} hover:bg-muted/30 transition-colors`}>
+                        <p className="text-xs font-semibold text-primary mb-1">{ann.title}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{ann.message}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+
             <Link href="/notifications" className="relative inline-flex items-center justify-center rounded-full p-2 hover:bg-accent hover:text-accent-foreground transition-colors">
                 <Bell className="h-5 w-5 text-muted-foreground" />
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full animate-pulse border-2 border-card"></span>
@@ -381,41 +450,65 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </main>
       </div>
-      {popupAnnouncement && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
-          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl">
-            <div className="mb-4 flex items-start justify-between gap-4">
+      {announcements.length > 0 && announcements[currentAnnIndex] && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 animate-in fade-in">
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl relative overflow-hidden">
+            {announcements.length > 1 && (
+              <div className="absolute top-0 left-0 w-full h-1 bg-muted">
+                <div className="h-full bg-primary transition-all duration-300" style={{ width: `${((currentAnnIndex + 1) / announcements.length) * 100}%` }} />
+              </div>
+            )}
+            
+            <div className="mb-4 flex items-start justify-between gap-4 mt-2">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary">Pengumuman</p>
-                <h2 className="mt-1 text-xl font-bold text-foreground">{popupAnnouncement.title}</h2>
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary flex items-center gap-1.5">
+                  <Megaphone className="w-3.5 h-3.5" /> 
+                  Pengumuman {announcements.length > 1 ? `(${currentAnnIndex + 1}/${announcements.length})` : ''}
+                </p>
+                <h2 className="mt-1 text-xl font-bold text-foreground">{announcements[currentAnnIndex].title}</h2>
               </div>
               <button
                 type="button"
-                onClick={closePopupAnnouncement}
-                className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                onClick={closeAllAnnouncements}
+                className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground shrink-0"
                 aria-label="Tutup pengumuman"
               >
                 x
               </button>
             </div>
-            <p className="whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{popupAnnouncement.message}</p>
-            {popupAnnouncement.fileUrl && (
+            
+            <div className="min-h-[80px]">
+              <p className="whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{announcements[currentAnnIndex].message}</p>
+            </div>
+            
+            {announcements[currentAnnIndex].fileUrl && (
               <a
-                href={popupAnnouncement.fileUrl}
+                href={announcements[currentAnnIndex].fileUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-4 inline-flex rounded-xl border border-border px-3 py-2 text-sm font-semibold text-primary hover:bg-muted/50"
+                className="mt-4 inline-flex rounded-xl border border-border px-3 py-2 text-sm font-semibold text-primary hover:bg-muted/50 transition-colors"
               >
                 Download Lampiran
               </a>
             )}
-            <div className="mt-6 flex justify-end">
+            
+            <div className="mt-6 flex justify-between items-center border-t border-border/50 pt-4">
+              <div className="flex gap-1">
+                {announcements.map((_, idx) => (
+                  <div key={idx} className={`w-2 h-2 rounded-full ${idx === currentAnnIndex ? 'bg-primary' : 'bg-muted'}`} />
+                ))}
+              </div>
+              
               <button
                 type="button"
-                onClick={closePopupAnnouncement}
-                className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
+                onClick={handleNextAnnouncement}
+                className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 flex items-center gap-2 transition-transform active:scale-95"
               >
-                Mengerti
+                {currentAnnIndex < announcements.length - 1 ? (
+                  <>Selanjutnya <ChevronRight className="w-4 h-4" /></>
+                ) : (
+                  'Mengerti & Tutup'
+                )}
               </button>
             </div>
           </div>

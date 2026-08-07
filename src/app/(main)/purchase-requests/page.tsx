@@ -5,28 +5,37 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { api } from '@/lib/api/axios';
-import { Plus, Send, CheckCircle, XCircle, ShoppingCart } from 'lucide-react';
+import { Plus, Send, CheckCircle, XCircle, ShoppingCart, Trash2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
-interface PurchaseRequest {
+interface PurchaseRequestItem {
   id: string;
-  requestNumber: string;
-  requestedQty: number;
-  estimatedBudget?: number;
-  actualPrice?: number;
-  status: string;
-  priority: string;
+  warehouseItemId: string;
   item: {
     id: string;
     name: string;
     code: string;
     unit: string;
   };
+  requestedQty: number;
+  estimatedBudget?: number;
+  actualPrice?: number;
+  actualQty?: number;
+  supplierId?: string;
   supplier?: {
     name: string;
   };
+}
+
+interface PurchaseRequest {
+  id: string;
+  requestNumber: string;
+  status: string;
+  priority: string;
+  items: PurchaseRequestItem[];
 }
 
 export default function PurchaseRequestsPage() {
@@ -36,29 +45,28 @@ export default function PurchaseRequestsPage() {
   const [supplierPrices, setSupplierPrices] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
   const [showDialog, setShowDialog] = useState(false);
   const [showPriceDialog, setShowPriceDialog] = useState(false);
   const [showPurchasedDialog, setShowPurchasedDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<PurchaseRequest | null>(null);
 
+  // Bulk Approval State
+  const [selectedRequestIds, setSelectedRequestIds] = useState<string[]>([]);
+
+  // Create Form State
   const [formData, setFormData] = useState({
-    warehouseItemId: '',
-    requestedQty: '',
+    items: [{ warehouseItemId: '', requestedQty: '' }],
     priority: 'MEDIUM',
     notes: ''
   });
 
-  const [priceData, setPriceData] = useState({
-    supplierId: '',
-    estimatedBudget: '',
-    actualPrice: ''
-  });
+  // Price Form State (Array of item prices)
+  const [priceData, setPriceData] = useState<any[]>([]);
 
-  const [purchasedData, setPurchasedData] = useState({
-    actualQty: '',
-    actualPrice: '',
-    receiptUrl: ''
-  });
+  // Purchased Form State (Array of purchased items)
+  const [purchasedData, setPurchasedData] = useState<any[]>([]);
+  const [receiptUrl, setReceiptUrl] = useState('');
 
   useEffect(() => {
     const userStr = sessionStorage.getItem('user');
@@ -106,21 +114,20 @@ export default function PurchaseRequestsPage() {
     }
   }
 
-  async function fetchSupplierPrices(warehouseItemId: string) {
-    try {
-      const response = await api.get(`/purchase-requests/suppliers/${warehouseItemId}`);
-      setSupplierPrices(response.data.data);
-    } catch (error) {
-      console.error('Failed to fetch supplier prices:', error);
-    }
-  }
-
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    // filter valid items
+    const validItems = formData.items.filter(i => i.warehouseItemId && i.requestedQty);
+    if (validItems.length === 0) {
+      toast.error("Minimal 1 barang diisi!");
+      return;
+    }
+
     try {
       await api.post('/purchase-requests', {
-        ...formData,
-        requestedQty: Number(formData.requestedQty)
+        items: validItems,
+        priority: formData.priority,
+        notes: formData.notes
       });
       toast.success('Purchase request berhasil dibuat');
       setShowDialog(false);
@@ -129,6 +136,25 @@ export default function PurchaseRequestsPage() {
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Gagal membuat request');
     }
+  };
+
+  const addItemRow = () => {
+    setFormData({
+      ...formData,
+      items: [...formData.items, { warehouseItemId: '', requestedQty: '' }]
+    });
+  };
+  
+  const removeItemRow = (index: number) => {
+    const newItems = [...formData.items];
+    newItems.splice(index, 1);
+    setFormData({ ...formData, items: newItems });
+  };
+
+  const updateItemRow = (index: number, field: string, value: string) => {
+    const newItems = [...formData.items] as any;
+    newItems[index][field] = value;
+    setFormData({ ...formData, items: newItems });
   };
 
   const handleSubmit = async (id: string) => {
@@ -146,9 +172,7 @@ export default function PurchaseRequestsPage() {
     if (!selectedRequest) return;
     try {
       await api.patch(`/purchase-requests/${selectedRequest.id}/set-price`, {
-        ...priceData,
-        estimatedBudget: Number(priceData.estimatedBudget),
-        actualPrice: Number(priceData.actualPrice)
+        updatedItems: priceData
       });
       toast.success('Harga dan supplier berhasil diset');
       setShowPriceDialog(false);
@@ -178,14 +202,54 @@ export default function PurchaseRequestsPage() {
     }
   };
 
+  const handleBulkApprove = async () => {
+    if (selectedRequestIds.length === 0) return;
+    
+    try {
+      // Loop over selected and approve based on role
+      for (const id of selectedRequestIds) {
+        if (canManagerApprove) {
+           await api.patch(`/purchase-requests/${id}/manager-approve`);
+        } else if (canCeoApprove) {
+           await api.patch(`/purchase-requests/${id}/ceo-approve`);
+        }
+      }
+      toast.success(`${selectedRequestIds.length} request disetujui secara massal`);
+      setSelectedRequestIds([]);
+      fetchRequests();
+    } catch (error: any) {
+      toast.error('Gagal melakukan bulk approve');
+    }
+  };
+
+  const approvableRequests = requests.filter(r => 
+    (canManagerApprove && r.status === 'PENDING_MANAGER') || 
+    (canCeoApprove && r.status === 'PENDING_CEO')
+  );
+
+  const toggleSelectAll = () => {
+    if (selectedRequestIds.length === approvableRequests.length) {
+      setSelectedRequestIds([]);
+    } else {
+      setSelectedRequestIds(approvableRequests.map(r => r.id));
+    }
+  };
+
+  const toggleSelectRequest = (id: string) => {
+    if (selectedRequestIds.includes(id)) {
+      setSelectedRequestIds(selectedRequestIds.filter(rid => rid !== id));
+    } else {
+      setSelectedRequestIds([...selectedRequestIds, id]);
+    }
+  };
+
   const handleMarkPurchased = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRequest) return;
     try {
       await api.patch(`/purchase-requests/${selectedRequest.id}/purchased`, {
-        actualQty: Number(purchasedData.actualQty),
-        actualPrice: Number(purchasedData.actualPrice),
-        receiptUrl: purchasedData.receiptUrl
+        purchasedItems: purchasedData,
+        receiptUrl: receiptUrl
       });
       toast.success('Pembelian selesai, stok gudang bertambah');
       setShowPurchasedDialog(false);
@@ -195,26 +259,31 @@ export default function PurchaseRequestsPage() {
     }
   };
 
-  const openPriceDialog = async (request: PurchaseRequest) => {
+  const openPriceDialog = (request: PurchaseRequest) => {
     setSelectedRequest(request);
-    await fetchSupplierPrices(request.item.id);
+    setPriceData(request.items.map(item => ({
+      id: item.id,
+      supplierId: item.supplierId || '',
+      estimatedBudget: item.estimatedBudget || '',
+      actualPrice: item.actualPrice || ''
+    })));
     setShowPriceDialog(true);
   };
 
   const openPurchasedDialog = (request: PurchaseRequest) => {
     setSelectedRequest(request);
-    setPurchasedData({
-      actualQty: String(request.requestedQty),
-      actualPrice: String(request.actualPrice || ''),
-      receiptUrl: ''
-    });
+    setPurchasedData(request.items.map(item => ({
+      id: item.id,
+      actualQty: item.requestedQty,
+      actualPrice: item.actualPrice || ''
+    })));
+    setReceiptUrl('');
     setShowPurchasedDialog(true);
   };
 
   const resetForm = () => {
     setFormData({
-      warehouseItemId: '',
-      requestedQty: '',
+      items: [{ warehouseItemId: '', requestedQty: '' }],
       priority: 'MEDIUM',
       notes: ''
     });
@@ -242,24 +311,45 @@ export default function PurchaseRequestsPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Purchase Requests</h1>
-        {canCreateRequest && (
-          <Button onClick={() => setShowDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Buat Request
-          </Button>
-        )}
+        <div className="space-x-2 flex">
+          {(canManagerApprove || canCeoApprove) && approvableRequests.length > 0 && (
+             <Button variant="secondary" onClick={toggleSelectAll}>
+               {selectedRequestIds.length === approvableRequests.length ? 'Deselect All' : 'Select All'}
+             </Button>
+          )}
+          {(canManagerApprove || canCeoApprove) && selectedRequestIds.length > 0 && (
+             <Button onClick={handleBulkApprove} className="bg-green-600 hover:bg-green-700">
+               <CheckCircle className="mr-2 h-4 w-4" /> Approve Selected ({selectedRequestIds.length})
+             </Button>
+          )}
+          {canCreateRequest && (
+            <Button onClick={() => setShowDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Buat Request
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4">
-        {requests.map((request) => (
+        {requests.map((request) => {
+          const isApprovable = (canManagerApprove && request.status === 'PENDING_MANAGER') || (canCeoApprove && request.status === 'PENDING_CEO');
+          
+          return (
           <Card key={request.id}>
-            <CardHeader>
-              <CardTitle className="flex justify-between items-center">
-                <div>
-                  <span className="text-lg">{request.requestNumber}</span>
-                  <span className={`ml-2 text-xs px-2 py-1 rounded ${getStatusColor(request.status)}`}>
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="flex justify-between items-center text-lg">
+                <div className="flex items-center space-x-3">
+                  {isApprovable && (
+                     <Checkbox 
+                        checked={selectedRequestIds.includes(request.id)}
+                        onCheckedChange={() => toggleSelectRequest(request.id)}
+                     />
+                  )}
+                  <span className="font-bold">{request.requestNumber}</span>
+                  <span className={`text-xs px-2 py-1 rounded ${getStatusColor(request.status)}`}>
                     {request.status}
                   </span>
-                  <span className="ml-2 text-xs bg-gray-200 px-2 py-1 rounded">
+                  <span className="text-xs bg-gray-200 px-2 py-1 rounded">
                     {request.priority}
                   </span>
                 </div>
@@ -292,67 +382,79 @@ export default function PurchaseRequestsPage() {
                 </div>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Item: {request.item.name}</p>
-                  <p className="text-sm text-gray-600">Jumlah: {request.requestedQty} {request.item.unit}</p>
-                </div>
-                <div>
-                  {request.supplier && (
-                    <p className="text-sm text-gray-600">Supplier: {request.supplier.name}</p>
-                  )}
-                  {request.estimatedBudget && (
-                    <p className="text-sm text-gray-600">
-                      Budget: Rp {request.estimatedBudget.toLocaleString()}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  {request.actualPrice && (
-                    <p className="text-sm text-gray-600">
-                      Harga Aktual: Rp {request.actualPrice.toLocaleString()}
-                    </p>
-                  )}
-                </div>
-              </div>
+            <CardContent className="pt-4">
+               {/* Daftar Barang */}
+               <div className="space-y-3">
+                 {request.items?.map((item, idx) => (
+                   <div key={item.id || idx} className="grid grid-cols-1 md:grid-cols-3 gap-2 bg-gray-50 p-2 rounded text-sm">
+                      <div>
+                        <p className="font-semibold">{item.item?.name}</p>
+                        <p className="text-gray-500">Jml: {item.requestedQty} {item.item?.unit}</p>
+                      </div>
+                      <div>
+                        {item.supplier && <p>Supplier: {item.supplier.name}</p>}
+                        {item.estimatedBudget && <p className="text-gray-500">Est. Budget: Rp {item.estimatedBudget.toLocaleString()}</p>}
+                      </div>
+                      <div>
+                        {item.actualPrice && <p className="font-medium text-green-600">Harga: Rp {item.actualPrice.toLocaleString()}</p>}
+                        {item.actualQty && <p className="text-gray-500">Dibeli: {item.actualQty} {item.item?.unit}</p>}
+                      </div>
+                   </div>
+                 ))}
+               </div>
             </CardContent>
           </Card>
-        ))}
+        )})}
       </div>
 
-      {/* Create Request Dialog */}
+      {/* Create Request Dialog (Multi-Barang) */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Buat Purchase Request</DialogTitle>
+            <DialogDescription>Tambahkan satu atau lebih barang dalam request ini.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
-            <div>
-              <Label>Barang</Label>
-              <select
-                className="w-full border rounded p-2"
-                value={formData.warehouseItemId}
-                onChange={(e) => setFormData({ ...formData, warehouseItemId: e.target.value })}
-                required
-              >
-                <option value="">Pilih Barang</option>
-                {warehouseItems.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name} ({item.code})
-                  </option>
-                ))}
-              </select>
+            
+            <div className="space-y-3">
+              <Label>Daftar Barang</Label>
+              {formData.items.map((item, index) => (
+                 <div key={index} className="flex space-x-2 items-center bg-gray-50 p-2 rounded">
+                    <div className="flex-1">
+                      <select
+                        className="w-full border rounded p-2 text-sm"
+                        value={item.warehouseItemId}
+                        onChange={(e) => updateItemRow(index, 'warehouseItemId', e.target.value)}
+                        required
+                      >
+                        <option value="">Pilih Barang...</option>
+                        {warehouseItems.map((wItem) => (
+                          <option key={wItem.id} value={wItem.id}>
+                            {wItem.name} ({wItem.code}) - {wItem.unit}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="w-24">
+                      <Input
+                        type="number" step="any" placeholder="Qty"
+                        value={item.requestedQty}
+                        onChange={(e) => updateItemRow(index, 'requestedQty', e.target.value)}
+                        required
+                      />
+                    </div>
+                    {formData.items.length > 1 && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => removeItemRow(index)}>
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    )}
+                 </div>
+              ))}
+              <Button type="button" variant="outline" size="sm" onClick={addItemRow}>
+                <Plus className="mr-1 h-3 w-3" /> Tambah Barang
+              </Button>
             </div>
-            <div>
-              <Label>Jumlah</Label>
-              <Input
-                type="number"
-                value={formData.requestedQty}
-                onChange={(e) => setFormData({ ...formData, requestedQty: e.target.value })}
-                required
-              />
-            </div>
+
             <div>
               <Label>Prioritas</Label>
               <select
@@ -367,13 +469,13 @@ export default function PurchaseRequestsPage() {
               </select>
             </div>
             <div>
-              <Label>Catatan</Label>
+              <Label>Catatan Umum</Label>
               <Input
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               />
             </div>
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end space-x-2 pt-4">
               <Button type="button" variant="outline" onClick={() => setShowDialog(false)}>
                 Batal
               </Button>
@@ -383,57 +485,66 @@ export default function PurchaseRequestsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Set Price Dialog */}
+      {/* Set Price Dialog (Per-Item) */}
       <Dialog open={showPriceDialog} onOpenChange={setShowPriceDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Set Harga & Supplier</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSetPrice} className="space-y-4">
-            {supplierPrices.length > 0 && (
-              <div className="bg-blue-50 p-3 rounded">
-                <p className="text-sm font-semibold mb-2">Opsi Supplier:</p>
-                {supplierPrices.map((sp) => (
-                  <div key={sp.id} className="text-sm">
-                    {sp.supplier.name}: Rp {sp.unitPrice.toLocaleString()} per {sp.item.unit}
-                  </div>
-                ))}
-              </div>
-            )}
-            <div>
-              <Label>Supplier</Label>
-              <select
-                className="w-full border rounded p-2"
-                value={priceData.supplierId}
-                onChange={(e) => setPriceData({ ...priceData, supplierId: e.target.value })}
-                required
-              >
-                <option value="">Pilih Supplier</option>
-                {suppliers.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <Label>Estimasi Budget</Label>
-              <Input
-                type="number"
-                value={priceData.estimatedBudget}
-                onChange={(e) => setPriceData({ ...priceData, estimatedBudget: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label>Harga Aktual</Label>
-              <Input
-                type="number"
-                value={priceData.actualPrice}
-                onChange={(e) => setPriceData({ ...priceData, actualPrice: e.target.value })}
-                required
-              />
-            </div>
+          <form onSubmit={handleSetPrice} className="space-y-6">
+            
+            {selectedRequest?.items.map((item, index) => (
+               <div key={item.id} className="border p-3 rounded space-y-3">
+                 <p className="font-semibold text-blue-800">{item.item.name} - Qty: {item.requestedQty} {item.item.unit}</p>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-xs">Supplier</Label>
+                      <select
+                        className="w-full border rounded p-2 text-sm"
+                        value={priceData[index]?.supplierId || ''}
+                        onChange={(e) => {
+                           const newPd = [...priceData];
+                           newPd[index].supplierId = e.target.value;
+                           setPriceData(newPd);
+                        }}
+                      >
+                        <option value="">Pilih...</option>
+                        {suppliers.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Estimasi Budget</Label>
+                      <Input
+                        type="number" step="any" className="h-9"
+                        value={priceData[index]?.estimatedBudget || ''}
+                        onChange={(e) => {
+                           const newPd = [...priceData];
+                           newPd[index].estimatedBudget = e.target.value;
+                           setPriceData(newPd);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Harga Aktual (Deal)</Label>
+                      <Input
+                        type="number" step="any" className="h-9"
+                        value={priceData[index]?.actualPrice || ''}
+                        onChange={(e) => {
+                           const newPd = [...priceData];
+                           newPd[index].actualPrice = e.target.value;
+                           setPriceData(newPd);
+                        }}
+                      />
+                    </div>
+                 </div>
+               </div>
+            ))}
+            
             <div className="flex justify-end space-x-2">
               <Button type="button" variant="outline" onClick={() => setShowPriceDialog(false)}>
                 Batal
@@ -446,42 +557,61 @@ export default function PurchaseRequestsPage() {
 
       {/* Mark Purchased Dialog */}
       <Dialog open={showPurchasedDialog} onOpenChange={setShowPurchasedDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Tandai Sudah Dibeli</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleMarkPurchased} className="space-y-4">
-            <div>
-              <Label>Jumlah Dibeli</Label>
-              <Input
-                type="number"
-                value={purchasedData.actualQty}
-                onChange={(e) => setPurchasedData({ ...purchasedData, actualQty: e.target.value })}
-                required
-              />
+            
+            <div className="space-y-3">
+              {selectedRequest?.items.map((item, index) => (
+                 <div key={item.id} className="border p-2 rounded grid grid-cols-2 gap-2 bg-gray-50">
+                    <div className="col-span-2 font-semibold text-sm">
+                      {item.item.name} 
+                    </div>
+                    <div>
+                      <Label className="text-xs">Jumlah Dibeli ({item.item.unit})</Label>
+                      <Input
+                        type="number" step="any" className="h-8 text-sm"
+                        value={purchasedData[index]?.actualQty || ''}
+                        onChange={(e) => {
+                           const newPd = [...purchasedData];
+                           newPd[index].actualQty = e.target.value;
+                           setPurchasedData(newPd);
+                        }}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Harga Final/Total</Label>
+                      <Input
+                        type="number" step="any" className="h-8 text-sm"
+                        value={purchasedData[index]?.actualPrice || ''}
+                        onChange={(e) => {
+                           const newPd = [...purchasedData];
+                           newPd[index].actualPrice = e.target.value;
+                           setPurchasedData(newPd);
+                        }}
+                        required
+                      />
+                    </div>
+                 </div>
+              ))}
             </div>
+
             <div>
-              <Label>Harga Final</Label>
+              <Label>URL Bukti/Nota Umum (Opsional)</Label>
               <Input
-                type="number"
-                value={purchasedData.actualPrice}
-                onChange={(e) => setPurchasedData({ ...purchasedData, actualPrice: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label>URL Bukti/Nota</Label>
-              <Input
-                value={purchasedData.receiptUrl}
-                onChange={(e) => setPurchasedData({ ...purchasedData, receiptUrl: e.target.value })}
+                value={receiptUrl}
+                onChange={(e) => setReceiptUrl(e.target.value)}
                 placeholder="https://..."
               />
             </div>
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end space-x-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setShowPurchasedDialog(false)}>
                 Batal
               </Button>
-              <Button type="submit">Simpan</Button>
+              <Button type="submit">Simpan ke Gudang</Button>
             </div>
           </form>
         </DialogContent>

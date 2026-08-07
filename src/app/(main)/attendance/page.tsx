@@ -10,6 +10,9 @@ import { toast } from 'sonner';
 import { Clock, CheckCircle, LogOut, Calendar, TrendingUp, AlertCircle, Timer, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 export default function AttendancePage() {
   const router = useRouter();
@@ -20,6 +23,12 @@ export default function AttendancePage() {
   
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [allAttendanceToday, setAllAttendanceToday] = useState<any[]>([]);
+
+  // Shift States
+  const [shifts, setShifts] = useState<any[]>([]);
+  const [shiftRequests, setShiftRequests] = useState<any[]>([]);
+  const [selectedShiftId, setSelectedShiftId] = useState<string>('');
+  const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
 
   const EXECUTIVE_ROLES = ['OWNER', 'CEO', 'GM', 'ADMIN', 'MANAGER'];
 
@@ -44,6 +53,13 @@ export default function AttendancePage() {
     }
   };
 
+  const fetchShiftRequests = async () => {
+    try {
+      const res = await api.get('/attendances/shift-requests');
+      if (res.data.success) setShiftRequests(res.data.data);
+    } catch (e) {}
+  };
+
   useEffect(() => {
     // Ambil data user dari sessionStorage
     const userStr = sessionStorage.getItem('user');
@@ -58,6 +74,8 @@ export default function AttendancePage() {
       }
     }
     fetchAttendances();
+    api.get('/shifts').then(r => { if (r.data.success) setShifts(r.data.data); }).catch(() => {});
+    fetchShiftRequests();
   }, []);
 
   const handleCheckIn = async () => {
@@ -116,6 +134,30 @@ export default function AttendancePage() {
     );
   };
 
+  const handleSubmitShiftRequest = async () => {
+    try {
+      setIsLoading(true);
+      await api.post('/attendances/shift-requests', { shiftId: selectedShiftId });
+      toast.success('Permintaan shift berhasil diajukan');
+      setIsShiftDialogOpen(false);
+      fetchShiftRequests();
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Gagal mengajukan shift');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleApproveShift = async (id: string, status: string) => {
+    try {
+      await api.patch(`/attendances/shift-requests/${id}/approve`, { status });
+      toast.success(`Shift ${status}`);
+      fetchShiftRequests();
+    } catch (e) {
+      toast.error('Gagal update status shift');
+    }
+  };
+
   const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
     HADIR: { label: 'Hadir', color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200' },
     TELAT: { label: 'Terlambat', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
@@ -138,6 +180,39 @@ export default function AttendancePage() {
           </p>
         </div>
         <div className="flex gap-3">
+            <Dialog open={isShiftDialogOpen} onOpenChange={setIsShiftDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="rounded-xl h-11 px-4 shadow-sm font-semibold">
+                  Ajukan Shift
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Pengajuan Pindah Shift</DialogTitle>
+                  <DialogDescription>
+                    Pilih shift yang ingin Anda ajukan. Manajer akan meninjau permintaan Anda.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col gap-4 py-4">
+                  <Select value={selectedShiftId} onValueChange={setSelectedShiftId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih Shift..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {shifts.map((shift) => (
+                        <SelectItem key={shift.id} value={shift.id}>
+                          {shift.name} ({shift.startTime} - {shift.endTime})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsShiftDialogOpen(false)}>Batal</Button>
+                  <Button onClick={handleSubmitShiftRequest} disabled={!selectedShiftId || isLoading}>Ajukan</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             <Button onClick={() => router.push('/overtime')} className="rounded-xl h-11 px-6 shadow-sm font-semibold transition-all hover:scale-[1.02]">
               <Timer className="w-4 h-4" /> Kelola Lembur
             </Button>
@@ -357,6 +432,65 @@ export default function AttendancePage() {
                           'bg-rose-100 text-rose-700'
                         }`}>{att.status}</span>
                       </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Daftar Pengajuan Shift */}
+      {shiftRequests.length > 0 && (
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-primary" /> Riwayat & Persetujuan Pindah Shift
+            </h2>
+          </div>
+          
+          <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/20">
+                    <th className="text-left py-3 px-5 text-muted-foreground font-semibold">Nama & Divisi</th>
+                    <th className="text-left py-3 px-5 text-muted-foreground font-semibold">Shift Tujuan</th>
+                    <th className="text-left py-3 px-5 text-muted-foreground font-semibold">Status</th>
+                    {currentUser && EXECUTIVE_ROLES.includes(currentUser.role?.name) && (
+                      <th className="text-right py-3 px-5 text-muted-foreground font-semibold">Aksi</th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {shiftRequests.map((req: any) => (
+                    <tr key={req.id} className="hover:bg-muted/50 transition-colors">
+                      <td className="py-4 px-5">
+                        <p className="font-semibold text-foreground">{req.user?.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{req.user?.division?.name}</p>
+                      </td>
+                      <td className="py-4 px-5">
+                        <span className="font-medium text-foreground">{req.shift?.name}</span>
+                        <p className="text-xs text-muted-foreground mt-0.5">{req.shift?.startTime} - {req.shift?.endTime}</p>
+                      </td>
+                      <td className="py-4 px-5">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          req.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' :
+                          req.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
+                          'bg-rose-100 text-rose-700'
+                        }`}>{req.status}</span>
+                      </td>
+                      {currentUser && EXECUTIVE_ROLES.includes(currentUser.role?.name) && (
+                        <td className="py-4 px-5 text-right">
+                          {req.status === 'PENDING' && (
+                            <div className="flex justify-end gap-2">
+                              <Button size="sm" variant="outline" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => handleApproveShift(req.id, 'APPROVED')}>Setujui</Button>
+                              <Button size="sm" variant="outline" className="text-rose-600 border-rose-200 hover:bg-rose-50" onClick={() => handleApproveShift(req.id, 'REJECTED')}>Tolak</Button>
+                            </div>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

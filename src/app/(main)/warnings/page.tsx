@@ -142,7 +142,7 @@ export default function WarningsPage() {
               <div className="space-y-2">
                 <Label>Durasi Berlaku (hari)</Label>
                 <Input
-                  type="number"
+                  type="number" step="any"
                   min="1"
                   placeholder={`${defaultDurationDays}`}
                   value={form.durationDays}
@@ -185,7 +185,7 @@ export default function WarningsPage() {
                     <Settings className="h-4 w-4" /> Durasi Default SP
                   </Label>
                   <Input
-                    type="number"
+                    type="number" step="any"
                     min="1"
                     value={defaultDurationDays}
                     onChange={(event) => setDefaultDurationDays(Number(event.target.value || 90))}
