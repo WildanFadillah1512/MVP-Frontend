@@ -48,16 +48,18 @@ export default function UsersPage() {
     name: '',
     theme: 'default'
   });
+  const [workdaysForm, setWorkdaysForm] = useState({ workdays: 22 });
   const [isUploadingAnnouncement, setIsUploadingAnnouncement] = useState(false);
   const [resignationMessages, setResignationMessages] = useState<Record<string, string>>({});
 
   const fetchData = async () => {
     try {
-      const [usersRes, optRes, resignationRes, themeRes] = await Promise.all([
+      const [usersRes, optRes, resignationRes, themeRes, workdaysRes] = await Promise.all([
         api.get('/users'),
         api.get('/users/options'),
         api.get('/users/resignations'),
-        api.get('/settings/event-theme')
+        api.get('/settings/event-theme'),
+        api.get('/settings/workdays').catch(() => null)
       ]);
       if (usersRes.data.success) setUsers(usersRes.data.data);
       if (optRes.data.success) {
@@ -69,6 +71,7 @@ export default function UsersPage() {
       }
       if (resignationRes.data.success) setResignations(resignationRes.data.data);
       if (themeRes.data.success) setEventThemeForm(themeRes.data.data);
+      if (workdaysRes?.data?.success) setWorkdaysForm({ workdays: workdaysRes.data.data.workdays });
     } catch (error) {
       console.error(error);
     } finally {
@@ -344,6 +347,21 @@ export default function UsersPage() {
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Gagal menyimpan tema event');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveWorkdays = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const res = await api.put('/settings/workdays', workdaysForm);
+      if (res.data.success) {
+        toast.success('Pengaturan target hari kerja bulanan diperbarui');
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal menyimpan pengaturan hari kerja');
     } finally {
       setIsSubmitting(false);
     }
@@ -867,7 +885,38 @@ export default function UsersPage() {
       )}
 
       {canManageAnnouncements && (
-        <Card className="border-border shadow-md rounded-2xl overflow-hidden">
+        <>
+          <Card className="border-border shadow-md rounded-2xl overflow-hidden mb-8">
+            <CardHeader className="bg-card/50 border-b border-border p-6">
+              <CardTitle className="text-xl text-foreground flex items-center gap-2">
+                <Clock3 className="w-5 h-5 text-primary" /> Pengaturan Waktu / Hari Kerja
+              </CardTitle>
+              <CardDescription>Atur target jumlah hari operasional dalam 1 bulan penuh (Misal: 22 atau 26 hari).</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <form onSubmit={handleSaveWorkdays} className="space-y-4">
+                <div className="space-y-2 max-w-sm">
+                  <Label>Total Hari Kerja (Per Bulan)</Label>
+                  <div className="flex gap-4">
+                    <Input 
+                      type="number" 
+                      min="1" 
+                      max="31" 
+                      value={workdaysForm.workdays}
+                      onChange={(e) => setWorkdaysForm({ workdays: parseInt(e.target.value) || 0 })}
+                      className="rounded-xl font-mono text-lg"
+                      required
+                    />
+                    <Button type="submit" disabled={isSubmitting} className="rounded-xl px-6 font-bold shadow-md">
+                      {isSubmitting ? 'Menyimpan...' : 'Simpan Waktu'}
+                    </Button>
+                  </div>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border shadow-md rounded-2xl overflow-hidden mb-8">
           <CardHeader className="bg-card/50 border-b border-border p-6">
             <CardTitle className="text-xl text-foreground">Tema Event</CardTitle>
             <CardDescription>Aktifkan suasana visual event untuk semua akun, misalnya Idul Fitri.</CardDescription>
@@ -900,12 +949,13 @@ export default function UsersPage() {
                   <SelectItem value="independence">Kemerdekaan</SelectItem>
                 </SelectContent>
               </Select>
-              <Button type="submit" disabled={isSubmitting} className="rounded-xl">
+              <Button type="submit" disabled={isSubmitting} className="rounded-xl font-bold shadow-md">
                 Simpan Tema
               </Button>
             </form>
           </CardContent>
         </Card>
+        </>
       )}
 
       <Card className="border-border shadow-md rounded-2xl overflow-hidden">
