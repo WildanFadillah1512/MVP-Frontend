@@ -13,6 +13,9 @@ import { id } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 export default function AttendancePage() {
   const router = useRouter();
@@ -28,6 +31,7 @@ export default function AttendancePage() {
   const [shifts, setShifts] = useState<any[]>([]);
   const [shiftRequests, setShiftRequests] = useState<any[]>([]);
   const [selectedShiftId, setSelectedShiftId] = useState<string>('');
+  const [shiftDate, setShiftDate] = useState<Date | undefined>(new Date());
   const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
 
   const EXECUTIVE_ROLES = ['OWNER', 'CEO', 'GM', 'ADMIN', 'MANAGER'];
@@ -135,9 +139,16 @@ export default function AttendancePage() {
   };
 
   const handleSubmitShiftRequest = async () => {
+    if (!shiftDate) {
+      toast.error('Tanggal wajib dipilih');
+      return;
+    }
     try {
       setIsLoading(true);
-      await api.post('/attendances/shift-requests', { shiftId: selectedShiftId });
+      await api.post('/attendances/shift-requests', { 
+        shiftId: selectedShiftId,
+        date: shiftDate.toISOString() 
+      });
       toast.success('Permintaan shift berhasil diajukan');
       setIsShiftDialogOpen(false);
       fetchShiftRequests();
@@ -194,18 +205,36 @@ export default function AttendancePage() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col gap-4 py-4">
-                  <Select value={selectedShiftId} onValueChange={setSelectedShiftId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih Shift..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {shifts.map((shift) => (
-                        <SelectItem key={shift.id} value={shift.id}>
-                          {shift.name} ({shift.startTime} - {shift.endTime})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Tanggal Shift</p>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !shiftDate && "text-muted-foreground")}>
+                          <Calendar className="mr-2 h-4 w-4" />
+                          {shiftDate ? format(shiftDate, "PPP", { locale: id }) : <span>Pilih Tanggal</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent mode="single" selected={shiftDate} onSelect={setShiftDate} initialFocus />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Pilih Shift Tujuan</p>
+                    <Select value={selectedShiftId} onValueChange={setSelectedShiftId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih Shift..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {shifts.map((shift) => (
+                          <SelectItem key={shift.id} value={shift.id}>
+                            <span>{shift.name} ({shift.startTime} - {shift.endTime})</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsShiftDialogOpen(false)}>Batal</Button>
@@ -257,9 +286,10 @@ export default function AttendancePage() {
 
       {/* Main Content */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Clock-in Card — Full Premium Layout */}
-        <Card className="lg:col-span-1 border-border shadow-sm rounded-2xl overflow-hidden flex flex-col">
-          <CardHeader className="bg-secondary text-secondary-foreground px-6 py-5">
+        {/* Clock-in Card — Full Premium Layout (Dihilangkan untuk Owner & CEO) */}
+        {currentUser && !['OWNER', 'CEO'].includes(currentUser.role?.name) && (
+          <Card className="lg:col-span-1 border-border shadow-sm rounded-2xl overflow-hidden flex flex-col">
+            <CardHeader className="bg-secondary text-secondary-foreground px-6 py-5">
             <CardTitle className="text-base font-bold">Status Hari Ini</CardTitle>
             <CardDescription className="text-secondary-foreground/60">{format(new Date(), 'EEEE, dd MMMM yyyy', { locale: id })}</CardDescription>
           </CardHeader>
@@ -334,9 +364,13 @@ export default function AttendancePage() {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* History Card */}
-        <Card className="lg:col-span-2 border-border shadow-sm rounded-2xl overflow-hidden flex flex-col">
+        <Card className={cn(
+          "border-border shadow-sm rounded-2xl overflow-hidden flex flex-col",
+          currentUser && ['OWNER', 'CEO'].includes(currentUser.role?.name) ? "lg:col-span-3" : "lg:col-span-2"
+        )}>
           <CardHeader className="bg-card border-b border-border/50 px-6 py-5 flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-lg font-bold text-foreground">Riwayat Kehadiran</CardTitle>
