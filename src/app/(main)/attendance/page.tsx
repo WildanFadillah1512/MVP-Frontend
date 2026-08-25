@@ -16,6 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 
 export default function AttendancePage() {
   const router = useRouter();
@@ -23,7 +25,11 @@ export default function AttendancePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [todayAttendance, setTodayAttendance] = useState<any>(null);
   const [time, setTime] = useState<Date>(new Date());
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   
+  const [breakMinutes, setBreakMinutes] = useState<number>(0);
+  const [hasWarnedBreak, setHasWarnedBreak] = useState(false);
+
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [allAttendanceToday, setAllAttendanceToday] = useState<any[]>([]);
 
@@ -41,9 +47,31 @@ export default function AttendancePage() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    if (todayAttendance?.breakStart && !todayAttendance?.breakEnd) {
+      const breakStart = new Date(todayAttendance.breakStart).getTime();
+      const interval = setInterval(() => {
+        const now = new Date().getTime();
+        const diffMs = now - breakStart;
+        const diffMins = Math.floor(diffMs / 60000);
+        setBreakMinutes(diffMins);
+
+        if (diffMins >= 55 && !hasWarnedBreak) {
+          toast.warning('Waktu istirahat Anda tersisa 5 menit lagi!');
+          setHasWarnedBreak(true);
+        }
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [todayAttendance, hasWarnedBreak]);
+
   const fetchAttendances = async () => {
     try {
-      const response = await attendanceApi.getMyAttendance();
+      const params: any = {};
+      if (dateRange?.from) params.startDate = format(dateRange.from, 'yyyy-MM-dd');
+      if (dateRange?.to) params.endDate = format(dateRange.to, 'yyyy-MM-dd');
+
+      const response = await attendanceApi.getMyAttendance(params);
       if (response.success) {
         setAttendances(response.data);
         const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -56,6 +84,10 @@ export default function AttendancePage() {
       console.error('Error fetching attendances:', error);
     }
   };
+
+  useEffect(() => {
+    fetchAttendances();
+  }, [dateRange]);
 
   const fetchShiftRequests = async () => {
     try {
@@ -77,7 +109,6 @@ export default function AttendancePage() {
           .catch(() => {});
       }
     }
-    fetchAttendances();
     api.get('/shifts').then(r => { if (r.data.success) setShifts(r.data.data); }).catch(() => {});
     fetchShiftRequests();
   }, []);
@@ -138,6 +169,32 @@ export default function AttendancePage() {
     );
   };
 
+  const handleStartBreak = async () => {
+    setIsLoading(true);
+    try {
+      const res = await attendanceApi.startBreak();
+      if (res.success) { 
+        toast.success('Waktu istirahat dimulai'); 
+        fetchAttendances(); 
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal memulai istirahat');
+    } finally { setIsLoading(false); }
+  };
+
+  const handleEndBreak = async () => {
+    setIsLoading(true);
+    try {
+      const res = await attendanceApi.endBreak();
+      if (res.success) { 
+        toast.success('Waktu istirahat selesai'); 
+        fetchAttendances(); 
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal mengakhiri istirahat');
+    } finally { setIsLoading(false); }
+  };
+
   const handleSubmitShiftRequest = async () => {
     if (!shiftDate) {
       toast.error('Tanggal wajib dipilih');
@@ -192,11 +249,11 @@ export default function AttendancePage() {
         </div>
         <div className="flex gap-3">
             <Dialog open={isShiftDialogOpen} onOpenChange={setIsShiftDialogOpen}>
-              <DialogTrigger asChild>
+              <DialogTrigger render={
                 <Button variant="outline" className="rounded-xl h-11 px-4 shadow-sm font-semibold">
                   Ajukan Shift
                 </Button>
-              </DialogTrigger>
+              } />
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Pengajuan Pindah Shift</DialogTitle>
@@ -208,21 +265,21 @@ export default function AttendancePage() {
                   <div className="space-y-2">
                     <p className="text-sm font-medium">Tanggal Shift</p>
                     <Popover>
-                      <PopoverTrigger asChild>
+                      <PopoverTrigger render={
                         <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !shiftDate && "text-muted-foreground")}>
                           <Calendar className="mr-2 h-4 w-4" />
                           {shiftDate ? format(shiftDate, "PPP", { locale: id }) : <span>Pilih Tanggal</span>}
                         </Button>
-                      </PopoverTrigger>
+                      } />
                       <PopoverContent className="w-auto p-0" align="start">
-                        <CalendarComponent mode="single" selected={shiftDate} onSelect={setShiftDate} initialFocus />
+                        <CalendarComponent mode="single" selected={shiftDate} onSelect={setShiftDate} />
                       </PopoverContent>
                     </Popover>
                   </div>
 
                   <div className="space-y-2">
                     <p className="text-sm font-medium">Pilih Shift Tujuan</p>
-                    <Select value={selectedShiftId} onValueChange={setSelectedShiftId}>
+                    <Select value={selectedShiftId} onValueChange={(val) => setSelectedShiftId(val || '')}>
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih Shift..." />
                       </SelectTrigger>
@@ -328,16 +385,47 @@ export default function AttendancePage() {
                     </div>
                     <CheckCircle className="w-8 h-8 text-emerald-400" />
                   </div>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="w-full border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-400 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-900/20 rounded-2xl h-14 text-base font-black transition-all hover:-translate-y-0.5"
-                    onClick={handleCheckOut}
-                    disabled={isLoading}
-                  >
-                    <LogOut className="h-5 w-5" />
-                    {isLoading ? 'Memproses...' : 'Check Out'}
-                  </Button>
+
+                  {!todayAttendance.breakStart ? (
+                    <Button 
+                      variant="outline" 
+                      className="w-full h-14 border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20 rounded-2xl text-base font-black transition-all hover:-translate-y-0.5"
+                      onClick={handleStartBreak}
+                      disabled={isLoading}
+                    >
+                      <Timer className="h-5 w-5 mr-2" />
+                      {isLoading ? 'Memproses...' : 'Mulai Istirahat (1 Jam)'}
+                    </Button>
+                  ) : !todayAttendance.breakEnd ? (
+                    <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 p-4 border border-amber-200 dark:border-amber-800 flex flex-col items-center">
+                      <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest text-center mb-2">Sedang Istirahat</p>
+                      <p className="text-2xl font-black text-amber-600 dark:text-amber-500 text-center font-mono tabular-nums">{breakMinutes} Menit</p>
+                      <Button
+                        className="w-full mt-4 h-12 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl"
+                        onClick={handleEndBreak}
+                        disabled={isLoading}
+                      >
+                        Selesai Istirahat
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 p-3 border border-blue-200 dark:border-blue-800 flex items-center justify-center">
+                      <p className="text-sm font-bold text-blue-700 dark:text-blue-400">Istirahat Selesai ✓</p>
+                    </div>
+                  )}
+
+                  {(!todayAttendance.breakStart || todayAttendance.breakEnd) && (
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="w-full border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-400 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-900/20 rounded-2xl h-14 text-base font-black transition-all hover:-translate-y-0.5"
+                      onClick={handleCheckOut}
+                      disabled={isLoading}
+                    >
+                      <LogOut className="h-5 w-5 mr-2" />
+                      {isLoading ? 'Memproses...' : 'Check Out'}
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="rounded-2xl bg-card border border-border overflow-hidden">
@@ -371,11 +459,12 @@ export default function AttendancePage() {
           "border-border shadow-sm rounded-2xl overflow-hidden flex flex-col",
           currentUser && ['OWNER', 'CEO'].includes(currentUser.role?.name) ? "lg:col-span-3" : "lg:col-span-2"
         )}>
-          <CardHeader className="bg-card border-b border-border/50 px-6 py-5 flex flex-row items-center justify-between">
+          <CardHeader className="bg-card border-b border-border/50 px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <CardTitle className="text-lg font-bold text-foreground">Riwayat Kehadiran</CardTitle>
               <CardDescription>Bulan Ini</CardDescription>
             </div>
+            <DatePickerWithRange date={dateRange} setDate={setDateRange} />
           </CardHeader>
           <CardContent className="p-0 flex-1">
             <div className="divide-y divide-border/50">

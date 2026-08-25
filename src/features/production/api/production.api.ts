@@ -10,8 +10,8 @@ export const productionApi = {
     return response.data;
   },
   
-  getRecords: async () => {
-    const response = await api.get('/production/records');
+  getRecords: async (params?: any) => {
+    const response = await api.get('/production/records', { params });
     return response.data;
   },
   getStockSummary: async () => {

@@ -14,6 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { FileText, Send, Lock, CheckCircle2, ClipboardList, Unlock } from 'lucide-react';
+import { DateRange } from "react-day-picker";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 
 export default function DailyReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
@@ -25,6 +27,7 @@ export default function DailyReportsPage() {
   const [targetsList, setTargetsList] = useState<any[]>([]);
   const [selectedWorkItem, setSelectedWorkItem] = useState<string>('');
   const [workQuantity, setWorkQuantity] = useState<string>('');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const form = useForm<ReportInput>({
     resolver: zodResolver(reportSchema),
@@ -33,7 +36,11 @@ export default function DailyReportsPage() {
 
   const fetchReports = async () => {
     try {
-      const response = await reportApi.getMyReports();
+      const params: any = {};
+      if (dateRange?.from) params.startDate = format(dateRange.from, 'yyyy-MM-dd');
+      if (dateRange?.to) params.endDate = format(dateRange.to, 'yyyy-MM-dd');
+
+      const response = await reportApi.getMyReports(params);
       if (response.success) {
         setReports(response.data);
         const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -41,17 +48,47 @@ export default function DailyReportsPage() {
           format(new Date(r.date), 'yyyy-MM-dd') === todayStr
         );
         setTodayReport(todayData);
-        if (todayData) {
+
+        let initialDescription = todayData?.description || '';
+
+        // Fetch CEO Tasks Template if not already submitted or description is empty
+        if (!todayData || !todayData.description) {
+          try {
+            const { api } = await import('@/lib/api/axios');
+            const templateRes = await api.get('/reports/daily-template');
+            if (templateRes.data.success && templateRes.data.data.length > 0) {
+              const ceoTasks = templateRes.data.data;
+              const statusLabel = (rawStatus: string) => {
+                const STATUS_MAP: Record<string, string> = {
+                  TODO: 'Belum Mulai',
+                  IN_PROGRESS: 'Sedang Dikerjakan',
+                  REVIEW: 'Menunggu Review'
+                };
+                return STATUS_MAP[rawStatus] || rawStatus;
+              };
+
+              const taskTemplateText = "⭐ TUGAS DIREKSI (Otomatis):\n" + 
+                ceoTasks.map((t: any) => `- [ ] ${t.title} (Status: ${statusLabel(t.status)})`).join('\n') +
+                "\n\n📝 PEKERJAAN LAINNYA:\n";
+              
+              initialDescription = taskTemplateText;
+            }
+          } catch (e) {
+            console.error("Gagal mengambil template CEO", e);
+          }
+        }
+
+        if (todayData || initialDescription) {
           form.reset({
-            description: todayData.description,
-            output: todayData.output || '',
-            obstacles: todayData.obstacles || '',
-            notes: todayData.notes || '',
+            description: initialDescription,
+            output: todayData?.output || '',
+            obstacles: todayData?.obstacles || '',
+            notes: todayData?.notes || '',
           });
         }
       }
       if (['OWNER', 'CEO', 'GM', 'ADMIN', 'MANAGER', 'LEADER'].includes(userRole)) {
-        const lockedRes = await reportApi.getLockedReports().catch(() => ({ success: false, data: [] }));
+        const lockedRes = await reportApi.getLockedReports(params).catch(() => ({ success: false, data: [] }));
         if (lockedRes.success) setLockedReports(lockedRes.data || []);
       }
 
@@ -84,7 +121,7 @@ export default function DailyReportsPage() {
     }
   }, []);
 
-  useEffect(() => { fetchReports(); }, [userRole]);
+  useEffect(() => { fetchReports(); }, [userRole, dateRange]);
 
   const onSubmit = async (data: ReportInput) => {
     setIsLoading(true);
@@ -221,7 +258,7 @@ export default function DailyReportsPage() {
                     <div className="space-y-2">
                       <FormLabel className="font-bold text-foreground">Progress Target Hari Ini</FormLabel>
                       <Input
-                        type="number" step="any"
+                        type="number"
                         min="0"
                         step="0.01"
                         value={workQuantity}
@@ -274,11 +311,14 @@ export default function DailyReportsPage() {
 
         {/* History Card — Timeline Style */}
         <Card className="lg:col-span-3 bg-card border-border shadow-sm rounded-2xl overflow-hidden">
-          <CardHeader className="border-b border-border/50 bg-muted/10 px-6 py-5">
-            <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-primary" /> Riwayat Laporan
-            </CardTitle>
-            <CardDescription>30 hari terakhir · {reports.length} laporan</CardDescription>
+          <CardHeader className="border-b border-border/50 bg-muted/10 px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-primary" /> Riwayat Laporan
+              </CardTitle>
+              <CardDescription>30 hari terakhir · {reports.length} laporan</CardDescription>
+            </div>
+            <DatePickerWithRange date={dateRange} setDate={setDateRange} />
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-border/50">

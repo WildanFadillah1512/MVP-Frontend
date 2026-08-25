@@ -12,6 +12,8 @@ import { format, differenceInDays } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { CheckCircle, XCircle, Clock, Calendar, PlaneTakeoff, Hourglass, ShieldCheck } from "lucide-react";
+import { DateRange } from "react-day-picker";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -21,6 +23,7 @@ export default function LeavePage() {
   const [teamLeaves, setTeamLeaves] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [userRole, setUserRole] = useState('');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const form = useForm<LeaveInput>({
     resolver: zodResolver(leaveSchema),
@@ -29,9 +32,13 @@ export default function LeavePage() {
 
   const fetchData = async () => {
     try {
+      let params: any = {};
+      if (dateRange?.from) params.startDate = format(dateRange.from, 'yyyy-MM-dd');
+      if (dateRange?.to) params.endDate = format(dateRange.to, 'yyyy-MM-dd');
+
       const [myRes, teamRes] = await Promise.all([
-        leaveApi.getMyLeaves(),
-        leaveApi.getTeamLeaves().catch(() => ({ success: false, data: [] }))
+        leaveApi.getMyLeaves(params),
+        leaveApi.getTeamLeaves(params).catch(() => ({ success: false, data: [] }))
       ]);
       if (myRes.success) setData(myRes.data);
       if (teamRes.success) setTeamLeaves(teamRes.data || []);
@@ -42,7 +49,7 @@ export default function LeavePage() {
     const userStr = sessionStorage.getItem('user');
     if (userStr) { const parsed = JSON.parse(userStr); setUserRole(parsed.role.name); }
     fetchData();
-  }, []);
+  }, [dateRange]);
 
   const onSubmit = async (formData: LeaveInput) => {
     setIsLoading(true);
@@ -253,9 +260,12 @@ export default function LeavePage() {
 
             {/* My History */}
             <Card className="lg:col-span-8 bg-card border-border shadow-md rounded-3xl overflow-hidden">
-              <CardHeader className="border-b border-border/50 bg-card px-8 py-6">
-                <CardTitle className="text-xl font-bold text-foreground">Riwayat Pengajuan Saya</CardTitle>
-                <CardDescription className="text-base">{data.requests.length} pengajuan tercatat di sistem</CardDescription>
+              <CardHeader className="border-b border-border/50 bg-card px-8 py-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                <div>
+                  <CardTitle className="text-xl font-bold text-foreground">Riwayat Pengajuan Saya</CardTitle>
+                  <CardDescription className="text-base">{data.requests.length} pengajuan tercatat di sistem</CardDescription>
+                </div>
+                <DatePickerWithRange date={dateRange} setDate={setDateRange} />
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y divide-border/50">
@@ -311,19 +321,22 @@ export default function LeavePage() {
 
         {canApprove && (
           <TabsContent value="team" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-sm">
+            <div className="mb-8 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-card p-6 rounded-3xl border border-border shadow-sm">
               <div>
                 <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
                   <ShieldCheck className="w-6 h-6 text-primary" /> Menunggu Persetujuan Tim
                 </h3>
                 <p className="text-muted-foreground mt-1">Review permintaan cuti dari anggota tim Anda dengan cepat.</p>
               </div>
-              <div className="bg-amber-100 text-amber-800 border border-amber-200 px-5 py-2 text-sm font-bold rounded-xl flex items-center gap-2 shadow-sm">
-                <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
-                </span>
-                {teamLeaves.filter(r => r.status === 'PENDING').length} Perlu Review
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <DatePickerWithRange date={dateRange} setDate={setDateRange} />
+                <div className="bg-amber-100 text-amber-800 border border-amber-200 px-5 py-2 text-sm font-bold rounded-xl flex items-center gap-2 shadow-sm shrink-0">
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                  </span>
+                  {teamLeaves.filter(r => r.status === 'PENDING').length} Perlu Review
+                </div>
               </div>
             </div>
             

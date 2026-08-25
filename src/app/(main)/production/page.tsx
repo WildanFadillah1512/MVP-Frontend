@@ -11,6 +11,8 @@ import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DateRange } from "react-day-picker";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 
 export default function ProductionPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -22,6 +24,7 @@ export default function ProductionPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<'input' | 'matrix' | 'materials' | 'targets'>('input');
   const [productionDrafts, setProductionDrafts] = useState<any[]>([]);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const [formData, setFormData] = useState({
     productId: '',
@@ -64,15 +67,13 @@ export default function ProductionPage() {
 
   const fetchData = async () => {
     try {
-      const [prodRes, recRes, whRes, targetRes, stockRes] = await Promise.all([
+      const [prodRes, whRes, targetRes, stockRes] = await Promise.all([
         productionApi.getProducts(),
-        productionApi.getRecords(),
         warehouseApi.getItems(),
         productionApi.getTargets({ month: format(new Date(), 'MM'), year: format(new Date(), 'yyyy') }),
         productionApi.getStockSummary()
       ]);
       if (prodRes.success) setProducts(prodRes.data);
-      if (recRes.success) setRecords(recRes.data);
       if (whRes.success) setWarehouseItems(whRes.data);
       if (targetRes.success) setTargets(targetRes.data);
       if (stockRes.success) setStockSummary(stockRes.data);
@@ -82,6 +83,23 @@ export default function ProductionPage() {
       setLoading(false);
     }
   };
+
+  const fetchRecords = async () => {
+    try {
+      const params: any = {};
+      if (dateRange?.from) params.startDate = format(dateRange.from, 'yyyy-MM-dd');
+      if (dateRange?.to) params.endDate = format(dateRange.to, 'yyyy-MM-dd');
+      
+      const res = await productionApi.getRecords(params);
+      if (res.success) setRecords(res.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecords();
+  }, [dateRange]);
 
   useEffect(() => {
     const userStr = sessionStorage.getItem('user');
@@ -106,6 +124,7 @@ export default function ProductionPage() {
         toast.success('Laporan produksi berhasil disimpan');
         setFormData({ ...formData, quantity: '', rejectQty: '', rejectReason: '', notes: '' });
         fetchData();
+        fetchRecords();
       }
     } catch { toast.error('Gagal menyimpan laporan'); }
     finally { setIsSubmitting(false); }
@@ -136,6 +155,7 @@ export default function ProductionPage() {
         toast.success(res.message || 'Semua laporan produksi berhasil disimpan');
         setProductionDrafts([]);
         fetchData();
+        fetchRecords();
       }
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Gagal menyimpan draft produksi');
@@ -256,7 +276,7 @@ export default function ProductionPage() {
   const totalRejectThisMonth = monthRecords.reduce((s, r) => s + (r.rejectQty || 0), 0);
   const uniqueDays = new Set(monthRecords.map(r => format(new Date(r.date), 'yyyy-MM-dd'))).size;
 
-  const isProduksiOrAbove = ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(userRole) || userDivision === 'PRODUKSI';
+  const isProduksiOrAbove = ['OWNER', 'CEO', 'GM', 'ADMIN'].includes(userRole) || ['PRODUKSI', 'PIC KEBERSIHAN DAN PERALATAN', 'PIC PRODUK DAN PERALATAN'].includes(userDivision);
   const canSetupProduct = ['OWNER', 'CEO', 'GM', 'ADMIN', 'MANAGER'].includes(userRole);
 
   if (loading) return (
@@ -635,11 +655,14 @@ export default function ProductionPage() {
           </Card>
 
           <Card className="lg:col-span-3 border-border shadow-md rounded-2xl overflow-hidden">
-            <CardHeader className="bg-card/50 border-b border-border p-6">
-              <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
-                <ClipboardList className="w-5 h-5 text-primary" /> Riwayat Produksi
-              </CardTitle>
-              <CardDescription>Rekap hasil produk jadi yang sudah dicatat</CardDescription>
+            <CardHeader className="bg-card/50 border-b border-border p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-primary" /> Riwayat Produksi
+                </CardTitle>
+                <CardDescription>Rekap hasil produk jadi yang sudah dicatat</CardDescription>
+              </div>
+              <DatePickerWithRange date={dateRange} setDate={setDateRange} />
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">

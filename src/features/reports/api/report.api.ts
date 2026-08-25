@@ -17,12 +17,12 @@ export const reportApi = {
     return response.data;
   },
   
-  getMyReports: async () => {
-    const response = await api.get('/daily-reports/me');
+  getMyReports: async (params?: any) => {
+    const response = await api.get('/daily-reports/me', { params });
     return response.data;
   },
-  getLockedReports: async () => {
-    const response = await api.get('/daily-reports/locked');
+  getLockedReports: async (params?: any) => {
+    const response = await api.get('/daily-reports/locked', { params });
     return response.data;
   },
   unlockReport: async (id: string) => {

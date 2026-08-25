@@ -11,6 +11,8 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DateRange } from "react-day-picker";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 
 export default function OvertimePage() {
   const router = useRouter();
@@ -20,22 +22,36 @@ export default function OvertimePage() {
   const [overtimeForm, setOvertimeForm] = useState({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '', endTime: '', reason: '', notes: '' });
   const [submittingOT, setSubmittingOT] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const EXECUTIVE_ROLES = ['OWNER', 'CEO', 'GM', 'ADMIN', 'MANAGER'];
 
-  useEffect(() => {
+  const fetchOvertimes = async () => {
+    let params: any = {};
+    if (dateRange?.from) params.startDate = format(dateRange.from, 'yyyy-MM-dd');
+    if (dateRange?.to) params.endDate = format(dateRange.to, 'yyyy-MM-dd');
+
     const userStr = sessionStorage.getItem('user');
-    if (userStr) {
-      const user = JSON.parse(userStr);
+    let user = currentUser;
+    if (userStr && !user) {
+      user = JSON.parse(userStr);
       setCurrentUser(user);
-      if (EXECUTIVE_ROLES.includes(user.role?.name)) {
-        api.get('/overtime/all')
-          .then(r => { if (r.data.success) setAllOvertimes(r.data.data); })
-          .catch(() => {});
-      }
     }
-    api.get('/overtime/me').then(r => { if (r.data.success) setOvertimes(r.data.data); }).catch(() => {});
-  }, []);
+    
+    if (user && EXECUTIVE_ROLES.includes(user.role?.name)) {
+      api.get('/overtime/all', { params })
+        .then(r => { if (r.data.success) setAllOvertimes(r.data.data); })
+        .catch(() => {});
+    }
+
+    api.get('/overtime/me', { params })
+      .then(r => { if (r.data.success) setOvertimes(r.data.data); })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchOvertimes();
+  }, [dateRange]);
 
   const handleOvertimeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,8 +67,7 @@ export default function OvertimePage() {
         toast.success('Pengajuan lembur berhasil dikirim');
         setShowOvertimeForm(false);
         setOvertimeForm({ date: format(new Date(), 'yyyy-MM-dd'), startTime: '', endTime: '', reason: '', notes: '' });
-        const r = await api.get('/overtime/me');
-        if (r.data.success) setOvertimes(r.data.data);
+        fetchOvertimes();
       }
     } catch { toast.error('Gagal mengajukan lembur'); }
     finally { setSubmittingOT(false); }
@@ -63,8 +78,7 @@ export default function OvertimePage() {
       const res = await api.patch(`/overtime/${id}/status`, { status });
       if (res.data.success) {
         toast.success(`Lembur berhasil di-${status === 'APPROVED' ? 'setujui' : 'tolak'}`);
-        const r = await api.get('/overtime/all');
-        if (r.data.success) setAllOvertimes(r.data.data);
+        fetchOvertimes();
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Gagal memproses lembur');
@@ -132,8 +146,9 @@ export default function OvertimePage() {
           )}
 
           <Card className="border-border shadow-sm rounded-2xl overflow-hidden flex flex-col h-full">
-            <CardHeader className="bg-card border-b border-border/50 px-6 py-5">
+            <CardHeader className="bg-card border-b border-border/50 px-6 py-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
               <CardTitle className="text-lg font-bold text-foreground">Riwayat Pengajuan Saya</CardTitle>
+              <DatePickerWithRange date={dateRange} setDate={setDateRange} />
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border/50">
@@ -177,8 +192,10 @@ export default function OvertimePage() {
                     <CardTitle className="text-lg font-bold text-foreground">Persetujuan Lembur Tim</CardTitle>
                     <CardDescription>Daftar pengajuan lembur yang perlu ditinjau</CardDescription>
                   </div>
-                  <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold">
-                    {allOvertimes.filter(ot => ot.status === 'PENDING').length} Menunggu
+                  <div className="flex items-center gap-4">
+                    <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold">
+                      {allOvertimes.filter(ot => ot.status === 'PENDING').length} Menunggu
+                    </div>
                   </div>
                 </div>
               </CardHeader>

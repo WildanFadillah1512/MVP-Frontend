@@ -10,6 +10,9 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api/axios';
 import { Plus, Send, CheckCircle, XCircle, ShoppingCart, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { format } from 'date-fns';
+import { DateRange } from 'react-day-picker';
+import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 
 interface PurchaseRequestItem {
   id: string;
@@ -67,6 +70,7 @@ export default function PurchaseRequestsPage() {
   // Purchased Form State (Array of purchased items)
   const [purchasedData, setPurchasedData] = useState<any[]>([]);
   const [receiptUrl, setReceiptUrl] = useState('');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   useEffect(() => {
     const userStr = sessionStorage.getItem('user');
@@ -85,16 +89,26 @@ export default function PurchaseRequestsPage() {
   const canCeoApprove = ['CEO', 'OWNER'].includes(userRole);
   const canMarkPurchased = isTopLevel || userDivision === 'PURCHASING';
 
-  async function fetchRequests() {
+  const fetchRequests = async () => {
     try {
-      const response = await api.get('/purchase-requests');
-      setRequests(response.data.data);
+      let params: any = {};
+      if (dateRange?.from) params.startDate = format(dateRange.from, 'yyyy-MM-dd');
+      if (dateRange?.to) params.endDate = format(dateRange.to, 'yyyy-MM-dd');
+
+      const res = await api.get('/purchase-requests', { params });
+      if (res.data.success) {
+        setRequests(res.data.data);
+      }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal mengambil data');
+      toast.error(error.response?.data?.message || 'Gagal mengambil data purchase requests');
     } finally {
       setLoading(false);
     }
-  }
+  };
+
+  useEffect(() => {
+    fetchRequests();
+  }, [dateRange]);
 
   async function fetchWarehouseItems() {
     try {
@@ -309,9 +323,10 @@ export default function PurchaseRequestsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold">Purchase Requests</h1>
-        <div className="space-x-2 flex">
+        <div className="space-x-2 flex items-center flex-wrap gap-2">
+          <DatePickerWithRange date={dateRange} setDate={setDateRange} />
           {(canManagerApprove || canCeoApprove) && approvableRequests.length > 0 && (
              <Button variant="secondary" onClick={toggleSelectAll}>
                {selectedRequestIds.length === approvableRequests.length ? 'Deselect All' : 'Select All'}

@@ -9,8 +9,8 @@ export const cashierApi = {
     const response = await api.post('/cashier/branches', data);
     return response.data;
   },
-  getReports: async () => {
-    const response = await api.get('/cashier/reports');
+  getReports: async (params?: any) => {
+    const response = await api.get('/cashier/reports', { params });
     return response.data;
   },
   createReport: async (data: any) => {

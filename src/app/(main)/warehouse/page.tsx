@@ -12,6 +12,8 @@ import { id as localeId } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { DateRange } from "react-day-picker";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 
 export default function WarehousePage() {
   const [items, setItems] = useState<any[]>([]);
@@ -23,6 +25,7 @@ export default function WarehousePage() {
   const [activeTab, setActiveTab] = useState<'stock' | 'movements'>('stock');
   const [editingItemId, setEditingItemId] = useState('');
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const [formData, setFormData] = useState({ warehouseItemId: '', type: 'IN', quantity: '', notes: '' });
   const [itemForm, setItemForm] = useState({
@@ -39,12 +42,28 @@ export default function WarehousePage() {
 
   const fetchData = async () => {
     try {
-      const [itemRes, movRes] = await Promise.all([warehouseApi.getItems(), warehouseApi.getMovements()]);
+      const itemRes = await warehouseApi.getItems();
       if (itemRes.success) setItems(itemRes.data);
-      if (movRes.success) setMovements(movRes.data);
     } catch (error) { console.error(error); }
     finally { setLoading(false); }
   };
+
+  const fetchMovements = async () => {
+    try {
+      const params: any = {};
+      if (dateRange?.from) params.startDate = format(dateRange.from, 'yyyy-MM-dd');
+      if (dateRange?.to) params.endDate = format(dateRange.to, 'yyyy-MM-dd');
+      
+      const res = await warehouseApi.getMovements(params);
+      if (res.success) setMovements(res.data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    fetchMovements();
+  }, [dateRange]);
 
   useEffect(() => {
     const userStr = sessionStorage.getItem('user');
@@ -62,6 +81,7 @@ export default function WarehousePage() {
         toast.success(`Stok ${formData.type === 'IN' ? 'Masuk' : 'Keluar'} berhasil dicatat`);
         setFormData({ ...formData, quantity: '', notes: '' });
         fetchData();
+        fetchMovements();
       }
     } catch { toast.error('Gagal mencatat pergerakan stok'); }
     finally { setIsSubmitting(false); }
@@ -213,11 +233,11 @@ export default function WarehousePage() {
             setIsItemDialogOpen(open);
             if (!open) resetItemForm();
           }}>
-            <DialogTrigger asChild>
+            <DialogTrigger render={
               <Button className="rounded-xl font-bold h-10">
                 <Plus className="w-4 h-4 mr-2" /> Tambah Barang
               </Button>
-            </DialogTrigger>
+            } />
             <DialogContent className="max-w-xl">
               <DialogHeader>
                 <DialogTitle>{editingItemId ? 'Edit Master Barang' : 'Setup Master Barang'}</DialogTitle>
@@ -441,9 +461,12 @@ export default function WarehousePage() {
             </Card>
           )}
           <Card className={`${isWarehouseOrAbove ? 'lg:col-span-3' : 'lg:col-span-5'} border-border shadow-md rounded-2xl overflow-hidden`}>
-            <CardHeader className="bg-card/50 border-b border-border p-6">
-              <CardTitle className="text-xl font-bold text-foreground">Buku Catatan Gudang</CardTitle>
-              <CardDescription>Riwayat semua pergerakan stok masuk dan keluar</CardDescription>
+            <CardHeader className="bg-card/50 border-b border-border p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <CardTitle className="text-xl font-bold text-foreground">Buku Catatan Gudang</CardTitle>
+                <CardDescription>Riwayat semua pergerakan stok masuk dan keluar</CardDescription>
+              </div>
+              <DatePickerWithRange date={dateRange} setDate={setDateRange} />
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               <table className="w-full text-sm text-left">

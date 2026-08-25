@@ -11,6 +11,7 @@ import {
   FileText,
   UploadCloud,
   Target,
+  Trophy,
   MessageSquare,
   Package,
   ShoppingCart,
@@ -59,6 +60,7 @@ const getSidebarMenus = (role: string, division: string) => {
     { name: 'Upload Harian', href: '/daily-uploads', icon: UploadCloud },
     { name: 'Tugas', href: '/tasks', icon: CheckSquare },
     { name: 'Target & KPI', href: '/performance', icon: Target },
+    { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
     { name: 'Cuti', href: '/leave', icon: Calendar },
     { name: 'Slip Gaji', href: '/payroll', icon: DollarSign },
     { name: 'Chat Divisi', href: '/chat', icon: MessageSquare },
@@ -69,6 +71,7 @@ const getSidebarMenus = (role: string, division: string) => {
   // === MENU ADMIN-ONLY (OWNER, CEO, GM & ADMIN saja) ===
   const adminOnlyMenus = [
     { name: 'User Management', href: '/users', icon: Users },
+    { name: 'Hari Libur', href: '/settings/holidays', icon: Settings },
   ];
 
   // === MENU MANAJERIAL KE ATAS ===
@@ -86,6 +89,8 @@ const getSidebarMenus = (role: string, division: string) => {
   // === MENU DIVISI (sesuai divisi masing-masing, atau CEO/ADMIN lihat semua) ===
   const divisionMenuMap: Record<string, any> = {
     PRODUKSI:  { name: 'Produksi',  href: '/production', icon: Package },
+    'PIC KEBERSIHAN DAN PERALATAN': { name: 'Produksi',  href: '/production', icon: Package },
+    'PIC PRODUK DAN PERALATAN': { name: 'Produksi',  href: '/production', icon: Package },
     PURCHASING: { name: 'Purchasing', href: '/purchasing', icon: ShoppingCart },
     KASIR:     { name: 'Kasir',     href: '/cashier',   icon: Calculator },
     GUDANG:    { name: 'Gudang',    href: '/warehouse', icon: Box },
@@ -115,7 +120,7 @@ const getSidebarMenus = (role: string, division: string) => {
   const shouldShowMaterialRequests =
     ['OWNER', 'CEO', 'ADMIN', 'GM'].includes(role) ||
     division.toUpperCase() === 'GUDANG' ||
-    (division.toUpperCase() === 'PRODUKSI' && ['LEADER', 'MANAGER'].includes(role));
+    (['PRODUKSI', 'PIC KEBERSIHAN DAN PERALATAN', 'PIC PRODUK DAN PERALATAN'].includes(division.toUpperCase()) && ['LEADER', 'MANAGER'].includes(role));
 
   if (role === 'OWNER' || role === 'CEO' || role === 'ADMIN') {
     menus = [
@@ -381,11 +386,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           
           <div className="flex items-center gap-4">
             <Popover>
-              <PopoverTrigger asChild>
+              <PopoverTrigger render={
                 <button className="relative inline-flex items-center justify-center rounded-full p-2 hover:bg-accent hover:text-accent-foreground transition-colors outline-none">
                   <Megaphone className="h-5 w-5 text-muted-foreground" />
                 </button>
-              </PopoverTrigger>
+              } />
               <PopoverContent align="end" className="w-80 p-0 rounded-2xl shadow-xl border-border">
                 <div className="p-4 border-b border-border/50 bg-muted/30 rounded-t-2xl">
                   <h3 className="font-bold text-foreground flex items-center gap-2"><Megaphone className="w-4 h-4 text-primary" /> Pengumuman Terbaru</h3>

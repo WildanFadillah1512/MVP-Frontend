@@ -11,6 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api/axios";
 import { AlertTriangle, Clock, Settings } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { DateRange } from "react-day-picker";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 
 export default function WarningsPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -21,17 +24,22 @@ export default function WarningsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     employeeId: "",
-    type: "SP",
+    type: "SP 1",
     reason: "",
     durationDays: "",
     notes: ""
   });
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const fetchData = async () => {
     try {
+      let params: any = {};
+      if (dateRange?.from) params.startDate = format(dateRange.from, 'yyyy-MM-dd');
+      if (dateRange?.to) params.endDate = format(dateRange.to, 'yyyy-MM-dd');
+
       const [usersRes, warningsRes] = await Promise.all([
         api.get("/users"),
-        api.get("/users/warnings")
+        api.get("/users/warnings", { params })
       ]);
       if (usersRes.data.success) setUsers(usersRes.data.data.filter((user: any) => user.isActive));
       if (warningsRes.data.success) {
@@ -52,7 +60,7 @@ export default function WarningsPage() {
       setUserRole(current.role?.name || "");
     }
     fetchData();
-  }, []);
+  }, [dateRange]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -130,12 +138,37 @@ export default function WarningsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Kategori SP</Label>
-                <Select value={form.type} onValueChange={(value) => setForm({ ...form, type: value })}>
+                <Select value={form.type} onValueChange={(value) => setForm({ ...form, type: value || "" })}>
                   <SelectTrigger className="rounded-xl">
                     <SelectValue placeholder="Pilih SP..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="SP">SP</SelectItem>
+                    {(() => {
+                      const activeWarnings = warnings.filter(w => w.employeeId === form.employeeId && w.status === "ACTIVE");
+                      const activeTypes = activeWarnings.map(w => w.type);
+                      const allOptions = ["SP 1", "SP 2", "SP 3"];
+                      
+                      // If has SP 2 active, can only issue SP 3
+                      // If has SP 1 active, can issue SP 2, SP 3
+                      // Else can issue SP 1, SP 2, SP 3
+                      let availableOptions = allOptions;
+                      if (activeTypes.includes("SP 2")) {
+                         availableOptions = ["SP 3"];
+                      } else if (activeTypes.includes("SP 1")) {
+                         availableOptions = ["SP 2", "SP 3"];
+                      }
+                      
+                      // Auto-update selected type if current selection is not available
+                      if (form.employeeId && form.type && !availableOptions.includes(form.type) && availableOptions.length > 0) {
+                          setTimeout(() => setForm(prev => ({ ...prev, type: availableOptions[0] })), 0);
+                      } else if (form.employeeId && !form.type && availableOptions.length > 0) {
+                          setTimeout(() => setForm(prev => ({ ...prev, type: availableOptions[0] })), 0);
+                      }
+
+                      return availableOptions.map(opt => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      ));
+                    })()}
                   </SelectContent>
                 </Select>
               </div>
@@ -171,11 +204,14 @@ export default function WarningsPage() {
         </Card>
 
         <Card className="lg:col-span-3 rounded-2xl border-border shadow-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" /> Riwayat SP
-            </CardTitle>
-            <CardDescription>SP aktif dan yang sudah kadaluarsa.</CardDescription>
+          <CardHeader className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-primary" /> Riwayat SP
+              </CardTitle>
+              <CardDescription>SP aktif dan yang sudah kadaluarsa.</CardDescription>
+            </div>
+            <DatePickerWithRange date={dateRange} setDate={setDateRange} />
           </CardHeader>
           <CardContent className="space-y-4">
             {canUpdateSettings && (
@@ -205,7 +241,10 @@ export default function WarningsPage() {
                 <div key={warning.id} className="py-4">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="font-semibold text-foreground">{warning.employee.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-foreground">{warning.employee.name}</p>
+                        <Badge variant="secondary" className="text-[10px] py-0">{warning.type || "SP"}</Badge>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         {warning.employee.role.name} - {warning.employee.division.name} · Oleh {warning.issuedBy.name}
                       </p>

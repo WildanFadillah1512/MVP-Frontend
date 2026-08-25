@@ -15,13 +15,13 @@ export const leaveApi = {
     return response.data;
   },
   
-  getMyLeaves: async () => {
-    const response = await api.get('/leaves/me');
+  getMyLeaves: async (params?: any) => {
+    const response = await api.get('/leaves/me', { params });
     return response.data;
   },
 
-  getTeamLeaves: async () => {
-    const response = await api.get('/leaves/team');
+  getTeamLeaves: async (params?: any) => {
+    const response = await api.get('/leaves/team', { params });
     return response.data;
   },
 

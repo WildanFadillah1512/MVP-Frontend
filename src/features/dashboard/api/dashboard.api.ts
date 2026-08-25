@@ -44,6 +44,10 @@ export const dashboardApi = {
   getEmployeeStatistics: async (id: string) => {
     const response = await api.get(`/dashboard/employees/${id}/statistics`);
     return response.data;
+  },
+  getMonthlyLeaderboard: async (month?: string) => {
+    const response = await api.get('/dashboard/leaderboard', { params: { month } });
+    return response.data;
   }
 };
 

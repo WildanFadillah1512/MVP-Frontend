@@ -12,6 +12,8 @@ import { Calculator, Plus, TrendingUp, Wallet, Receipt, Minus, Package, X, Uploa
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { DateRange } from "react-day-picker";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 
 export default function CashierPage() {
   const [branches, setBranches] = useState<any[]>([]);
@@ -21,6 +23,7 @@ export default function CashierPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const [formData, setFormData] = useState({
     branchId: '',
@@ -41,17 +44,30 @@ export default function CashierPage() {
 
   const fetchData = async () => {
     try {
-      const [branchRes, reportsRes, prodRes] = await Promise.all([
+      const [branchRes, prodRes] = await Promise.all([
         cashierApi.getBranches(),
-        cashierApi.getReports(),
         productionApi.getProducts()
       ]);
       if (branchRes.success) setBranches(branchRes.data);
-      if (reportsRes.success) setReports(reportsRes.data);
       if (prodRes.success) setProducts(prodRes.data);
     } catch (error) { console.error(error); }
     finally { setLoading(false); }
   };
+
+  const fetchReports = async () => {
+    try {
+      const params: any = {};
+      if (dateRange?.from) params.startDate = format(dateRange.from, 'yyyy-MM-dd');
+      if (dateRange?.to) params.endDate = format(dateRange.to, 'yyyy-MM-dd');
+      
+      const res = await cashierApi.getReports(params);
+      if (res.success) setReports(res.data);
+    } catch (error) { console.error(error); }
+  };
+
+  useEffect(() => {
+    fetchReports();
+  }, [dateRange]);
 
   const addProductRow = () => setProductsSold(prev => [...prev, { productId: '', quantity: '', isReject: false }]);
   const removeProductRow = (i: number) => setProductsSold(prev => prev.filter((_, idx) => idx !== i));
@@ -91,6 +107,7 @@ export default function CashierPage() {
         setFormData({ ...formData, totalCash: '', totalTransfer: '', totalQris: '', totalExpense: '', depositProofUrl: '', notes: '' });
         setProductsSold([]);
         fetchData();
+        fetchReports();
       }
     } catch { toast.error('Gagal menyimpan laporan kasir'); }
     finally { setIsSubmitting(false); }
@@ -370,11 +387,14 @@ export default function CashierPage() {
 
         {/* Tabel Rekapitulasi */}
         <Card className="lg:col-span-3 border-border shadow-md rounded-2xl overflow-hidden">
-          <CardHeader className="bg-card/50 border-b border-border p-6">
-            <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
-              <Calculator className="w-5 h-5 text-primary" /> Rekapitulasi Pendapatan
-            </CardTitle>
-            <CardDescription>Riwayat laporan kasir yang sudah disubmit</CardDescription>
+          <CardHeader className="bg-card/50 border-b border-border p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+                <Calculator className="w-5 h-5 text-primary" /> Rekapitulasi Pendapatan
+              </CardTitle>
+              <CardDescription>Riwayat laporan kasir yang sudah disubmit</CardDescription>
+            </div>
+            <DatePickerWithRange date={dateRange} setDate={setDateRange} />
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
             <table className="w-full text-sm text-left">

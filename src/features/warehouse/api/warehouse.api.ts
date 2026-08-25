@@ -17,8 +17,8 @@ export const warehouseApi = {
     const response = await api.delete(`/warehouse/items/${id}`);
     return response.data;
   },
-  getMovements: async () => {
-    const response = await api.get('/warehouse/movements');
+  getMovements: async (params?: any) => {
+    const response = await api.get('/warehouse/movements', { params });
     return response.data;
   },
   createMovement: async (data: any) => {

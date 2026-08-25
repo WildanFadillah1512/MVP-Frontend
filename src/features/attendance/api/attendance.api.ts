@@ -11,13 +11,23 @@ export const attendanceApi = {
     return response.data;
   },
 
-  getMyAttendance: async () => {
-    const response = await api.get('/attendances/me');
+  getMyAttendance: async (params?: any) => {
+    const response = await api.get('/attendances/me', { params });
     return response.data;
   },
 
   getLocations: async () => {
     const response = await api.get('/attendances/locations');
+    return response.data;
+  },
+
+  startBreak: async () => {
+    const response = await api.post('/attendances/break/start');
+    return response.data;
+  },
+
+  endBreak: async () => {
+    const response = await api.post('/attendances/break/end');
     return response.data;
   }
 };

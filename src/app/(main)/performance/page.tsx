@@ -163,6 +163,7 @@ export default function PerformancePage() {
                     { label: 'KPI', value: `${employeeStats.scores.kpiScore} (${employeeStats.scores.grade})` },
                     { label: 'Absensi', value: `${employeeStats.summary.attendanceDays} hari` },
                     { label: 'Laporan', value: `${employeeStats.summary.reportDays} hari` },
+                    { label: 'Tugas CEO', value: `${employeeStats.ceoTasks?.completed || 0}/${employeeStats.ceoTasks?.total || 0}` },
                     { label: 'Upload', value: `${employeeStats.summary.uploadCount} file` },
                     { label: 'Lembur', value: `${employeeStats.summary.overtimeHours} jam` },
                   ].map((item) => (
@@ -176,6 +177,7 @@ export default function PerformancePage() {
                   {[
                     { label: 'Skor Absensi', value: employeeStats.scores.attendanceScore },
                     { label: 'Skor Laporan', value: employeeStats.scores.reportScore },
+                    { label: 'Tugas CEO Selesai', value: employeeStats.ceoTasks?.total > 0 ? Math.round((employeeStats.ceoTasks.completed / employeeStats.ceoTasks.total) * 100) : 0 },
                     { label: 'Skor Target', value: employeeStats.scores.targetScore },
                   ].map((score) => (
                     <div key={score.label}>
@@ -195,6 +197,7 @@ export default function PerformancePage() {
                   <RadarChart cx="50%" cy="50%" outerRadius="70%" data={[
                     { subject: 'KPI', score: employeeStats.scores.kpiScore, fullMark: 100 },
                     { subject: 'Absensi', score: employeeStats.scores.attendanceScore, fullMark: 100 },
+                    { subject: 'Tugas CEO', score: employeeStats.ceoTasks?.total > 0 ? Math.round((employeeStats.ceoTasks.completed / employeeStats.ceoTasks.total) * 100) : 0, fullMark: 100 },
                     { subject: 'Laporan', score: employeeStats.scores.reportScore, fullMark: 100 },
                     { subject: 'Target', score: employeeStats.scores.targetScore, fullMark: 100 },
                   ]}>

@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { api } from '@/lib/api/axios';
 import { uploadApi } from '@/features/uploads/api/upload.api';
-import { Users, Plus, UserCheck, Search, Filter, Building2, Pencil, Trash2, KeyRound, Clock3, Megaphone, Upload, MessageSquare } from "lucide-react";
+import { Users, Plus, UserCheck, Search, Filter, Building2, Pencil, Trash2, KeyRound, Clock3, Megaphone, Upload, MessageSquare, UserX } from "lucide-react";
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -51,6 +51,9 @@ export default function UsersPage() {
   const [workdaysForm, setWorkdaysForm] = useState({ workdays: 22 });
   const [isUploadingAnnouncement, setIsUploadingAnnouncement] = useState(false);
   const [resignationMessages, setResignationMessages] = useState<Record<string, string>>({});
+  const [terminationTarget, setTerminationTarget] = useState<any>(null);
+  const [terminationReason, setTerminationReason] = useState('');
+  const [terminationNotes, setTerminationNotes] = useState('');
 
   const fetchData = async () => {
     try {
@@ -265,6 +268,33 @@ export default function UsersPage() {
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Gagal memperbarui password');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleTerminate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!terminationTarget) return;
+    if (!terminationReason.trim()) {
+      toast.error('Alasan pemecatan wajib diisi');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await api.post(`/users/${terminationTarget.id}/terminate`, {
+        reason: terminationReason,
+        notes: terminationNotes
+      });
+      if (res.data.success) {
+        toast.success('Karyawan berhasil diberhentikan');
+        setTerminationTarget(null);
+        setTerminationReason('');
+        setTerminationNotes('');
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal memproses pemecatan');
     } finally {
       setIsSubmitting(false);
     }
@@ -659,6 +689,51 @@ export default function UsersPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!terminationTarget} onOpenChange={(open) => {
+        if (!open) {
+          setTerminationTarget(null);
+          setTerminationReason('');
+          setTerminationNotes('');
+        }
+      }}>
+        <DialogContent className="max-w-md rounded-2xl border-0 shadow-2xl">
+          <DialogHeader className="pb-4 border-b border-border">
+            <DialogTitle className="text-2xl font-bold text-rose-600">Pemecatan Karyawan</DialogTitle>
+            <DialogDescription>
+              Tindakan ini akan menonaktifkan akun {terminationTarget?.name} dan mencatat histori pemecatan.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleTerminate} className="mt-4 flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label className="text-foreground font-medium">Alasan Pemecatan <span className="text-rose-500">*</span></Label>
+              <Textarea
+                required
+                value={terminationReason}
+                onChange={(event) => setTerminationReason(event.target.value)}
+                className="rounded-xl min-h-[100px]"
+                placeholder="Tulis alasan pemecatan secara jelas..."
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label className="text-foreground font-medium">Catatan Tambahan (Opsional)</Label>
+              <Input
+                value={terminationNotes}
+                onChange={(event) => setTerminationNotes(event.target.value)}
+                className="rounded-xl"
+                placeholder="Info tambahan (misal: terkait pesangon/SOP)..."
+              />
+            </div>
+            <div className="flex gap-3 border-t border-border pt-4">
+              <Button type="button" variant="outline" onClick={() => setTerminationTarget(null)} className="flex-1 rounded-xl">
+                Batal
+              </Button>
+              <Button type="submit" variant="destructive" disabled={isSubmitting} className="flex-1 rounded-xl">
+                {isSubmitting ? 'Memproses...' : 'Ya, Pecat Karyawan'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
       {canCreateDivision && (
         <Card className="border-border shadow-md rounded-2xl">
           <CardHeader className="pb-3">
@@ -1136,6 +1211,11 @@ export default function UsersPage() {
                         {canEditDeleteUsers && (
                           <Button size="sm" variant="outline" className="rounded-lg" onClick={() => setPasswordTarget(u)}>
                             <KeyRound className="w-4 h-4 mr-1.5" /> Password
+                          </Button>
+                        )}
+                        {canEditDeleteUsers && u.isActive && (
+                          <Button size="sm" variant="destructive" className="rounded-lg shadow-sm bg-rose-600 hover:bg-rose-700" onClick={() => setTerminationTarget(u)}>
+                            <UserX className="w-4 h-4 mr-1.5" /> Pecat
                           </Button>
                         )}
                         {canEditDeleteUsers && (

@@ -100,6 +100,13 @@ export default function TasksPage() {
   const filtered = activeFilter === 'active' 
     ? tasks.filter(t => ['TODO', 'IN_PROGRESS', 'REVIEW'].includes(t.status))
     : tasks.filter(t => ['COMPLETED', 'CANCELLED'].includes(t.status));
+
+  const sortedTasks = [...filtered].sort((a, b) => {
+    const aIsCeo = ['CEO', 'OWNER'].includes(a.assigner?.role?.name) ? 1 : 0;
+    const bIsCeo = ['CEO', 'OWNER'].includes(b.assigner?.role?.name) ? 1 : 0;
+    return bIsCeo - aIsCeo;
+  });
+
   const stats = {
     total: tasks.length,
     todo: tasks.filter(t => t.status === 'TODO').length,
@@ -262,13 +269,20 @@ export default function TasksPage() {
                   <p className="text-lg font-semibold text-foreground">Tidak Ada Tugas</p>
                   <p className="text-muted-foreground mt-1">Daftar tugas di tab ini masih kosong.</p>
                 </div>
-              ) : filtered.map(task => {
+              ) : sortedTasks.map(task => {
                 const sCfg = STATUS_CONFIG[task.status] || STATUS_CONFIG['TODO'];
                 const pCfg = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG['MEDIUM'];
                 const StatusIcon = sCfg.icon;
                 const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'COMPLETED';
+                const isCeoTask = ['CEO', 'OWNER'].includes(task.assigner?.role?.name);
+                
                 return (
-                  <div key={task.id} className="bg-card border border-border shadow-sm rounded-2xl p-6 hover:shadow-md hover:border-primary/40 transition-all flex flex-col justify-between">
+                  <div key={task.id} className={`bg-card border ${isCeoTask ? 'border-amber-500/50 shadow-amber-500/10 dark:border-amber-500/30 dark:shadow-amber-500/5' : 'border-border'} shadow-sm rounded-2xl p-6 hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden`}>
+                    {isCeoTask && (
+                      <div className="absolute top-0 right-0 bg-amber-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm z-10 flex items-center gap-1">
+                        <Target className="w-3 h-3" /> TUGAS DIREKSI
+                      </div>
+                    )}
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 flex-wrap mb-3">

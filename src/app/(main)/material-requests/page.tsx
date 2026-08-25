@@ -12,6 +12,9 @@ import { api } from "@/lib/api/axios";
 import { warehouseApi } from "@/features/warehouse/api/warehouse.api";
 import { CheckCircle, PackagePlus, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { DateRange } from "react-day-picker";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 
 export default function MaterialRequestsPage() {
   const [requests, setRequests] = useState<any[]>([]);
@@ -26,11 +29,16 @@ export default function MaterialRequestsPage() {
     purpose: "",
     notes: ""
   });
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const fetchData = async () => {
     try {
+      let params: any = {};
+      if (dateRange?.from) params.startDate = format(dateRange.from, 'yyyy-MM-dd');
+      if (dateRange?.to) params.endDate = format(dateRange.to, 'yyyy-MM-dd');
+
       const [requestRes, itemRes] = await Promise.all([
-        api.get("/material-requests"),
+        api.get("/material-requests", { params }),
         warehouseApi.getItems()
       ]);
       if (requestRes.data.success) setRequests(requestRes.data.data);
@@ -50,7 +58,7 @@ export default function MaterialRequestsPage() {
       setUserDivision(user.division?.name || "");
     }
     fetchData();
-  }, []);
+  }, [dateRange]);
 
   const handleCreate = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -87,8 +95,8 @@ export default function MaterialRequestsPage() {
     }
   };
 
-  const canCreate = ["OWNER", "CEO", "ADMIN"].includes(userRole) || (userDivision === "PRODUKSI" && ["LEADER", "MANAGER"].includes(userRole));
-  const canProcess = userDivision === "GUDANG" || ["OWNER", "CEO", "ADMIN"].includes(userRole);
+  const canCreate = ["OWNER", "CEO", "ADMIN"].includes(userRole) || (["PRODUKSI", "PIC KEBERSIHAN DAN PERALATAN", "PIC PRODUK DAN PERALATAN"].includes(userDivision) && ["LEADER", "MANAGER"].includes(userRole));
+  const canProcess = ['GUDANG', 'PURCHASING'].includes(userDivision) || ["OWNER", "CEO", "ADMIN"].includes(userRole);
 
   if (loading) {
     return (
@@ -152,9 +160,12 @@ export default function MaterialRequestsPage() {
         )}
 
         <Card className={`${canCreate ? "lg:col-span-3" : "lg:col-span-5"} rounded-2xl border-border shadow-md`}>
-          <CardHeader>
-            <CardTitle>Daftar Request</CardTitle>
-            <CardDescription>Status request bahan produksi ke gudang.</CardDescription>
+          <CardHeader className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+            <div>
+              <CardTitle>Daftar Request</CardTitle>
+              <CardDescription>Status request bahan produksi ke gudang.</CardDescription>
+            </div>
+            <DatePickerWithRange date={dateRange} setDate={setDateRange} />
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
